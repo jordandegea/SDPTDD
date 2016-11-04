@@ -1,2 +1,2 @@
 # SDPTDD
-Syst. dist. pour trait. de donnees
+Système distribué pour traitement de données.
