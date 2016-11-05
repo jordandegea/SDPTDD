@@ -25,5 +25,63 @@ William DUCLOT - Mathieu STOFFEL - Joseph PEREZ - Imane Rachdi - Salim ABOUBACAR
 
 \maketitle
 
+Nous avons choisi de travailler sur le sujet IDA. Il s'agit de traiter des données sous forme de flux. \\
+
+\section{Thème} 
+
+Notre thème est intitulé "Twitter et Meteo". Notre objectif est de récupérer le contentement des utilisateurs de twitter sur des régions données par rapport à la météo. 
+
+\section{Le Projet}
+
+\subsection{Composants}
+
+\subsubsection{Kafka}
+
+Kafka a pour objectif de récupérer des flux d'informations depuis twitter et depuis des données météorologique. Kafka a pour rôle de récupérer et de garder seulement les données utiles à notre projet. 
+
+\subsubsection{Flink}
+
+Flink a pour rôle de mesurer le contentement des utilisateurs et d'écrire le résultat dans la base de données. 
+
+\subsubsection{HBase}
+
+HBase sera notre base de données pour nos résultats. HBase est sous forme NoSQL. 
+
+\subsubsection{Zeppelin}
+
+Zeppelin sera notre application de visualisation de données. 
+
+\subsection{Architecture des composants}
+
+Hypothèses : 
+\begin{itemize}
+	\item Pannes franches
+	\item Canaux de communications fiables
+	\item Détecteur de fautes parfait
+\end{itemize}
+
+Configuration : 
+\begin{itemize}
+	\item Kafka sera installé sur 3 machines si 3 machines ou plus sont en vie. Et sur toutes les machines si moins de 3 machines sont en vie. Un détecteur de faute se chargera de garantir la propriété "3 machines en vie".
+	\item Flink sera installé sur autant de machines que nous avons. Dans le cas où nous avons plus de 10 machines, Flink sera installé sur des machines où Kafka n'est pas installé. Un détecteur de faute se chargera de garantir les règles que nous appliquerons sur les configuration de Kafka. 
+	\item HBase sera installé sur 3 machines si 3 machines ou plus sont en vie. Et sur toutes les machines si moins de 3 machines sont en vie. L'algorithme Rowkey sera utilisé pour garantir les propriétés ACID.
+	\item Zeppelin sera installé sur 3 machines. Zeppelin sera répliqué. Un détecteur de faute se chargera de garantir la propriété "3 machines en vie".
+\end{itemize}
+
+Comportement : 
+\begin{itemize}
+	\item Lorsque que 3 ou plus machines sont en vie, alors le service fonctionne correctement.
+	\item Lorsque que 2 machines sont en vie, alors le service fonctionne correctement et cherche à utiliser une nouvelle machine.
+	\item Lorsque que 1 machine est en vie, alors le service se bloque jusqu'à ce qu'au moins une autre machine soit ajouté au système. 
+\end{itemize}
+
+
+\subsection{Premiers objectifs}
+
+Nous commencerons par nous fixer un faible nombre de régions (Paris et Londres par exemple). Nous appliquerons nos algorithmes sur ces régions. 
+Afin de mesurer le contentement des personnes, nous utiliserons des mots clef, hastags et emojis contenu dans les messages twitter. 
+
+Kafka sélectionnera seulement les tweets dans les régions sélectionnées et gardera seulement les données météorologiques sur ces régions. 
+
 
 \end{document}
