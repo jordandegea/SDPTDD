@@ -34,24 +34,33 @@ Notre thème est intitulé "Twitter et Meteo". Notre objectif est de récupérer
 \section{Le Projet}
 
 \subsection{Composants}
+% expliquer ce que permet le composant, comment il s'utilise, les hypothèses qu'il fait, les garanties qu'il offre, etc. 
 
 \subsubsection{Kafka}
+%Expliquer Kafka
+%%% Par ailleurs, cette partie est indépendante de votre application. A titre d'exemple, Kafka n'est pas un composant qui "a pour objectif de récupérer des flux Twitter". Kafka est un composant généraliste qui joue un role de "message broker" et que vous utilisez dans votre application pour récupérer des flux Twitter.
 
 Kafka a pour objectif de récupérer des flux d'informations depuis twitter et depuis des données météorologique. Kafka a pour rôle de récupérer et de garder seulement les données utiles à notre projet. 
 
 \subsubsection{Flink}
-
+% Expliquer Flink
 Flink a pour rôle de mesurer le contentement des utilisateurs et d'écrire le résultat dans la base de données. 
 
 \subsubsection{HBase}
 
+%Expliquer HBase
 HBase sera notre base de données pour nos résultats. HBase est sous forme NoSQL. 
 
 \subsubsection{Zeppelin}
-
+%Expliquer Zeppelin
 Zeppelin sera notre application de visualisation de données. 
 
 \subsection{Architecture des composants}
+% Le titre de la section 2.2 est mal choisi. Par ailleurs, cette section mélange actuellement plusieurs éléments : 
+% - l'architecture générale du système : combien de machines pour chaque composant, les liens entre ces composants (i.e. quel composant communique avec quel composant).
+% - les garanties fournies par le système
+% Par ailleurs, la partie "Hypothèses" n'a pas sa place ici ; elle a sa place dans la description de chaque composant (pour expliquer les hypothèses que fait le composant et ce qu'il garantit en termes de tolérance aux fautes).
+
 
 Hypothèses : 
 \begin{itemize}
@@ -77,6 +86,8 @@ Comportement :
 
 
 \subsection{Premiers objectifs}
+%La section 2.3 devrait être fusionnée avec la partie "architecture générale du système" citée précédemment.
+
 
 Nous commencerons par nous fixer un faible nombre de régions (Paris et Londres par exemple). Nous appliquerons nos algorithmes sur ces régions. 
 Afin de mesurer le contentement des personnes, nous utiliserons des mots clef, hastags et emojis contenu dans les messages twitter. 
