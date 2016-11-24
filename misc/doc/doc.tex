@@ -46,9 +46,9 @@ Kafka fonctionne en cluster, permettant de répliquer les partitions pour être 
 
 Dans notre cas, Kafka sera utilisé pour s'abonner aux flux Twitter et météo, et partitionner ces flux par région.
 
-\textbf{Utilisé par :} Netflix, PayPal, Uber...
+Kafka est tolérant aux pannes franches, du fait de la réplication des partitions sur les différents serveurs (réplication configurable). Cette tolérance est valable si on considère que les communications entre producteur et cluster Kafka sont fiables. En effet la réplication se fait au sein du cluster Kafka, les serveurs de réplication (\textbf{followers}) pour une partition donnée copiant la partition depuis le serveur référent (\textbf{leader}) pour cette partition. Dés lors si le producteur ne parvient pas à contacter le serveur référent, le message ne sera pas renvoyé et sera perdu. 
 
-% Que garanti Kafka en terme de tolérance aux fautes et quels sont ses hypothèses
+\textbf{Utilisé par :} Netflix, PayPal, Uber...
 
 
 \subsubsection{Flink}
