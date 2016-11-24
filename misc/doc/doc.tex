@@ -37,8 +37,6 @@ Notre thème est intitulé "Twitter et Meteo". Notre objectif est de récupérer
 % expliquer ce que permet le composant, comment il s'utilise, les hypothèses qu'il fait, les garanties qu'il offre, etc. 
 
 \subsubsection{Kafka}
-%Expliquer Kafka
-%%% Par ailleurs, cette partie est indépendante de votre application. A titre d'exemple, Kafka n'est pas un composant qui "a pour objectif de récupérer des flux Twitter". Kafka est un composant généraliste qui joue un role de "message broker" et que vous utilisez dans votre application pour récupérer des flux Twitter.
 
 Kafka est un système de messagerie distribué. Il joue le r\^ole de \textit{broker} pour des flux de données : des \textbf{producteurs} envoient des flux de données à Kafka, qui va les stocker et permettre à des \textbf{consommateurs} de traiter ces flux.
 
@@ -50,6 +48,9 @@ Dans notre cas, Kafka sera utilisé pour s'abonner aux flux Twitter et météo, 
 
 \textbf{Utilisé par :} Netflix, PayPal, Uber...
 
+% Que garanti Kafka en terme de tolérance aux fautes et quels sont ses hypothèses
+
+
 \subsubsection{Flink}
 % Expliquer Flink
 Apache Flink est un framework de traitement temps-réel. Il permet donc de traiter des données arrivant en temps-réel, plutôt que par \textit{batch}, et donc d'avoir un temps de latence extr\^emement court.
@@ -58,6 +59,8 @@ En utilisant Flink pour traiter les flux fournis par Kafka, nous conservons l'as
 
 \textbf{Utilisé par :} Bouygues Telecom, Alibaba, Amadeus, ATOS...
 
+% Que garanti Flink en terme de tolérance aux fautes et quels sont ses hypothèses
+
 \subsubsection{HBase}
 HBase est une base de données distribuée non-relationnelle. Cette technologie permet de stocker de larges quantités de données, et est très efficace pour les applications ayant un haut débit de données.
 
@@ -65,50 +68,141 @@ Hbase gère la réplication au sein du cluster, le sharding et le balancement de
 
 \textbf{Utilisé par :} Adobe, Airbnb, Facebook Messenger, Netflix...
 
+% Que garanti Hbase en terme de tolérance aux fautes et quels sont ses hypothèses
+
 \subsubsection{Zeppelin}
 %Expliquer Zeppelin
 Zeppelin fournis une interface web de visualisation de données. Son principal intérêt est d'être capable d'analyser et mettre en forme de grandes quantités de données, et de s'intégrer très bien aux autres technologies (faisant partie de l'écosystème Apache).
 
 Cet outil fournis de nombreuses graphes pour la visualisation de données, permettant de rapidement et facilement travailler sur de gros volumes.
+% Que garanti FHbase en terme de tolérance aux fautes et quels sont ses hypothèses
 
 \subsection{Architecture des composants}
 % Le titre de la section 2.2 est mal choisi. Par ailleurs, cette section mélange actuellement plusieurs éléments : 
 % - l'architecture générale du système : combien de machines pour chaque composant, les liens entre ces composants (i.e. quel composant communique avec quel composant).
 % - les garanties fournies par le système
-% Par ailleurs, la partie "Hypothèses" n'a pas sa place ici ; elle a sa place dans la description de chaque composant (pour expliquer les hypothèses que fait le composant et ce qu'il garantit en termes de tolérance aux fautes).
 
+\begin{figure}[h]
+\centering
+\includegraphics[width=15cm]{content/Kafka.png}
+\caption{Kafka est notre premier composant. Nous créons un "Producer" permettant de récupérer le flux de Twitter et filtrant pour récupérer des messages pouvant être lié à la météo. Kafka partitionne ce flux par régions. Seul les régions que nous souhaitons traitées sont gardées}
+\label{fig1}
+\centering
+\includegraphics[width=15cm]{content/KafkaFlink.png}
+\caption{Flink récupère les données de Kafka correspondant à sa région, traite ces données par rapport aux données météorologiques qu'il à récupéré. Flink récupère les données météorologiques de sa région grâce à une API à intervalle régulier. }
+\label{fig1}
+\end{figure}
 
-Hypothèses : 
-\begin{itemize}
-	\item Pannes franches
-	\item Canaux de communications fiables
-	\item Détecteur de fautes parfait
-\end{itemize}
+\pagebreak
 
-Configuration : 
-\begin{itemize}
-	\item Kafka sera installé sur 3 machines si 3 machines ou plus sont en vie. Et sur toutes les machines si moins de 3 machines sont en vie. Un détecteur de faute se chargera de garantir la propriété "3 machines en vie".
-	\item Flink sera installé sur autant de machines que nous avons. Dans le cas où nous avons plus de 10 machines, Flink sera installé sur des machines où Kafka n'est pas installé. Un détecteur de faute se chargera de garantir les règles que nous appliquerons sur les configuration de Kafka. 
-	\item HBase sera installé sur 3 machines si 3 machines ou plus sont en vie. Et sur toutes les machines si moins de 3 machines sont en vie. L'algorithme Rowkey sera utilisé pour garantir les propriétés ACID.
-	\item Zeppelin sera installé sur 3 machines. Zeppelin sera répliqué. Un détecteur de faute se chargera de garantir la propriété "3 machines en vie".
-\end{itemize}
+\begin{figure}[h]
+\centering
+\includegraphics[width=16cm]{content/FlinkHbase.png}
+\caption{Lorsque Flink a traité une donnée, il stock son résultat dans la base}
+\label{fig1}
+\centering
+\includegraphics[width=16cm]{content/HbaseZeppelin.png}
+\caption{Zeppelin est notre interface de visualisation. Il est connecté à HBase pour récupérer les données}
+\label{fig1}
+\end{figure}
 
-Comportement : 
-\begin{itemize}
-	\item Lorsque que 3 ou plus machines sont en vie, alors le service fonctionne correctement.
-	\item Lorsque que 2 machines sont en vie, alors le service fonctionne correctement et cherche à utiliser une nouvelle machine.
-	\item Lorsque que 1 machine est en vie, alors le service se bloque jusqu'à ce qu'au moins une autre machine soit ajouté au système. 
-\end{itemize}
-
+\pagebreak
 
 \subsection{Premiers objectifs}
+
 %La section 2.3 devrait être fusionnée avec la partie "architecture générale du système" citée précédemment.
 
+\subsubsection{Comportement}
 
-Nous commencerons par nous fixer un faible nombre de régions (Paris et Londres par exemple). Nous appliquerons nos algorithmes sur ces régions. 
+Au départ, nous prenons en compte la présence de 3 serveurs. 
+Nous souhaitons garantir le fonctionnement du service en tolérant deux fautes. 
+
+\begin{itemize}
+	\item Lorsque 3 machines sont en vie, alors le service fonctionne correctement.
+	\item Lorsque 2 machines sont en vie, alors le service fonctionne correctement et cherche à remettre en place la machine en faute.
+	\item Lorsque 1 machine est en vie, alors le service fonctionne correctement et à remettre en place les machines en faute. 
+\end{itemize}
+
+\subsubsection{Configuration}
+
+\textbf{Kafka}
+\begin{itemize}
+	\item Installé sur toutes les machines. 
+	\item Un détecteur de faute se chargera de détecter les machines fautives.
+	\item Un correcteur de faute cherchera à redémarrer la ou les machines fautives
+\end{itemize}
+
+\textbf{Flink}
+\begin{itemize}
+	\item Installé sur 3 machines. 
+	\item Un détecteur de faute se chargera de répartir les différentes configurations de Flink sur les différents serveurs en vie
+\end{itemize}
+
+\textbf{Hbase}
+\begin{itemize}
+	\item Installé sur 3 machines. 
+\end{itemize}
+	
+\textbf{Zeppelin}
+\begin{itemize}
+	\item Installé sur 3 machines. 
+	\item Un détecteur de faute cherchera à redémarrer la ou les machines fautives 
+\end{itemize}
+
+Nous commencerons par nous fixer un faible nombre de régions (Paris, Londres et New York par exemple). Nous appliquerons nos algorithmes sur ces régions. 
 Afin de mesurer le contentement des personnes, nous utiliserons des mots clef, hastags et emojis contenu dans les messages twitter. 
 
-Kafka sélectionnera seulement les tweets dans les régions sélectionnées et gardera seulement les données météorologiques sur ces régions. 
+
+\subsection{Objectifs suivants}
+
+\subsubsection{Comportement}
+
+Au départ, nous prenons en compte la présence d'un nombre de serveur inconnu par le système mais fixé, appelons le N.
+
+Nous souhaitons garantir le fonctionnement du service(Safe et Live) en tolérant N-2 fautes.
+Nous souhaitons garantir le fonctionnement du service(Safe) en tolérant N-1 fautes. 
+
+\begin{itemize}
+	\item Lorsque 3 ou plus machines sont en vie, alors le service fonctionne correctement.
+	\item Lorsque 2 machines sont en vie, alors le service fonctionne correctement et cherche à remettre en place la machine en faute.
+	\item Lorsque 1 machine est en vie, alors le service fonctionne correctement et à remettre en place les machines en faute. 
+\end{itemize}
+
+
+\subsubsection{Configuration}
+
+
+\textbf{Kafka}
+\begin{itemize}
+	\item Installé sur 3 machines. 
+	\item Un détecteur de faute se chargera de détecter les machines fautives
+	\item Un correcteur de faute cherchera à redémarrer la ou les machines fautives
+\end{itemize}
+
+\textbf{Flink}
+\begin{itemize}
+	\item Installé sur $max(3, N-3, N-6, N-9)$ machines. 
+	\begin{itemize}
+		\item Dans le cas où nous avons de nombreuses régions à traiter, nous évitons de faire tourner Kafka ET Flink sur la meme machine
+		\item Il en est de meme pour HBase et Zeppelin
+	\end{itemize}
+	\item Un détecteur de faute se chargera de répartir les différentes configurations de Flink sur les différents serveurs devant executer Flink
+\end{itemize}
+
+\textbf{Hbase}
+\begin{itemize}
+	\item Installé sur 3 machines. 
+\end{itemize}
+	
+\textbf{Zeppelin}
+\begin{itemize}
+	\item Installé sur 3 machines. 
+\end{itemize}
+
+
+Avec ces objectifs, nous traiterons un plus grand nombre de régions. 
+Afin de mesurer le contentement des personnes, chercherons plus de paramètres à prendre en compte . 
+
 
 
 \end{document}
