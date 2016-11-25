@@ -1,0 +1,6 @@
+# This file defines hostnames, usernames, ip addresses and private keys
+# to use for connecting to the different servers using SSH.
+# Usage: ./scripts/ssh.sh server-1
+server-1:xnet:213.32.77.17:keys/xnet
+server-2:xnet:213.32.77.173:keys/xnet
+server-3:xnet:213.32.77.170:keys/xnet
