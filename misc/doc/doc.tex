@@ -69,6 +69,9 @@ Hbase gère la réplication au sein du cluster, le sharding et le balancement de
 \textbf{Utilisé par :} Adobe, Airbnb, Facebook Messenger, Netflix...
 
 % Que garanti Hbase en terme de tolérance aux fautes et quels sont ses hypothèses
+% HBase au dessus de HDFS
+HBase assure une cohérence stricte des écritures et lectures, c'est à dire qu'une lecture renvoie toujours le résultat de la dernière écriture effectuée.
+HBase gère de manière automatique la réplication au sein du cluster ainsi que le basculement en cas de panne.
 
 \subsubsection{Zeppelin}
 Zeppelin fournit une interface web de visualisation de données. Son principal intérêt est d'être capable d'analyser et mettre en forme de grandes quantités de données, et de s'intégrer très bien aux autres technologies (faisant partie de l'écosystème Apache).
