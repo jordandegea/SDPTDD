@@ -1,0 +1,50 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+require 'yaml'
+
+# Check required Vagrant plugins are properly installed
+required_plugins = %W(vagrant-hostmanager)
+required_plugins.each do |required_plugin|
+  unless Vagrant.has_plugin?(required_plugin)
+    raise <<-EOT
+      #{required_plugin} is not installed!
+      Please run the command "vagrant plugin install #{required_plugin}"
+    EOT
+  end
+end
+
+# Begin Vagrant configuration. See https://docs.vagrantup.com for reference.
+Vagrant.configure("2") do |config| 
+  # Use a minimalist Debian box
+  config.vm.box = "minimal/jessie64"
+
+  # Some optimizations
+  config.vm.provider "virtualbox" do |v|
+    v.linked_clone = true
+    v.cpus = 1
+  end
+
+  # Use hostmanager so we can refere to hosts from the host machine
+  config.hostmanager.enabled = true
+  config.hostmanager.manage_host = true
+  config.hostmanager.manage_guest = true
+  config.hostmanager.ignore_private_ip = false
+  config.hostmanager.include_offline = true
+
+  # Load hosts
+  conf = YAML.load_file(File.expand_path('../vagrant-hosts.yml', __FILE__))
+  
+  conf['hosts'].each do |hostname, params|
+    config.vm.define hostname do |worker|
+      worker.vm.network :private_network, :ip => params['ip']
+      worker.vm.hostname = hostname
+
+      # Install system-wide dependencies
+      # worker.vm.provision "shell", path: "root-provision.sh"
+    end
+  end
+
+  # Disable automatic box update checking.
+  # Run `vagrant box outdated` to check for updates.
+  config.vm.box_check_update = false
+end

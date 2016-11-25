@@ -1,0 +1,8 @@
+---
+hosts:
+    worker1:
+        ip: 10.20.1.100
+    worker2:
+        ip: 10.20.1.101
+    worker3:
+        ip: 10.20.1.102
