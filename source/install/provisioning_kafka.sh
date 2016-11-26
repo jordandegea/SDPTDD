@@ -9,6 +9,20 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
+# Detect the environment
+ENABLE_VAGRANT=0
+while getopts ":v" opt; do
+  case $opt in
+    v)
+      echo "Kafka: Running in vagrant mode." 1>&2
+      ENABLE_VAGRANT=1
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      ;;
+  esac
+done
+
 # Tools
 get_file () {
   url=$1 ; shift
@@ -96,6 +110,12 @@ fi
 if ! [ -f $ZOOKEEPER_SERVICE_FILE ]; then
   echo "Kafka: installing Zookeeper systemd unit..." 1>&2
 
+  # Yes, KAFKA_HEAP_OPTS for ZOOKEEPER
+  MORE_ENV=''
+  if (($ENABLE_VAGRANT)); then
+    MORE_ENV="Environment=KAFKA_HEAP_OPTS=-Xmx128M -Xms128M"
+  fi
+
   # Install the unit file
   echo "[Unit]
 Description=Apache Zookeeper
@@ -107,6 +127,7 @@ Type=forking
 User=zookeeper
 Group=zookeeper
 Environment=LOG_DIR=$ZOOKEEPER_LOG_DIR
+$MORE_ENV
 ExecStart=$KAFKA_INSTALL_DIR/bin/zookeeper-server-start.sh -daemon $ZOOKEEPER_CONF_FILE
 ExecStop=$KAFKA_INSTALL_DIR/bin/zookeeper-server-stop.sh
 Restart=on-failure
@@ -146,6 +167,11 @@ fi
 if ! [ -f $KAFKA_SERVICE_FILE ]; then
   echo "Kafka: installing Kafka systemd unit..." 1>&2
 
+  MORE_ENV=''
+  if (($ENABLE_VAGRANT)); then
+    MORE_ENV="Environment=KAFKA_HEAP_OPTS=-Xmx128M -Xms128M"
+  fi
+
   # Install the unit file
   echo "[Unit]
 Description=Apache Kafka server (broker)
@@ -157,6 +183,7 @@ Type=forking
 User=kafka
 Group=kafka
 Environment=LOG_DIR=$KAFKA_LOG_DIR
+$MORE_ENV
 ExecStart=$KAFKA_INSTALL_DIR/bin/kafka-server-start.sh -daemon $KAFKA_CONF_FILE
 ExecStop=$KAFKA_INSTALL_DIR/bin/kafka-server-stop.sh
 Restart=on-failure
