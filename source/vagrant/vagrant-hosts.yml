@@ -3,10 +3,13 @@
 # Each entry defines the hostname of the machine
 #
 # Components to be provisioned are defined as ../install/provisioning_component.sh
+# Order is significant
 hosts:
     worker1:
         ip: 10.20.1.100
         provision: # List of components to install on worker1
+            - apt
+            - java
             - kafka
             - flink
             - hbase
@@ -14,6 +17,8 @@ hosts:
     worker2:
         ip: 10.20.1.101
         provision: # List of components to install on worker2
+            - apt
+            - java
             - kafka
             - flink
             - hbase
@@ -21,6 +26,8 @@ hosts:
     worker3:
         ip: 10.20.1.102
         provision: # List of components to install on worker3
+            - apt
+            - java
             - kafka
             - flink
             - hbase
