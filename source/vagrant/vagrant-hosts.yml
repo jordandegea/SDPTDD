@@ -1,8 +1,27 @@
 ---
+# Define the workers in the Vagrant testing environment
+# Each entry defines the hostname of the machine
+#
+# Components to be provisioned are defined as ../install/provisioning_component.sh
 hosts:
     worker1:
         ip: 10.20.1.100
+        provision: # List of components to install on worker1
+            - kafka
+            - flink
+            - hbase
+            - zeppelin
     worker2:
         ip: 10.20.1.101
+        provision: # List of components to install on worker2
+            - kafka
+            - flink
+            - hbase
+            - zeppelin
     worker3:
         ip: 10.20.1.102
+        provision: # List of components to install on worker3
+            - kafka
+            - flink
+            - hbase
+            - zeppelin
