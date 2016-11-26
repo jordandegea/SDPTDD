@@ -1,6 +1,6 @@
 # Environnement de test Vagrant
 
-Ce dossier `machines/` contient :
+Ce dossier contient :
 
 * `Vagrantfile` : définition de machines virtuelles de test
 * `vagrant-hosts.yml` : configuration des différentes machines de test
