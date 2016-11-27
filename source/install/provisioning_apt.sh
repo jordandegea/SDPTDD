@@ -9,4 +9,5 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-echo "WARNING: Zeppelin provisioning not yet implemented" 1>&2
+# Just update packages for future provisioning scripts
+apt-get update

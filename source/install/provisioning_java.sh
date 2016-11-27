@@ -9,4 +9,9 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-echo "WARNING: Zeppelin provisioning not yet implemented" 1>&2
+if ! java -version >/dev/null 2>&1; then
+    # Install the default JRE using apt (see debian docs)
+    apt-get install -y default-jre
+else
+    echo "Java: already installed."
+fi

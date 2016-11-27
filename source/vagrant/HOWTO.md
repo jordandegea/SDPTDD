@@ -29,6 +29,12 @@ vagrant up
 # Connexion SSH à une des machines
 vagrant ssh worker1
 
+# Lancer le provisioning (automatique lors de vagrant up)
+vagrant provision
+
+# Recréer les machines suite à une modification du Vagrantfile
+vagrant reload
+
 # Mise en pause des machines
 vagrant suspend
 
@@ -44,3 +50,11 @@ Si _vagrant-hostmanager_ est configuré correctement, les machines peuvent être
 
 Le réseau privé utilisé pour les machines Vagrant est 10.20.1.0/24. Par défaut l'adresse de la machine hôte est
 10.20.1.1.
+
+## Statut
+
+Les machines démarrées avec Vagrant ont les composants suivants installés :
+
+* java
+* Zookeeper (géré par systemd, config /etc/zookeeper/zookeeper.conf)
+* Kafka (géré par systemd, config /etc/kafka/kafka.conf)
