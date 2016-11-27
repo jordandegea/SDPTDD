@@ -22,14 +22,14 @@ class TwitterProducer(StreamListener):
     def __init__(self):
         super(TwitterProducer, self).__init__()
         self.parse_yaml("../config.yml")
-        # self.producer = KafkaProducer(
-        #     bootstrap_servers=self.bootstrap_server,
-        #     acks=0  # do not wait for acknowledgement
-        # )
+        self.producer = KafkaProducer(
+            bootstrap_servers=self.bootstrap_server,
+            acks=0  # do not wait for acknowledgement
+        )
 
     def on_data(self, data):
-        # self.send('twitter', data)  # The key must be set
-        print data
+        self.producer.send('twitter', data)  # The key must be set
+        # print data
         return True
 
     def on_error(self, status):
@@ -41,14 +41,21 @@ class TwitterProducer(StreamListener):
                 config = yaml.load(stream)
                 locations = config['environment']['locations']
                 for name in locations:
-                    self.locations[name] = locations[name].replace(' ', '').split(',')
+                    # Create a dict associating a bounding box to a name (eg Paris and its bounding box coordinates)
+                    self.locations[name] = [ float(v) for v in locations[name].replace(' ', '').split(',') ]
 
-                print self.locations
                 self.bootstrap_server = config['kafka']['bootstrap_server']
 
             except yaml.YAMLError as exc:
                 print(exc)
                 exit(1)
+
+    def get_bounding_boxes(self):
+        """
+        We want all bounding boxes in a single list (so 4 successive values will define a bounding box). So basically
+        We want to merge the dict of lists into a single list.
+        """
+        return [ v for l in self.locations for v in self.locations[l] ]
 
 
 if __name__ == '__main__':
@@ -57,4 +64,4 @@ if __name__ == '__main__':
     auth.set_access_token(access_token, access_token_secret)
 
     stream = Stream(auth, l)
-    stream.filter(locations=l.locations)
+    stream.filter(locations=l.get_bounding_boxes()) # warning: 'locations' filter act as a OR with all other filters
