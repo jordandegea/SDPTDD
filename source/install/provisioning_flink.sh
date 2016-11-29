@@ -9,4 +9,65 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
-echo "WARNING: Flink provisioning not yet implemented" 1>&2
+
+# So we dont need to pass in i to the scripts
+NODE_NUMBER=`hostname | tr -d a-z\-`
+
+
+function downloadFile {
+
+    url="http://www-eu.apache.org/dist/flink/flink-1.0.3/flink-1.0.3-bin-hadoop27-scala_2.10.tgz"
+ 
+    filename="flink-1.0.3-bin-hadoop27-scala_2.10.tgz"
+
+    cached_file="/vagrant/resources/${filename} "
+
+    if [ ! -e $cached_file ]; then
+        echo "Downloading ${filename} from ${url} to ${cached_file}"
+        echo "This will take some time. Please be patient..."
+        wget -nv -O $cached_file $url
+    fi
+
+    TARBALL=$cached_file
+}
+
+
+
+
+while getopts t:r: option; do
+    case $option in
+        t) TOTAL_NODES=$OPTARG;;
+    esac
+done
+
+
+function installFlink {
+
+    downloadFile  $filename
+
+    tar -oxzf $TARBALL -C /opt
+
+    }
+
+function configureFlink {
+    echo "Configuring Flink"
+#set the jobmanager.rpc.address key in conf/flink-conf.yaml to master's IP 
+    sed -i 's/jobmanager.rpc.address.*/jobmanager.rpc.address:10.20.1.100/' /opt/flink-1.0.3/conf/flink-conf.yaml 
+
+     rm /opt/flink-1.0.3/conf/slaves
+
+#Add the IPs or hostnames of all worker nodes
+    for i in $(seq 2 $TOTAL_NODES); do
+        sudo echo "worker${i}" >> /opt/flink-1.0.3/conf/slaves
+    done
+
+
+
+
+}
+
+
+
+echo "Setting up Flink"
+installFlink
+configureFlink
