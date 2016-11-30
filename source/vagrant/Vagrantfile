@@ -44,7 +44,7 @@ Vagrant.configure("2") do |config|
       # Configure hostname
       worker.vm.hostname = hostname
       # Run provisioning scripts as specified by the config
-      args = '-v' + (if ENV['FORCE_PROVISION'] == 'yes' then ' -f' end)
+      args = '-v' + (if ENV['FORCE_PROVISION'] == 'yes' then ' -f' else '' end)
       params['provision'].each do |provisioning_name|
         worker.vm.provision "shell",
           path: File.expand_path("../../install/provisioning_#{provisioning_name}.sh", __FILE__),
