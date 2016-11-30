@@ -1,21 +1,19 @@
 import sys
 from kafka import KafkaProducer
+from producer import Producer
 import random
 import time
 
 
-class FakeTwitterProducer(KafkaProducer):
+class FakeTwitterProducer(Producer):
     rate = 1.0 # tweets/sec
     allowance = rate
     last_check = time.clock()
 
-    def __init__(self, rate, logging=False, **configs):
-        super(FakeTwitterProducer, self).__init__(**configs)
+    def __init__(self, rate, logging=False):
+        Producer.__init__(self, logging)
         self.fake_tweet = open('fake_tweet.json', 'r').read()
-        self.logging = logging
         self.rate = rate
-        if logging:
-            self.log_file = open('fake_tweet.log', 'w')
 
     def generate_tweet(self):
         return self.fake_tweet
@@ -27,12 +25,6 @@ class FakeTwitterProducer(KafkaProducer):
             if time_passed >= self.rate:
                 self.send_to_kafka(self.generate_tweet())
                 self.last_check = current
-
-    def send_to_kafka(self, tweet):
-        self.send('twitter', self.fake_tweet.encode('utf-8'), b'Paris')
-        # print tweet
-        if self.logging:
-            self.log_file.write(tweet)
 
 
 if __name__ == "__main__":
@@ -47,7 +39,5 @@ if __name__ == "__main__":
 
     FakeTwitterProducer(
         1/float(rate),
-        logging,
-        bootstrap_servers='localhost:1234',
-        acks=0  # do not wait for acknowledgement
+        logging
     ).run_producer()
