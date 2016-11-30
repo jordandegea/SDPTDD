@@ -11,11 +11,15 @@ fi
 
 # Detect the environment
 ENABLE_VAGRANT=0
-while getopts ":v" opt; do
+FORCE_INSTALL=0
+while getopts ":vf" opt; do
   case $opt in
     v)
       echo "Kafka: Running in vagrant mode." 1>&2
       ENABLE_VAGRANT=1
+      ;;
+    f)
+      FORCE_INSTALL=1
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -59,7 +63,7 @@ KAFKA_LOG_DIR=/var/log/kafka
 ZOOKEEPER_LOG_DIR=/var/log/zookeeper
 
 # Install Kafka
-if ! [ -d $KAFKA_INSTALL_DIR ]; then
+if (($FORCE_INSTALL)) || ! [ -d $KAFKA_INSTALL_DIR ]; then
   # Download Kafka
   echo "Kafka: downloading..." 1>&2
 
@@ -102,7 +106,7 @@ if ! [ -d $ZOOKEEPER_CONF_DIR ]; then
   mkdir -p $ZOOKEEPER_CONF_DIR
 fi
 
-if ! [ -f $ZOOKEEPER_CONF_FILE ]; then
+if (($FORCE_INSTALL)) || ! [ -f $ZOOKEEPER_CONF_FILE ]; then
   echo "Kafka: installed Zookeeper default config file to $ZOOKEEPER_CONF_FILE" 1>&2
   cp $KAFKA_INSTALL_DIR/config/zookeeper.properties $ZOOKEEPER_CONF_FILE
 fi
@@ -114,7 +118,7 @@ if ! [ -d $ZOOKEEPER_LOG_DIR ]; then
 fi
 
 # Create the zookeeper systemd service
-if ! [ -f $ZOOKEEPER_SERVICE_FILE ]; then
+if (($FORCE_INSTALL)) || ! [ -f $ZOOKEEPER_SERVICE_FILE ]; then
   echo "Kafka: installing Zookeeper systemd unit..." 1>&2
 
   # Yes, KAFKA_HEAP_OPTS for ZOOKEEPER
@@ -159,7 +163,7 @@ if ! [ -d $KAFKA_CONF_DIR ]; then
   mkdir -p $KAFKA_CONF_DIR
 fi
 
-if ! [ -f $KAFKA_CONF_FILE ]; then
+if (($FORCE_INSTALL)) || ! [ -f $KAFKA_CONF_FILE ]; then
   echo "Kafka: installed default config file to $KAFKA_CONF_FILE" 1>&2
   cp $KAFKA_INSTALL_DIR/config/server.properties $KAFKA_CONF_FILE
 fi
@@ -171,7 +175,7 @@ if ! [ -d $KAFKA_LOG_DIR ]; then
 fi
 
 # Create the kafka systemd service
-if ! [ -f $KAFKA_SERVICE_FILE ]; then
+if (($FORCE_INSTALL)) || ! [ -f $KAFKA_SERVICE_FILE ]; then
   echo "Kafka: installing Kafka systemd unit..." 1>&2
 
   MORE_ENV=''
