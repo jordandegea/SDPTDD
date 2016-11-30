@@ -115,7 +115,7 @@ if (($FORCE_INSTALL)) || ! [ -f $ZOOKEEPER_SERVICE_FILE ]; then
   # Yes, KAFKA_HEAP_OPTS for ZOOKEEPER
   MORE_ENV=''
   if (($ENABLE_VAGRANT)); then
-    MORE_ENV="Environment=KAFKA_HEAP_OPTS=-Xmx128M -Xms128M"
+    MORE_ENV="Environment=KAFKA_HEAP_OPTS=-Xmx126M -Xms126M"
   fi
 
   # Install the unit file
@@ -161,7 +161,7 @@ if (($FORCE_INSTALL)) || ! [ -f $KAFKA_SERVICE_FILE ]; then
 
   MORE_ENV=''
   if (($ENABLE_VAGRANT)); then
-    MORE_ENV="Environment=KAFKA_HEAP_OPTS=-Xmx128M -Xms128M"
+    MORE_ENV="Environment=KAFKA_HEAP_OPTS=-Xmx256M -Xms256M"
   fi
 
   # Install the unit file
