@@ -28,7 +28,14 @@ get_file () {
   url=$1 ; shift
   filename=$1 ; shift
 
-  wget -q -O "$filename" "$url"
+  # Download file if needed
+  if ! [ -f "/vagrant/resources/$filename" ]; then
+    echo "Kafka: Downloading $url, this may take a while..."
+    wget -q -O "/vagrant/resources/$filename" "$url"
+  fi
+
+  # Copy the cached file to the desired location (ie. pwd)
+  cp "/vagrant/resources/$filename" "$filename"
 }
 
 # Installation parameters
