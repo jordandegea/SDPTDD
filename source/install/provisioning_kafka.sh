@@ -50,12 +50,8 @@ KAFKA_INSTALL_DIR=/usr/local/kafka
 KAFKA_CHECKSUM=45c7d032324e16c2e19a7d904a4d65c6
 
 KAFKA_SERVICE_FILE=/etc/systemd/system/kafka.service
-KAFKA_CONF_DIR=/etc/kafka
-KAFKA_CONF_FILE=$KAFKA_CONF_DIR/kafka.conf
 
 ZOOKEEPER_SERVICE_FILE=/etc/systemd/system/zookeeper.service
-ZOOKEEPER_CONF_DIR=/etc/zookeeper
-ZOOKEEPER_CONF_FILE=$ZOOKEEPER_CONF_DIR/zookeeper.conf
 
 LOG4J_PATH=$KAFKA_INSTALL_DIR/config/log4j.properties
 
@@ -85,7 +81,12 @@ if (($FORCE_INSTALL)) || ! [ -d $KAFKA_INSTALL_DIR ]; then
   mv $KAFKA_NAME $KAFKA_INSTALL_DIR
 
   # Symlink all files to /usr/local/bin
-  ln -s $KAFKA_INSTALL_DIR/bin/* /usr/local/bin
+  for BINARY in $KAFKA_INSTALL_DIR/bin/*; do
+    FN=/usr/local/bin/$(basename "$BINARY" .sh)
+    echo "#!/bin/bash
+$BINARY" >"$FN"
+    chmod +x "$FN"
+  done
 
   # Cleanup
   rm -f $KAFKA_FILENAME $KAFKA_FILENAME.md5
@@ -99,16 +100,6 @@ if ! id -u zookeeper >/dev/null 2>&1; then
   useradd -m -s /bin/bash zookeeper
 else
   echo "Kafka: zookeeper user already created." 1>&2
-fi
-
-# Ensure we have a kafka config setup
-if ! [ -d $ZOOKEEPER_CONF_DIR ]; then
-  mkdir -p $ZOOKEEPER_CONF_DIR
-fi
-
-if (($FORCE_INSTALL)) || ! [ -f $ZOOKEEPER_CONF_FILE ]; then
-  echo "Kafka: installed Zookeeper default config file to $ZOOKEEPER_CONF_FILE" 1>&2
-  cp $KAFKA_INSTALL_DIR/config/zookeeper.properties $ZOOKEEPER_CONF_FILE
 fi
 
 # Check the log path for zookeeper
@@ -139,7 +130,7 @@ User=zookeeper
 Group=zookeeper
 Environment=LOG_DIR=$ZOOKEEPER_LOG_DIR
 $MORE_ENV
-ExecStart=$KAFKA_INSTALL_DIR/bin/zookeeper-server-start.sh -daemon $ZOOKEEPER_CONF_FILE
+ExecStart=$KAFKA_INSTALL_DIR/bin/zookeeper-server-start.sh -daemon $KAFKA_INSTALL_DIR/config/zookeeper.properties
 ExecStop=$KAFKA_INSTALL_DIR/bin/zookeeper-server-stop.sh
 Restart=on-failure
 SyslogIdentifier=zookeeper
@@ -156,16 +147,6 @@ if ! id -u kafka >/dev/null 2>&1; then
   useradd -m -s /bin/bash kafka
 else
   echo "Kafka: user already created." 1>&2
-fi
-
-# Ensure we have a kafka config setup
-if ! [ -d $KAFKA_CONF_DIR ]; then
-  mkdir -p $KAFKA_CONF_DIR
-fi
-
-if (($FORCE_INSTALL)) || ! [ -f $KAFKA_CONF_FILE ]; then
-  echo "Kafka: installed default config file to $KAFKA_CONF_FILE" 1>&2
-  cp $KAFKA_INSTALL_DIR/config/server.properties $KAFKA_CONF_FILE
 fi
 
 # Check the log path for kafka
@@ -195,7 +176,7 @@ User=kafka
 Group=kafka
 Environment=LOG_DIR=$KAFKA_LOG_DIR
 $MORE_ENV
-ExecStart=$KAFKA_INSTALL_DIR/bin/kafka-server-start.sh -daemon $KAFKA_CONF_FILE
+ExecStart=$KAFKA_INSTALL_DIR/bin/kafka-server-start.sh -daemon $KAFKA_INSTALL_DIR/config/server.properties
 ExecStop=$KAFKA_INSTALL_DIR/bin/kafka-server-stop.sh
 Restart=on-failure
 SyslogIdentifier=kafka
