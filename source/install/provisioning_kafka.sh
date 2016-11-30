@@ -84,7 +84,7 @@ if (($FORCE_INSTALL)) || ! [ -d $KAFKA_INSTALL_DIR ]; then
   for BINARY in $KAFKA_INSTALL_DIR/bin/*; do
     FN=/usr/local/bin/$(basename "$BINARY" .sh)
     echo "#!/bin/bash
-$BINARY" >"$FN"
+$BINARY \"\$@\"" >"$FN"
     chmod +x "$FN"
   done
 
