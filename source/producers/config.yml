@@ -1,0 +1,12 @@
+environment:
+        addresses:
+                - worker1
+                - worker2
+                - worker3
+        locations:
+                Paris: 1.56, 48.52, 3.08, 49.21
+                New-York: -75.24, 40.23, -72.85, 41.30
+                London: -0.91, 51.13, 0.61, 51.78
+
+kafka:
+        bootstrap_server: worker1
