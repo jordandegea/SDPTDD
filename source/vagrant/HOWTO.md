@@ -58,3 +58,9 @@ Les machines démarrées avec Vagrant ont les composants suivants installés :
 * java
 * Zookeeper (géré par systemd, config /etc/zookeeper/zookeeper.conf)
 * Kafka (géré par systemd, config /etc/kafka/kafka.conf)
+
+## Troubleshooting
+
+### vagrant plugin install vagrant-hostmanager échoue
+
+sous debian il peut être nécessaire d'installer le paquet ruby-dev.
