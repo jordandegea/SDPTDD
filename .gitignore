@@ -6,3 +6,4 @@
 *.synctex.gz
 *.tex.bak
 **/*.swp
+**/.DS_Store
