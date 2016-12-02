@@ -60,7 +60,6 @@ echo "<?xml version=\"1.0\"?>
 " > hbase-site.xml
 
 JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
-echo $JAVA_HOME
 echo "
 export JAVA_HOME=$JAVA_HOME
 " >> hbase-env.sh
