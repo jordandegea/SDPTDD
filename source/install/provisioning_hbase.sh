@@ -32,8 +32,7 @@ export HBASE_HOME="/usr/lib/hbase/hbase-$version"
 cd $libpath/hbase-$version/conf
 master="10.20.1.100"
 servers="10.20.1.100, 10.20.1.101, 10.20.1.102"
-echo "
-<?xml version=\"1.0\"?>
+echo "<?xml version=\"1.0\"?>
 <?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>
 <configuration>
  
