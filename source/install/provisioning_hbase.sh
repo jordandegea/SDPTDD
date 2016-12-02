@@ -59,7 +59,8 @@ echo "<?xml version=\"1.0\"?>
 </configuration>
 " > hbase-site.xml
 
-JAVA_HOME=/usr/lib/java/jdk1.8.*
+# File + cut is used to expand *
+JAVA_HOME=$(file -0 /usr/lib/jvm/java-1.8.*-openjdk-* | cut -d '' -f 1)
 echo $JAVA_HOME
 echo "
 export JAVA_HOME=$JAVA_HOME
