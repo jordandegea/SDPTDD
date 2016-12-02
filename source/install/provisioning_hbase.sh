@@ -32,8 +32,7 @@ export HBASE_HOME="/usr/lib/hbase/hbase-$version"
 cd $libpath/hbase-$version/conf
 master="10.20.1.100"
 servers="10.20.1.100, 10.20.1.101, 10.20.1.102"
-echo "
-<?xml version=\"1.0\"?>
+echo "<?xml version=\"1.0\"?>
 <?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>
 <configuration>
  
@@ -60,7 +59,7 @@ echo "
 </configuration>
 " > hbase-site.xml
 
-JAVA_HOME=/usr/lib/java/jdk1.8.*
+JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 echo $JAVA_HOME
 echo "
 export JAVA_HOME=$JAVA_HOME
@@ -68,11 +67,9 @@ export JAVA_HOME=$JAVA_HOME
 
 # Start hbase
 echo "Start HBase"
-ip=`ifconfig eth1 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'`
-echo $ip
-echo "lol"
-if [ $ip = $master ]
+if [ `hostname` = "worker1" ]
 then
     /usr/lib/hbase/hbase-$version/bin/start-hbase.sh
 fi
+jps
 
