@@ -4,7 +4,11 @@
 set -eo pipefail
 
 # Load the shared provisioning script
-source /vagrant/provisioning_shared.sh
+if [ -f './provisioning_shared.sh' ]; then
+  source ./provisioning_shared.sh
+else
+  source /vagrant/provisioning_shared.sh
+fi
 
 # So we dont need to pass in i to the scripts
 NODE_NUMBER=`hostname | tr -d a-z\-`

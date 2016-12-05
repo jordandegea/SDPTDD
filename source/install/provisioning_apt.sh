@@ -4,7 +4,11 @@
 set -eo pipefail
 
 # Load the shared provisioning script
-source /vagrant/provisioning_shared.sh
+if [ -f './provisioning_shared.sh' ]; then
+  source ./provisioning_shared.sh
+else
+  source /vagrant/provisioning_shared.sh
+fi
 
 # Setup local package cache
 # Source: https://superuser.com/questions/303621/local-cache-for-apt-packages
