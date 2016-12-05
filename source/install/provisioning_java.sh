@@ -1,10 +1,7 @@
 #!/bin/bash
 
-# This script must be run as root.
-if [[ $EUID -ne 0 ]]; then
-  echo "This script must be run as root" 1>&2
-  exit 1
-fi
+# Load the shared provisioning script
+source /vagrant/provisioning_shared.sh
 
 JAVA_VERSION=$(java -version 2>&1)
 if ! [[ "$JAVA_VERSION" =~ 1\.8 ]]; then

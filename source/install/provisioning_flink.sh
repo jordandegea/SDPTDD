@@ -3,12 +3,8 @@
 # Fail if any command fail
 set -eo pipefail
 
-# This script must be run as root.
-if [[ $EUID -ne 0 ]]; then
-  echo "This script must be run as root" 1>&2
-  exit 1
-fi
-
+# Load the shared provisioning script
+source /vagrant/provisioning_shared.sh
 
 # So we dont need to pass in i to the scripts
 NODE_NUMBER=`hostname | tr -d a-z\-`

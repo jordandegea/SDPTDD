@@ -1,6 +1,7 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 require 'yaml'
+require 'fileutils'
 
 # Check required Vagrant plugins are properly installed
 required_plugins = %W(vagrant-hostmanager)
@@ -39,6 +40,12 @@ Vagrant.configure("2") do |config|
 
   # Compute arguments comon to all hosts
   shared_args = conf['shared_args'] || ''
+
+  # Deploy the shared provisioning script to the /vagrant shared folder
+  FileUtils.cp(
+    File.expand_path(File.join('..', conf['shared_script']), __FILE__),
+    File.expand_path('..', __FILE__)
+  )
 
   # Use "FORCE_PROVISION=yes vagrant provision" to re-run provisioning scripts
   # and reinstall everything

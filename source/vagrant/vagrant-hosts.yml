@@ -39,3 +39,6 @@ hosts:
 # Shared arguments to apply to all provisioning scripts
 # SPEC: Use '-v' to indicate Vagrant provisioning
 shared_args: -v
+# Shared code for provisioning scripts
+# Available as /vagrant/provisioning_shared.sh
+shared_script: ../install/provisioning_shared.sh

@@ -3,29 +3,8 @@
 # Fail if any command fail
 set -eo pipefail
 
-# This script must be run as root.
-if [[ $EUID -ne 0 ]]; then
-  echo "This script must be run as root" 1>&2
-  exit 1
-fi
-
-# Detect the environment
-ENABLE_VAGRANT=0
-FORCE_INSTALL=0
-while getopts ":vf" opt; do
-  case $opt in
-    v)
-      echo "Kafka: Running in vagrant mode." 1>&2
-      ENABLE_VAGRANT=1
-      ;;
-    f)
-      FORCE_INSTALL=1
-      ;;
-    \?)
-      echo "Invalid option: -$OPTARG" >&2
-      ;;
-  esac
-done
+# Load the shared provisioning script
+source /vagrant/provisioning_shared.sh
 
 # Tools
 get_file () {

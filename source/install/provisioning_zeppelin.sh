@@ -3,11 +3,8 @@
 # Fail if any command fail
 set -eo pipefail
 
-# This script must be run as root.
-if [[ $EUID -ne 0 ]]; then
-  echo "This script must be run as root" 1>&2
-  exit 1
-fi
+# Load the shared provisioning script
+source /vagrant/provisioning_shared.sh
 
 ZEPPELIN_VERSION=0.6.2
 ZEPPELIN_NAME=zeppelin-$ZEPPELIN_VERSION
@@ -15,18 +12,6 @@ ZEPPELIN_FILENAME=$ZEPPELIN_NAME-bin-all.tgz
 ZEPPELIN_INSTALL_DIR=/usr/local/zeppelin
 MAVEN_NAME=apache-maven-3.3.9
 MAVEN_FILENAME=$MAVEN_NAME-bin.tar.gz
-
-FORCE_INSTALL=0
-while getopts ":f" opt; do
-  case $opt in
-    f)
-      FORCE_INSTALL=1
-      ;;
-    \?)
-      echo "Invalid option: -$OPTARG" >&2
-      ;;
-  esac
-done
 
 if(($FORCE_INSTALL)) || ! [ -d $ZEPPELIN_INSTALL_DIR ]; then
 	# Download file if needed
