@@ -22,10 +22,14 @@ task :deploy do |task, args|
       folder = Pathname.new(source_folder)
 
       Dir.glob(File.join(folder, '**')).each do |file|
-        unless file == '.'
-          upload! file,
-            File.join('deploy', Pathname.new(file).relative_path_from(folder))
-        end
+        destination_file = File.join('deploy', Pathname.new(file).relative_path_from(folder))
+        destination_dir = File.dirname(destination_file)
+
+        # Ensure the destination directory is created
+        execute :mkdir, '-p', destination_dir unless destination_dir == 'deploy'
+
+        # Upload the file
+        upload! file, destination_file
       end
     end
 
