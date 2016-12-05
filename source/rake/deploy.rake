@@ -3,6 +3,22 @@ require 'sshkit'
 require 'sshkit/sudo'
 include SSHKit::DSL
 
+# Runs a provisioning entry
+def provision(shared_args, p)
+  # Provisioning script name and args
+  provisioning_name, provisioning_args = [p.keys, p.values].flatten
+  script_name = "./provisioning_#{provisioning_name}.sh"
+
+  # Get the full path to the current working directory
+  cwd = capture(:pwd)
+
+  # Make the script executable
+  execute :chmod, '+x', script_name
+
+  # Ensure sudo is in the right path and execute the provisioning script
+  sudo "bash -c \"cd #{cwd} && #{script_name} #{shared_args} #{provisioning_args}\""
+end
+
 desc "Deploys everything to every server"
 task :deploy do |task, args|
   shared_args = ''
@@ -35,19 +51,19 @@ task :deploy do |task, args|
 
     # Change to the deploy directory
     within 'deploy' do
+      # Run 'before' provisioning scripts
+      ($conf['hosts'][host.properties.name]['provisioning']['before'] || []).each do |p|
+        provision(shared_args, p)
+      end
+
+      # Run 'shared' provisioning scripts
       $conf['provisioning'].each do |p|
-        # Provisioning script name and args
-        provisioning_name, provisioning_args = [p.keys, p.values].flatten
-        script_name = "./provisioning_#{provisioning_name}.sh"
+        provision(shared_args, p)
+      end
 
-        # Get the full path to the current working directory
-        cwd = capture(:pwd)
-
-        # Make the script executable
-        execute :chmod, '+x', script_name
-
-        # Ensure sudo is in the right path and execute the provisioning script
-        sudo "bash -c \"cd #{cwd} && #{script_name} #{shared_args} #{provisioning_args}\""
+      # Run 'after' provisioning scripts
+      ($conf['hosts'][host.properties.name]['provisioning']['after'] || []).each do |p|
+        provision(shared_args, p)
       end
     end
 
