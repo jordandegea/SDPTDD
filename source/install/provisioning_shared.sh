@@ -23,3 +23,9 @@ while getopts ":vf" opt; do
       ;;
   esac
 done
+
+# Detect what is the temporary directory
+RESOURCES_DIRECTORY='/tmp'
+if (($ENABLE_VAGRANT)); then
+  RESOURCES_DIRECTORY='/vagrant/resources'
+fi

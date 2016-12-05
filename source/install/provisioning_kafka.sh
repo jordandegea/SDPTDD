@@ -16,13 +16,13 @@ get_file () {
   filename=$1 ; shift
 
   # Download file if needed
-  if ! [ -f "/vagrant/resources/$filename" ]; then
+  if ! [ -f "$RESOURCES_DIRECTORY/$filename" ]; then
     echo "Kafka: Downloading $url, this may take a while..."
-    wget -q -O "/vagrant/resources/$filename" "$url"
+    wget -q -O "$RESOURCES_DIRECTORY/$filename" "$url"
   fi
 
   # Copy the cached file to the desired location (ie. pwd)
-  cp "/vagrant/resources/$filename" "$filename"
+  cp "$RESOURCES_DIRECTORY/$filename" "$filename"
 }
 
 # Installation parameters
@@ -114,7 +114,7 @@ Group=zookeeper
 Environment=LOG_DIR=$ZOOKEEPER_LOG_DIR
 $MORE_ENV
 ExecStart=$KAFKA_INSTALL_DIR/bin/zookeeper-server-start.sh -daemon $KAFKA_INSTALL_DIR/config/zookeeper.properties
-ExecStop=$KAFKA_INSTALL_DIR/bin/zookeeper-server-stop.sh
+ExecStop=$KAFKA_INSTALL_DIR/bin/zookeeper-server-stop.sh $KAFKA_INSTALL_DIR/config/zookeeper.properties
 Restart=on-failure
 SyslogIdentifier=zookeeper
 
@@ -160,7 +160,7 @@ Group=kafka
 Environment=LOG_DIR=$KAFKA_LOG_DIR
 $MORE_ENV
 ExecStart=$KAFKA_INSTALL_DIR/bin/kafka-server-start.sh -daemon $KAFKA_INSTALL_DIR/config/server.properties
-ExecStop=$KAFKA_INSTALL_DIR/bin/kafka-server-stop.sh
+ExecStop=$KAFKA_INSTALL_DIR/bin/kafka-server-stop.sh $KAFKA_INSTALL_DIR/config/server.properties
 Restart=on-failure
 SyslogIdentifier=kafka
 
