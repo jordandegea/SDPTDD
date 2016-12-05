@@ -1,12 +1,13 @@
 #!/bin/bash
 
 exit_usage () {
-	echo "Usage: ./scripts/ssh.sh server-name" 1>&2
+	echo "Usage: ./scripts/ssh.sh server-name [command-to-execute]" 1>&2
 	exit
 }
 
 # Get the wanted host from first arg
 SERVER_NAME=$1 ; shift
+INPUT_COMMANDS="$1" ; shift
 
 # Check command line args
 if [ -z "$SERVER_NAME" ]; then
@@ -26,4 +27,8 @@ if [ -z "$SSH_CMD" ]; then
 	exit 1
 fi
 
-$SSH_CMD
+if ! [ -z "$INPUT_COMMANDS" ]; then
+	echo "$INPUT_COMMANDS" | $SSH_CMD 'bash -s'
+else
+	$SSH_CMD
+fi
