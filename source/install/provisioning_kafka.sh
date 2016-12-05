@@ -170,7 +170,11 @@ else
   echo "Kafka: Kafka systemd unit already installed." 1>&2
 fi
 
-# Enable and start services
+# Reload unit files
 systemctl daemon-reload
-systemctl enable zookeeper.service kafka.service
-systemctl start zookeeper.service kafka.service
+
+# Only start/enable services if we are running on vagrant
+if (($ENABLE_VAGRANT)); then
+    systemctl enable zookeeper.service kafka.service
+    systemctl start zookeeper.service kafka.service
+fi
