@@ -51,15 +51,17 @@ function installFlink {
 
 function configureFlink {
     echo "Configuring Flink"
-#set the jobmanager.rpc.address key in conf/flink-conf.yaml to master's IP 
+#set the jobmanager.rpc.address key in conf/flink-conf.yaml to master's IP (worker1)
     sed -i 's/jobmanager.rpc.address.*/jobmanager.rpc.address:10.20.1.100/' /opt/flink-1.0.3/conf/flink-conf.yaml 
 
      rm /opt/flink-1.0.3/conf/slaves
 
-#Add the IPs or hostnames of all worker nodes
-    for i in $(seq 2 $TOTAL_NODES); do
-        sudo echo "worker${i}" >> /opt/flink-1.0.3/conf/slaves
-    done
+#Add the  hostnames of all worker nodes
+   
+       echo "worker2" >> /opt/flink-1.0.3/conf/slaves
+       echo "worker3" >> /opt/flink-1.0.3/conf/slaves
+
+   
 
 
 
