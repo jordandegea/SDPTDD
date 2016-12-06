@@ -10,21 +10,6 @@ else
   source /vagrant/provisioning_shared.sh
 fi
 
-# Tools
-get_file () {
-  url=$1 ; shift
-  filename=$1 ; shift
-
-  # Download file if needed
-  if ! [ -f "$RESOURCES_DIRECTORY/$filename" ]; then
-    echo "Kafka: Downloading $url, this may take a while..."
-    wget -q -O "$RESOURCES_DIRECTORY/$filename" "$url"
-  fi
-
-  # Copy the cached file to the desired location (ie. pwd)
-  cp "$RESOURCES_DIRECTORY/$filename" "$filename"
-}
-
 # Installation parameters
 KAFKA_VERSION=0.10.1.0
 KAFKA_NAME=kafka_2.11-$KAFKA_VERSION

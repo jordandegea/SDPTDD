@@ -29,3 +29,21 @@ RESOURCES_DIRECTORY='/tmp'
 if (($ENABLE_VAGRANT)); then
   RESOURCES_DIRECTORY='/vagrant/resources'
 fi
+
+# Tools
+
+# Usage: get_file http://file-to-download output-file-name.tar.gz
+# Downloads (or use cached version) of given file.
+get_file () {
+  url=$1 ; shift
+  filename=$1 ; shift
+
+  # Download file if needed
+  if ! [ -f "$RESOURCES_DIRECTORY/$filename" ]; then
+    echo "Downloading $url, this may take a while..."
+    wget -q -O "$RESOURCES_DIRECTORY/$filename" "$url"
+  fi
+
+  # Copy the cached file to the desired location (ie. pwd)
+  cp "$RESOURCES_DIRECTORY/$filename" "$filename"
+}

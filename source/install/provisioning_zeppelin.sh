@@ -18,16 +18,16 @@ MAVEN_NAME=apache-maven-3.3.9
 MAVEN_FILENAME=$MAVEN_NAME-bin.tar.gz
 
 if(($FORCE_INSTALL)) || ! [ -d $ZEPPELIN_INSTALL_DIR ]; then
-	# Download file if needed
-	if ! [ -f "/vagrant/resources/$ZEPPELIN_FILENAME" ]; then
-		echo "Zeppelin: Downloading, this may take a while..."
-		wget -q -O "/vagrant/resources/$ZEPPELIN_FILENAME" "http://apache.mindstudios.com/zeppelin/$ZEPPELIN_NAME/$ZEPPELIN_FILENAME" 
-	fi
+	# Download Zeppelin
+	echo "Zeppelin: downloading..."
+
+	get_file "http://apache.mindstudios.com/zeppelin/$ZEPPELIN_NAME/$ZEPPELIN_FILENAME" $ZEPPELIN_FILENAME
 
 	#Install in the right location
 	echo "Zeppelin: Installing..."
+
+	mv $ZEPPELIN_FILENAME /usr/local
 	cd /usr/local/
-	cp "/vagrant/resources/$ZEPPELIN_FILENAME" $ZEPPELIN_FILENAME
 	tar xf $ZEPPELIN_FILENAME
 	rm $ZEPPELIN_FILENAME
 	rm -rf $ZEPPELIN_INSTALL_DIR
