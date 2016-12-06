@@ -25,4 +25,5 @@ apt-get update
 # If we are on production servers, upgrade all packages
 if ! (($ENABLE_VAGRANT)); then
   apt-get upgrade -y
+  apt-get dist-upgrade -y
 fi
