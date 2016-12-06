@@ -20,6 +20,9 @@ rake ssh server-1
 # Déploiement et provisioning
 rake deploy
 
+# Uniquement sur deux serveurs (définis dans hosts.yml)
+rake deploy[server-2;server-3]
+
 # Démarrage des services
 rake services:start
 

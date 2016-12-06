@@ -17,5 +17,14 @@ $hosts = $conf['hosts'].collect do |host, params|
   [host, ssh_host]
 end.to_h
 
+# Obtains the list of hosts for the current task run
+def hosts(args)
+  if args[:server]
+    args[:server].split(';').collect { |server| $hosts[server] || raise("#{server} is not a known host") }
+  else
+    $hosts.values
+  end
+end
+
 # Load custom tasks from `source/rake`
 Dir.glob("source/rake/*.rake").each { |r| import r }

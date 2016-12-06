@@ -12,15 +12,15 @@ end
 
 namespace :services do
   desc "Reloads the systemd daemon"
-  task :reload do |task, args|
-    on $hosts.values do |host|
+  task :reload, :server do |task, args|
+    on hosts(args) do |host|
       sudo "systemctl", "daemon-reload"
     end
   end
 
   desc "Enables (or disables) services as defined in the host config file"
-  task :enable do |task, args|
-    on $hosts.values do |host|
+  task :enable, :server do |task, args|
+    on hosts(args) do |host|
       # Get the hostname as defined in the config file
       hostname = host.properties.name
 
@@ -48,8 +48,8 @@ namespace :services do
   end
 
   desc "Starts services according to service assignments in the host config file"
-  task :start do |task, args|
-    on $hosts.values do |host|
+  task :start, :server do |task, args|
+    on hosts(args) do |host|
       # Get the hostname as defined in the config file
       hostname = host.properties.name
 
@@ -61,8 +61,8 @@ namespace :services do
   end
 
   desc "Stops services according to service assignments in the host config file"
-  task :stop do |task, args|
-    on $hosts.values do |host|
+  task :stop, :server do |task, args|
+    on hosts(args) do |host|
       # Get the hostname as defined in the config file
       hostname = host.properties.name
 
@@ -74,8 +74,8 @@ namespace :services do
   end
 
   desc "Kills services according to service assignments in the host config file"
-  task :kill do |task, args|
-    on $hosts.values do |host|
+  task :kill, :server do |task, args|
+    on hosts(args) do |host|
       # Get the hostname as defined in the config file
       hostname = host.properties.name
 
@@ -87,8 +87,8 @@ namespace :services do
   end
 
   desc "Prints the status of services according to service assignments in the host config file"
-  task :status do |task, args|
-    on $hosts.values do |host|
+  task :status, :server do |task, args|
+    on hosts(args) do |host|
       # Get the hostname as defined in the config file
       hostname = host.properties.name
 

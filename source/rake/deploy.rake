@@ -20,7 +20,7 @@ def provision(shared_args, p)
 end
 
 desc "Deploys everything to every server"
-task :deploy do |task, args|
+task :deploy, :server do |task, args|
   shared_args = ''
 
   # Use "FORCE_PROVISION=yes vagrant provision" to re-run provisioning scripts
@@ -29,7 +29,7 @@ task :deploy do |task, args|
     shared_args = '-f'
   end
 
-  on $hosts.values do |host|
+  on hosts(args) do |host|
     # Create the deploy directory
     execute :mkdir, '-p', 'deploy'
 
