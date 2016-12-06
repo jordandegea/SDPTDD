@@ -3,10 +3,11 @@
 # Fail if any command fail
 set -eo pipefail
 
-# This script must be run as root.
-if [[ $EUID -ne 0 ]]; then
-  echo "This script must be run as root" 1>&2
-  exit 1
+# Load the shared provisioning script
+if [ -f './provisioning_shared.sh' ]; then
+  source ./provisioning_shared.sh
+else
+  source /vagrant/provisioning_shared.sh
 fi
 
 ZEPPELIN_VERSION=0.6.2
@@ -16,29 +17,17 @@ ZEPPELIN_INSTALL_DIR=/usr/local/zeppelin
 MAVEN_NAME=apache-maven-3.3.9
 MAVEN_FILENAME=$MAVEN_NAME-bin.tar.gz
 
-FORCE_INSTALL=0
-while getopts ":f" opt; do
-  case $opt in
-    f)
-      FORCE_INSTALL=1
-      ;;
-    \?)
-      echo "Invalid option: -$OPTARG" >&2
-      ;;
-  esac
-done
-
 if(($FORCE_INSTALL)) || ! [ -d $ZEPPELIN_INSTALL_DIR ]; then
-	# Download file if needed
-	if ! [ -f "/vagrant/resources/$ZEPPELIN_FILENAME" ]; then
-		echo "Zeppelin: Downloading, this may take a while..."
-		wget -q -O "/vagrant/resources/$ZEPPELIN_FILENAME" "http://apache.mindstudios.com/zeppelin/$ZEPPELIN_NAME/$ZEPPELIN_FILENAME" 
-	fi
+	# Download Zeppelin
+	echo "Zeppelin: downloading..."
+
+	get_file "http://apache.mindstudios.com/zeppelin/$ZEPPELIN_NAME/$ZEPPELIN_FILENAME" $ZEPPELIN_FILENAME
 
 	#Install in the right location
 	echo "Zeppelin: Installing..."
+
+	mv $ZEPPELIN_FILENAME /usr/local
 	cd /usr/local/
-	cp "/vagrant/resources/$ZEPPELIN_FILENAME" $ZEPPELIN_FILENAME
 	tar xf $ZEPPELIN_FILENAME
 	rm $ZEPPELIN_FILENAME
 	rm -rf $ZEPPELIN_INSTALL_DIR

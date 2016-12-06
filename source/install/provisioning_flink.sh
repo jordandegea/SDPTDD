@@ -3,32 +3,25 @@
 # Fail if any command fail
 set -eo pipefail
 
-# This script must be run as root.
-if [[ $EUID -ne 0 ]]; then
-  echo "This script must be run as root" 1>&2
-  exit 1
+# Load the shared provisioning script
+if [ -f './provisioning_shared.sh' ]; then
+  source ./provisioning_shared.sh
+else
+  source /vagrant/provisioning_shared.sh
 fi
-
 
 # So we dont need to pass in i to the scripts
 NODE_NUMBER=`hostname | tr -d a-z\-`
 
 
 function downloadFile {
-
-    url="http://www-eu.apache.org/dist/flink/flink-1.0.3/flink-1.0.3-bin-hadoop27-scala_2.10.tgz"
- 
     filename="flink-1.0.3-bin-hadoop27-scala_2.10.tgz"
 
-    cached_file="/vagrant/resources/${filename} "
+    echo "Flink: downloading..."
 
-    if [ ! -e $cached_file ]; then
-        echo "Downloading ${filename} from ${url} to ${cached_file}"
-        echo "This will take some time. Please be patient..."
-        wget -nv -O $cached_file $url
-    fi
+    get_file "http://www-eu.apache.org/dist/flink/flink-1.0.3/$filename" $filename
 
-    TARBALL=$cached_file
+    TARBALL=$filename
 }
 
 

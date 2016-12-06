@@ -3,44 +3,12 @@
 # Fail if any command fail
 set -eo pipefail
 
-# This script must be run as root.
-if [[ $EUID -ne 0 ]]; then
-  echo "This script must be run as root" 1>&2
-  exit 1
+# Load the shared provisioning script
+if [ -f './provisioning_shared.sh' ]; then
+  source ./provisioning_shared.sh
+else
+  source /vagrant/provisioning_shared.sh
 fi
-
-# Detect the environment
-ENABLE_VAGRANT=0
-FORCE_INSTALL=0
-while getopts ":vf" opt; do
-  case $opt in
-    v)
-      echo "Kafka: Running in vagrant mode." 1>&2
-      ENABLE_VAGRANT=1
-      ;;
-    f)
-      FORCE_INSTALL=1
-      ;;
-    \?)
-      echo "Invalid option: -$OPTARG" >&2
-      ;;
-  esac
-done
-
-# Tools
-get_file () {
-  url=$1 ; shift
-  filename=$1 ; shift
-
-  # Download file if needed
-  if ! [ -f "/vagrant/resources/$filename" ]; then
-    echo "Kafka: Downloading $url, this may take a while..."
-    wget -q -O "/vagrant/resources/$filename" "$url"
-  fi
-
-  # Copy the cached file to the desired location (ie. pwd)
-  cp "/vagrant/resources/$filename" "$filename"
-}
 
 # Installation parameters
 KAFKA_VERSION=0.10.1.0
@@ -131,7 +99,7 @@ Group=zookeeper
 Environment=LOG_DIR=$ZOOKEEPER_LOG_DIR
 $MORE_ENV
 ExecStart=$KAFKA_INSTALL_DIR/bin/zookeeper-server-start.sh -daemon $KAFKA_INSTALL_DIR/config/zookeeper.properties
-ExecStop=$KAFKA_INSTALL_DIR/bin/zookeeper-server-stop.sh
+ExecStop=$KAFKA_INSTALL_DIR/bin/zookeeper-server-stop.sh $KAFKA_INSTALL_DIR/config/zookeeper.properties
 Restart=on-failure
 SyslogIdentifier=zookeeper
 
@@ -177,7 +145,7 @@ Group=kafka
 Environment=LOG_DIR=$KAFKA_LOG_DIR
 $MORE_ENV
 ExecStart=$KAFKA_INSTALL_DIR/bin/kafka-server-start.sh -daemon $KAFKA_INSTALL_DIR/config/server.properties
-ExecStop=$KAFKA_INSTALL_DIR/bin/kafka-server-stop.sh
+ExecStop=$KAFKA_INSTALL_DIR/bin/kafka-server-stop.sh $KAFKA_INSTALL_DIR/config/server.properties
 Restart=on-failure
 SyslogIdentifier=kafka
 
@@ -187,7 +155,11 @@ else
   echo "Kafka: Kafka systemd unit already installed." 1>&2
 fi
 
-# Enable and start services
+# Reload unit files
 systemctl daemon-reload
-systemctl enable zookeeper.service kafka.service
-systemctl start zookeeper.service kafka.service
+
+# Only start/enable services if we are running on vagrant
+if (($ENABLE_VAGRANT)); then
+    systemctl enable zookeeper.service kafka.service
+    systemctl start zookeeper.service kafka.service
+fi
