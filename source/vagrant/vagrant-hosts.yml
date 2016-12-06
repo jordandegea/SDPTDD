@@ -12,7 +12,7 @@ hosts:
         provision: # List of components to install on worker1
             - apt:
             - java:
-            - kafka:
+            - kafka: "-i 1"
             - flink:
             - hbase:
             - zeppelin:
@@ -23,7 +23,7 @@ hosts:
         provision: # List of components to install on worker2
             - apt:
             - java:
-            - kafka:
+            - kafka: "-i 2"
             - flink:
             - hbase:
     worker3:
@@ -33,7 +33,7 @@ hosts:
         provision: # List of components to install on worker3
             - apt:
             - java:
-            - kafka:
+            - kafka: "-i 3"
             - flink:
             - hbase:
 # Shared arguments to apply to all provisioning scripts

@@ -10,6 +10,32 @@ else
   source /vagrant/provisioning_shared.sh
 fi
 
+# Parsing the ID, specified as an argument, of the Zookeeper/Kafka
+# daemons inside the Kafka Cluster.
+SERVER_ID=0
+while getopts ":i:" opt; do
+  case "$opt" in
+    i)
+      SERVER_ID="$OPTARG"
+      ;;
+    :)
+      echo "Missing argument: the option $opt needs an \
+          argument." >&2
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      ;;
+  esac
+done
+
+# Checking that the ID of each Kafka server has been uniquely defined.
+if [[ $SERVER_ID -eq 0 ]]; then
+  COLOR_BLUE='\033[1;34m'
+  COLOR_END='\033[0m'
+  echo -e "${COLOR_BLUE}[WARNING]${COLOR_END} A unique positive ID \
+should be precised thanks to the option '-i'."
+fi
+
 # Installation parameters
 KAFKA_VERSION=0.10.1.0
 KAFKA_NAME=kafka_2.11-$KAFKA_VERSION
@@ -25,6 +51,13 @@ LOG4J_PATH=$KAFKA_INSTALL_DIR/config/log4j.properties
 
 KAFKA_LOG_DIR=/var/log/kafka
 ZOOKEEPER_LOG_DIR=/var/log/zookeeper
+
+# Configuration parameters.
+ZOOKEEPER_CONFIG_FILE="${KAFKA_INSTALL_DIR}/config/zookeeper.properties"
+ZOOKEEPER_DATA_DIR="/tmp/zookeeper"
+ZOOKEEPER_ID_FILE="${ZOOKEEPER_DATA_DIR}/myid"
+
+KAFKA_CONFIG_FILE="${KAFKA_INSTALL_DIR}/config/server.properties"
 
 # Install Kafka
 if (($FORCE_INSTALL)) || ! [ -d $KAFKA_INSTALL_DIR ]; then
@@ -76,6 +109,12 @@ if ! [ -d $ZOOKEEPER_LOG_DIR ]; then
   chown zookeeper:zookeeper -R $ZOOKEEPER_LOG_DIR
 fi
 
+# Check, and create if necessary, the data path for Zookeeper.
+if [[ ! -d "$ZOOKEEPER_DATA_DIR" ]]; then
+  mkdir -p "$ZOOKEEPER_DATA_DIR"
+  chown zookeeper:zookeeper -R "$ZOOKEEPER_DATA_DIR"
+fi
+
 # Create the zookeeper systemd service
 if (($FORCE_INSTALL)) || ! [ -f $ZOOKEEPER_SERVICE_FILE ]; then
   echo "Kafka: installing Zookeeper systemd unit..." 1>&2
@@ -98,13 +137,29 @@ User=zookeeper
 Group=zookeeper
 Environment=LOG_DIR=$ZOOKEEPER_LOG_DIR
 $MORE_ENV
-ExecStart=$KAFKA_INSTALL_DIR/bin/zookeeper-server-start.sh -daemon $KAFKA_INSTALL_DIR/config/zookeeper.properties
-ExecStop=$KAFKA_INSTALL_DIR/bin/zookeeper-server-stop.sh $KAFKA_INSTALL_DIR/config/zookeeper.properties
+ExecStart=$KAFKA_INSTALL_DIR/bin/zookeeper-server-start.sh -daemon $ZOOKEEPER_CONFIG_FILE
+ExecStop=$KAFKA_INSTALL_DIR/bin/zookeeper-server-stop.sh $ZOOKEEPER_CONFIG_FILE
 Restart=on-failure
 SyslogIdentifier=zookeeper
 
 [Install]
 WantedBy=multi-user.target" >$ZOOKEEPER_SERVICE_FILE
+
+  # Appending the configuration related to the Zookeeper Quorum.
+  echo "# Defining the Zookeeper Quorum
+server.1=worker1:2888:3888
+server.2=worker2:2888:3888
+server.3=worker3:2888:3888
+
+tickTime=2000
+initLimit=10
+syncLimit=5" >> "$ZOOKEEPER_CONFIG_FILE"
+
+  # Each member of the Zookeeper Quorum is deployed on one exclusive node of the
+  # cluster. As a result, it is necessary to give an ID to each member.
+  # This is done thanks to an extra configuration file.
+  echo "$SERVER_ID" > "$ZOOKEEPER_ID_FILE"
+
 else
   echo "Kafka: Zookeeper systemd unit already installed." 1>&2
 fi
@@ -144,13 +199,38 @@ User=kafka
 Group=kafka
 Environment=LOG_DIR=$KAFKA_LOG_DIR
 $MORE_ENV
-ExecStart=$KAFKA_INSTALL_DIR/bin/kafka-server-start.sh -daemon $KAFKA_INSTALL_DIR/config/server.properties
-ExecStop=$KAFKA_INSTALL_DIR/bin/kafka-server-stop.sh $KAFKA_INSTALL_DIR/config/server.properties
+ExecStart=$KAFKA_INSTALL_DIR/bin/kafka-server-start.sh -daemon $KAFKA_CONFIG_FILE
+ExecStop=$KAFKA_INSTALL_DIR/bin/kafka-server-stop.sh $KAFKA_CONFIG_FILE
 Restart=on-failure
 SyslogIdentifier=kafka
 
 [Install]
 WantedBy=multi-user.target" >$KAFKA_SERVICE_FILE
+
+  # Modifying the Kafka configuration file, taking into account the 
+  # specifics of each broker.
+  # Setting the broker ID.
+  eval `sed -i "s/broker.id=0/broker.id=$SERVER_ID/" $KAFKA_CONFIG_FILE`
+  # Enabling topic deletion.
+  eval `sed -i "s/#delete/delete/" $KAFKA_CONFIG_FILE`
+  # Setting the configuration related to the connection to the TCP socket used
+  # to communicate inside the cluster.
+  eval `sed -i "s/#listeners=PLAINTEXT:\/\/:9092/\
+listeners=PLAINTEXT:\/\/worker$SERVER_ID:9092/" $KAFKA_CONFIG_FILE`
+  # Setting the connection information to the Zookeeper Quorum.
+  eval `sed -i "s/zookeeper.connect=localhost:2181/zookeeper.connect\
+=worker1:2181,worker2:2181,worker3:2181/" $KAFKA_CONFIG_FILE`
+  # Vagrant tends to slow down the network, it is compulsory to increase the
+  # timeout delay.
+  eval `sed -i "s/zookeeper.connection.timeout.ms=6000/\
+zookeeper.connection.timeout.ms=120000/" $KAFKA_CONFIG_FILE`
+
+  # Due to a "Linux /etc/hosts" bug with distributed systems, it is necessary
+  # to remove the "127.0.0.1<->workerX" definition from the "/etc/hosts" file.
+  tail -n +2 /etc/hosts > tmp
+  cat tmp > /etc/hosts
+  rm -f tmp
+
 else
   echo "Kafka: Kafka systemd unit already installed." 1>&2
 fi
