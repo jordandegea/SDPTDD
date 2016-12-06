@@ -16,7 +16,7 @@ fi
 echo "Download HBase"
 version="1.2.4"
 tgz="hbase-$version-bin.tar.gz"
-url="http://wwwftp.ciril.fr/pub/apache/hbase/stable/$tgz"
+url="http://wwwftp.ciril.fr/pub/apache/hbase/$version/$tgz"
 cached_file="/vagrant/resources/$tgz"
 if [ ! -e $cached_file ]
 then
@@ -31,8 +31,8 @@ tar -oxzf $cached_file -C $libpath
 echo "Configure HBase"
 export HBASE_HOME="/usr/lib/hbase/hbase-$version"
 cd $libpath/hbase-$version/conf
-master="10.20.1.100"
-servers="10.20.1.100, 10.20.1.101, 10.20.1.102"
+master="10.20.1.102"
+servers="10.20.1.102, 10.20.1.101, 10.20.1.100"
 echo "<?xml version=\"1.0\"?>
 <?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>
 <configuration>
@@ -67,7 +67,7 @@ export JAVA_HOME=$JAVA_HOME
 
 # Start hbase
 echo "Start HBase"
-if [ `hostname` = "worker1" ]
+if [ `hostname` = "worker3" ]
 then
     /usr/lib/hbase/hbase-$version/bin/start-hbase.sh
 fi
