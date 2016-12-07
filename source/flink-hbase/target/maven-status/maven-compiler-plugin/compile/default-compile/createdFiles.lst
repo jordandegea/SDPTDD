@@ -1,0 +1,5 @@
+org/apache/flink/quickstart/Job.class
+org/apache/flink/quickstart/WordCount.class
+org/apache/flink/quickstart/SocketTextStreamWordCount.class
+org/apache/flink/quickstart/WordCount$LineSplitter.class
+org/apache/flink/quickstart/SocketTextStreamWordCount$LineSplitter.class
