@@ -30,12 +30,12 @@ end
 
 desc "Deploys everything to every server"
 task :deploy, :server do |task, args|
-  shared_args = ''
+  shared_args = $conf['shared_args'] || ''
 
   # Use "FORCE_PROVISION=yes vagrant provision" to re-run provisioning scripts
   # and reinstall everything
   if ENV['FORCE_PROVISION'] == 'yes'
-    shared_args = '-f'
+    shared_args += ' -f'
   end
 
   on hosts(args) do |host|
