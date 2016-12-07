@@ -2,7 +2,9 @@ require 'yaml'
 require 'sshkit'
 
 # Load hostfile
-$conf = YAML.load_file(File.expand_path('../hosts.yml', __FILE__))
+config_source = ENV['RAKE_HOSTS'] || 'hosts.yml'
+config_file = File.expand_path(File.join('..', config_source), __FILE__)
+$conf = YAML.load_file(config_file)
 
 # Create SSHKit hosts
 $hosts = $conf['hosts'].collect do |host, params|
@@ -10,7 +12,7 @@ $hosts = $conf['hosts'].collect do |host, params|
     hostname: params['ip'],
     user: params['user'],
     ssh_options: {
-      keys: [File.expand_path(File.join('..', params['key']), __FILE__)]
+      keys: [File.expand_path(File.join('..', params['key']), config_file)]
   })
 
   ssh_host.properties.name = host

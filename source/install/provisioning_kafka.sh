@@ -12,11 +12,20 @@ fi
 
 # Parsing the ID, specified as an argument, of the Zookeeper/Kafka
 # daemons inside the Kafka Cluster.
-SERVER_ID=0
-while getopts ":i:" opt; do
+SERVER_ID=$(hostname | tr -d 'a-z\-')
+QUORUM_SPEC=""
+ZOOKEEPER_CONNECT=""
+while getopts ":H:" opt; do
   case "$opt" in
-    i)
-      SERVER_ID="$OPTARG"
+    H)
+      while IFS='@' read -ra ADDR; do
+        SRV_HOSTNAME="${ADDR[0]}"
+        SRV_ADDRESS="${ADDR[1]}"
+        SRV_ID=$(echo "$SRV_HOSTNAME" | tr -d 'a-z\-')
+
+        QUORUM_SPEC=$(printf "%s\nserver.%d=%s:2888:3888" "$QUORUM_SPEC" "$SRV_ID" "$SRV_HOSTNAME")
+        ZOOKEEPER_CONNECT=$(printf "%s,%s:2181" "$ZOOKEEPER_CONNECT" "$SRV_HOSTNAME")
+      done <<< "$OPTARG"
       ;;
     :)
       echo "Missing argument: the option $opt needs an \
@@ -27,6 +36,9 @@ while getopts ":i:" opt; do
       ;;
   esac
 done
+
+# Strip leading "," from ZOOKEEPER_CONNECT
+ZOOKEEPER_CONNECT=$(echo "$ZOOKEEPER_CONNECT" | tail -c +2)
 
 # Checking that the ID of each Kafka server has been uniquely defined.
 if [[ $SERVER_ID -eq 0 ]]; then
@@ -144,25 +156,28 @@ SyslogIdentifier=zookeeper
 
 [Install]
 WantedBy=multi-user.target" >$ZOOKEEPER_SERVICE_FILE
-
-  # Appending the configuration related to the Zookeeper Quorum.
-  echo "# Defining the Zookeeper Quorum
-server.1=worker1:2888:3888
-server.2=worker2:2888:3888
-server.3=worker3:2888:3888
-
-tickTime=2000
-initLimit=10
-syncLimit=5" >> "$ZOOKEEPER_CONFIG_FILE"
-
-  # Each member of the Zookeeper Quorum is deployed on one exclusive node of the
-  # cluster. As a result, it is necessary to give an ID to each member.
-  # This is done thanks to an extra configuration file.
-  echo "$SERVER_ID" > "$ZOOKEEPER_ID_FILE"
-
 else
   echo "Kafka: Zookeeper systemd unit already installed." 1>&2
 fi
+
+# Modifying the Zookeeper configuration file
+
+# Remove previous Zookeeper Quorum config
+sed -i '/# BEGIN ZOOKEEPER QUORUM CONFIG/,/# END ZOOKEEPER QUORUM CONFIG/d' "$ZOOKEEPER_CONFIG_FILE"
+
+# Appending the configuration related to the Zookeeper Quorum.
+echo "# BEGIN ZOOKEEPER QUORUM CONFIG
+$QUORUM_SPEC
+
+tickTime=2000
+initLimit=10
+syncLimit=5
+# END ZOOKEEPER QUORUM CONFIG" >> "$ZOOKEEPER_CONFIG_FILE"
+
+# Each member of the Zookeeper Quorum is deployed on one exclusive node of the
+# cluster. As a result, it is necessary to give an ID to each member.
+# This is done thanks to an extra configuration file.
+echo "$SERVER_ID" > "$ZOOKEEPER_ID_FILE"
 
 # Create the kafka user if necessary
 if ! id -u kafka >/dev/null 2>&1; then
@@ -206,33 +221,30 @@ SyslogIdentifier=kafka
 
 [Install]
 WantedBy=multi-user.target" >$KAFKA_SERVICE_FILE
-
-  # Modifying the Kafka configuration file, taking into account the 
-  # specifics of each broker.
-  # Setting the broker ID.
-  eval `sed -i "s/broker.id=0/broker.id=$SERVER_ID/" $KAFKA_CONFIG_FILE`
-  # Enabling topic deletion.
-  eval `sed -i "s/#delete/delete/" $KAFKA_CONFIG_FILE`
-  # Setting the configuration related to the connection to the TCP socket used
-  # to communicate inside the cluster.
-  eval `sed -i "s/#listeners=PLAINTEXT:\/\/:9092/\
-listeners=PLAINTEXT:\/\/worker$SERVER_ID:9092/" $KAFKA_CONFIG_FILE`
-  # Setting the connection information to the Zookeeper Quorum.
-  eval `sed -i "s/zookeeper.connect=localhost:2181/zookeeper.connect\
-=worker1:2181,worker2:2181,worker3:2181/" $KAFKA_CONFIG_FILE`
-  # Vagrant tends to slow down the network, it is compulsory to increase the
-  # timeout delay.
-  eval `sed -i "s/zookeeper.connection.timeout.ms=6000/\
-zookeeper.connection.timeout.ms=120000/" $KAFKA_CONFIG_FILE`
-
-  # Due to a "Linux /etc/hosts" bug with distributed systems, it is necessary
-  # to remove the "127.0.0.1<->workerX" definition from the "/etc/hosts" file.
-  tail -n +2 /etc/hosts > tmp
-  cat tmp > /etc/hosts
-  rm -f tmp
-
 else
   echo "Kafka: Kafka systemd unit already installed." 1>&2
+fi
+
+# Modifying the Kafka configuration file, taking into account the 
+# specifics of each broker.
+
+# Setting the broker ID.
+sed -i "s/broker.id=[0-9]*/broker.id=$SERVER_ID/" $KAFKA_CONFIG_FILE
+# Enabling topic deletion.
+sed -i "s/^#delete/delete/" $KAFKA_CONFIG_FILE
+# Setting the configuration related to the connection to the TCP socket used
+# to communicate inside the cluster.
+sed -i "s/^#*listeners=.*9092/\
+listeners=PLAINTEXT:\\/\\/$(hostname):9092/" $KAFKA_CONFIG_FILE
+# Setting the connection information to the Zookeeper Quorum.
+sed -i "s/zookeeper.connect=.*/zookeeper.connect\
+=$ZOOKEEPER_CONNECT/" $KAFKA_CONFIG_FILE
+
+# Vagrant tends to slow down the network, it is compulsory to increase the
+# timeout delay.
+if (($ENABLE_VAGRANT)); then
+  sed -i "s/zookeeper.connection.timeout.ms=[0-9]*/\
+zookeeper.connection.timeout.ms=120000/" $KAFKA_CONFIG_FILE
 fi
 
 # Reload unit files

@@ -4,38 +4,49 @@
 #
 # Components to be provisioned are defined as ../install/provisioning_component.sh
 # Order is significant
+defaults:
+    # Default options for hosts
+    hosts: &host_defaults
+        user: vagrant     # Default non-privileged user
 hosts:
     worker1:
+        <<: *host_defaults
+        key: .vagrant/machines/worker1/virtualbox/private_key
         ip: 10.20.1.100
         memory: 2048
         cpus: 1
         provision: # List of components to install on worker1
-            - apt:
-            - java:
-            - kafka: "-i 1"
-            - flink:
-            - hbase: "-m worker3"
-            - zeppelin:
+            before:
+            after:
+                - hbase: "-m worker3"
+                - zeppelin:
     worker2:
+        <<: *host_defaults
+        key: .vagrant/machines/worker2/virtualbox/private_key
         ip: 10.20.1.101
         memory: 512
         cpus: 1
         provision: # List of components to install on worker2
-            - apt:
-            - java:
-            - kafka: "-i 2"
-            - flink:
-            - hbase: "-m worker3"
+            before:
+            after:
+                - hbase: "-m worker3"
     worker3:
+        <<: *host_defaults
+        key: .vagrant/machines/worker3/virtualbox/private_key
         ip: 10.20.1.102
         memory: 512
         cpus: 1
         provision: # List of components to install on worker3
-            - apt:
-            - java:
-            - kafka: "-i 3"
-            - flink:
-            - hbase: "-M -m worker3 -s worker1 worker2"
+            before:
+            after:
+                - hbase: "-M -m worker3 -s worker1 worker2"
+# List of provisioning steps, follows the same conventions as vagrant-hosts.yml
+provisioning:
+    - hosts: $hostspec
+    - apt:
+    - java:
+    - kafka: $hostspec
+    - flink:
 # Shared arguments to apply to all provisioning scripts
 # SPEC: Use '-v' to indicate Vagrant provisioning
 shared_args: -v
