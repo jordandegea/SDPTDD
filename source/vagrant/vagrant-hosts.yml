@@ -14,7 +14,7 @@ hosts:
             - java:
             - kafka: "-i 1"
             - flink:
-            - hbase:
+            - hbase: "-m worker3"
             - zeppelin:
     worker2:
         ip: 10.20.1.101
@@ -25,7 +25,7 @@ hosts:
             - java:
             - kafka: "-i 2"
             - flink:
-            - hbase:
+            - hbase: "-m worker3"
     worker3:
         ip: 10.20.1.102
         memory: 512
@@ -35,7 +35,7 @@ hosts:
             - java:
             - kafka: "-i 3"
             - flink:
-            - hbase:
+            - hbase: "-M -m worker3 -s worker1 worker2"
 # Shared arguments to apply to all provisioning scripts
 # SPEC: Use '-v' to indicate Vagrant provisioning
 shared_args: -v
