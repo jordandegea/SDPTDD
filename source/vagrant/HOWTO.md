@@ -32,6 +32,9 @@ vagrant ssh worker1
 # Lancer le provisioning (automatique lors de vagrant up)
 vagrant provision
 
+# Forcer la réinstallation
+FORCE_PROVISION=yes vagrant provision
+
 # Recréer les machines suite à une modification du Vagrantfile
 vagrant reload
 
