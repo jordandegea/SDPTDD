@@ -18,8 +18,8 @@ hosts:
         provision: # List of components to install on worker1
             before:
             after:
-                - hbase: "-m worker3"
-                - zeppelin:
+                - hbase: "-m 10.20.1.102"
+                # - zeppelin:
     worker2:
         <<: *host_defaults
         key: .vagrant/machines/worker2/virtualbox/private_key
@@ -29,7 +29,7 @@ hosts:
         provision: # List of components to install on worker2
             before:
             after:
-                - hbase: "-m worker3"
+                - hbase: "-m 10.20.1.102"
     worker3:
         <<: *host_defaults
         key: .vagrant/machines/worker3/virtualbox/private_key
@@ -39,14 +39,14 @@ hosts:
         provision: # List of components to install on worker3
             before:
             after:
-                - hbase: "-M -m worker3 -s worker1 worker2"
+                - hbase: "-M -m 10.20.1.102 -s 10.20.1.100 10.20.1.101"
 # List of provisioning steps, follows the same conventions as vagrant-hosts.yml
 provisioning:
     - hosts: $hostspec
     - apt:
     - java:
-    - kafka: $hostspec
-    - flink:
+    # - kafka: $hostspec
+    # - flink:
 # Shared arguments to apply to all provisioning scripts
 # SPEC: Use '-v' to indicate Vagrant provisioning
 shared_args: -v
