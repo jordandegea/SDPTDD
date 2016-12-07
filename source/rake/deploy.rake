@@ -9,6 +9,15 @@ def provision(shared_args, p)
   provisioning_name, provisioning_args = [p.keys, p.values].flatten
   script_name = "./provisioning_#{provisioning_name}.sh"
 
+  # Specific variables
+  if provisioning_args =~ /\$hostspec/
+    hostspec = $hosts.map do |hostname, host|
+      "-H #{hostname}@#{host.hostname}"
+    end.join(' ')
+
+    provisioning_args.gsub!(/\$hostspec/, hostspec)
+  end
+
   # Get the full path to the current working directory
   cwd = capture(:pwd)
 

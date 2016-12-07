@@ -8,6 +8,8 @@ GEM
     sshkit (1.11.4)
       net-scp (>= 1.1.2)
       net-ssh (>= 2.8.0)
+    sshkit-sudo (0.1.0)
+      sshkit (~> 1.8)
 
 PLATFORMS
   x64-mingw32
@@ -15,6 +17,7 @@ PLATFORMS
 DEPENDENCIES
   rake (~> 11.3)
   sshkit (~> 1.11)
+  sshkit-sudo (~> 0.1)
 
 BUNDLED WITH
    1.13.2
