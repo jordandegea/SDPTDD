@@ -1,6 +1,0 @@
-[2016-12-06 10:00:38,908] INFO Closing socket connection to /10.20.1.1. (kafka.network.Processor)
-[2016-12-06 10:18:08,465] INFO Closing socket connection to /10.20.1.1. (kafka.network.Processor)
-[2016-12-06 10:18:38,200] INFO Closing socket connection to /127.0.0.1. (kafka.network.Processor)
-[2016-12-06 10:18:38,356] INFO Closing socket connection to /127.0.0.1. (kafka.network.Processor)
-[2016-12-06 10:19:22,688] INFO Closing socket connection to /127.0.0.1. (kafka.network.Processor)
-[2016-12-06 10:26:19,880] INFO Closing socket connection to /10.20.1.1. (kafka.network.Processor)
