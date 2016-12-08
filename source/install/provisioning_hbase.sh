@@ -12,8 +12,8 @@ fi
 
 JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
-HADOOP_TGZ="hadoop.tar.gz"
-HADOOP_URL="http://apache.mindstudios.com/hadoop/common/hadoop-2.5.2/"
+HADOOP_TGZ="hadoop-2.5.2.tar.gz"
+HADOOP_URL="http://apache.mindstudios.com/hadoop/common/hadoop-2.5.2/hadoop-2.5.2.tar.gz"
 HADOOP_HOME="/usr/local/hadoop"
 
 HBASE_LOG_DIR="/var/log/hbase"
@@ -44,8 +44,8 @@ fi
 if (($FORCE_INSTALL)) || ! [ -d $HADOOP_HOME ]; then
 	echo "Hadoop: Download"
 	get_file $HADOOP_URL $HADOOP_TGZ
-	tar -oxzf /vagrant/resources/$HADOOP_TGZ -C /vagrant/resources
-	mv /vagrant/resources/hadoop-2.5.2 $HADOOP_HOME
+	tar -oxzf $HADOOP_TGZ -C /opt
+	mv /opt/hadoop-2.5.2 $HADOOP_HOME
 fi
 
 # Configure Hadoop
@@ -121,7 +121,7 @@ export HBASE_MANAGES_ZK=false
 " >> hbase-env.sh
 
 if (($FORCE_INSTALL)) || ! [ -f $START_SCRIPT ]; then
-	echo "rm -rf /home/hbase/hadoopdata/tmp
+	echo "
 	$HADOOP_HOME/bin/hdfs namenode -format
 	$HADOOP_HOME/sbin/start-dfs.sh
 	$HBASE_HOME/bin/start-hbase.sh

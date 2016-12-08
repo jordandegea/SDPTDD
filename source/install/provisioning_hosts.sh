@@ -31,7 +31,7 @@ if (($ENABLE_VAGRANT)); then
     if ! grep "127.0.0.1.*localhost" /etc/hosts 2>/dev/null ; then
         printf "127.0.0.1\tlocalhost" >/etc/hosts.head
         mv /etc/hosts /etc/hosts.tail
-        cat /etc/hosts.head /etc/hosts.tail /etc/hosts
+        cat /etc/hosts.head /etc/hosts.tail >/etc/hosts
         rm -f /etc/hosts.head /etc/hosts/tail
     fi
 
