@@ -76,29 +76,55 @@ cp KafkaHbaseBridge.jar /opt
 cp FakeTwitterProducer.jar /opt
 
 # Create systemd unit for flink service
-# Create the zookeeper systemd service
-if (($FORCE_INSTALL)) || ! [ -f $FLINK_BRIDGE_SERVICE_FILE ]; then
-   echo "Flink: installing Flink bridge systemd unit..." 1>&2
- 
-   # Install the unit file
-   echo "[Unit]
- Description=Flink Kafka bridge
- Requires=network.target flink.service hbase.service
- After=network.target flink.service hbase.service
- 
- [Service]
- Type=oneshot
- User=flink
- Group=flink
- Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR
- ExecStart=$FLINK_INSTALL_DIR/bin/flink run /opt/KafkaHbaseBridge.jar --port 9000 --topic paris --bootstrap.servers localhost:9092 --zookeeper.connect localhost:2181 --group.id parisconsumer --hbasetable paris --hbasequorum worker1,worker2,worker3 --hbaseport 2181
- Restart=on-failure
- SyslogIdentifier=flinkbridge
- 
- [Install]
- WantedBy=multi-user.target" >$FLINK_SERVICE_FILE
- else
-   echo "Flink: Flink bridge systemd unit already installed." 1>&2
- fi
+
+# Create the services
+echo "Flink: installing Flink cities systemd unit..." 1>&2
+
+while getopts ":t:" opt; do
+    case "$opt" in
+        t)
+            TOPIC_NAME="$OPTARG"
+
+            # Install the unit file
+            # TODO: Use -H
+            echo "[Unit]
+Description=Flink bridge ($TOPIC_NAME)
+Requires=network.target flink.service hbase.service
+After=network.target flink.service hbase.service
+
+[Service]
+Type=oneshot
+User=flink
+Group=flink
+Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR
+ExecStart=$FLINK_INSTALL_DIR/bin/flink run /opt/KafkaHbaseBridge.jar --port 9000 --topic $TOPIC_NAME --bootstrap.servers localhost:9092 --zookeeper.connect localhost:2181 --group.id parisconsumer --hbasetable $TOPIC_NAME --hbasequorum worker1,worker2,worker3 --hbaseport 2181
+Restart=on-failure
+SyslogIdentifier=flink_$TOPIC_NAME
+
+[Install]
+WantedBy=multi-user.target" >/etc/systemd/system/flink_$TOPIC_NAME.service
+      ;;
+  esac
+done
+
+# Create the services
+echo "Flink: installing Flink fake producer systemd unit..." 1>&2
+
+echo "[Unit]
+Description=Flink bridge producer
+Requires=network.target flink.service hbase.service
+After=network.target flink.service hbase.service
+
+[Service]
+Type=oneshot
+User=flink
+Group=flink
+Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR
+ExecStart=$FLINK_INSTALL_DIR/bin/flink run /opt/FakeTwitterProducer.jar 1 localhost:9092
+Restart=on-failure
+SyslogIdentifier=flink_producer_fake
+
+[Install]
+WantedBy=multi-user.target" >/etc/systemd/system/flink_producer_fake.service
 
 systemctl daemon-reload

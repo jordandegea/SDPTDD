@@ -17,6 +17,10 @@ services:
     - flink
     - hbase
     - zeppelin
+    - flink_paris
+    - flink_london
+    - flink_nyc
+    - flink_producer_fake
 hosts:
     worker1:
         <<: *host_defaults
@@ -26,6 +30,10 @@ hosts:
         services: # List of services to enable/start on worker1
             - zookeeper
             - kafka
+            - flink
+            # - hbase
+            # - flink_paris
+            - flink_producer_fake
         provisioning:
             before:
             after:
@@ -42,6 +50,9 @@ hosts:
         services: # List of services to enable/start on worker2
             - zookeeper
             - kafka
+            - flink
+            # - hbase
+            # - flink_london
         provisioning:
             before:
             after:
@@ -53,9 +64,12 @@ hosts:
         <<: *host_defaults
         key: .vagrant/machines/worker3/virtualbox/private_key
         ip: 10.20.1.102
-        services: # List of services to enable/start on worker2
+        services: # List of services to enable/start on worker3
             - zookeeper
             - kafka
+            - flink
+            # - hbase
+            # - flink_nyc
         provisioning:
             before:
             after:
@@ -70,7 +84,7 @@ provisioning:
     - apt:
     - java:
     - kafka: $hostspec
-    - flink:
+    - flink: -t paris -t london -t nyc
 configuring:
 # Shared arguments to apply to all provisioning scripts
 # SPEC: Use '-v' to indicate Vagrant provisioning
