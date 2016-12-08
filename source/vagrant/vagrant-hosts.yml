@@ -30,7 +30,7 @@ hosts:
             before:
             after:
                 - hbase: "-m worker3"
-                # - zeppelin:
+                - zeppelin:
     worker2:
         <<: *host_defaults
         key: .vagrant/machines/worker2/virtualbox/private_key

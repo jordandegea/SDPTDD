@@ -19,8 +19,8 @@ HBASE_URL="http://wwwftp.ciril.fr/pub/apache/hbase/hbase-$HBASE_VERSION/$HBASE_T
 HBASE_HOME="/usr/lib/hbase"
 
 SERVICE_FILE="/etc/systemd/system/hbase.service"
-START_SCRIPT="/usr/lib/hbase/start-hbase.sh"
-STOP_SCRIPT="/usr/lib/hbase/stop-hbase.sh"
+START_SCRIPT="$HBASE_HOME/bin/start-hbase.sh"
+STOP_SCRIPT="$HBASE_HOME/bin/stop-hbase.sh"
 
 # Download HBase
 if (($FORCE_INSTALL)) || ! [ -d $HBASE_HOME ]
@@ -40,17 +40,18 @@ cd $HBASE_HOME/conf
 
 echo "
 export JAVA_HOME=$JAVA_HOME
+export HBASE_MANAGES_ZK=false
 " >> hbase-env.sh
 
+  # <property>
+  #   <name>hbase.cluster.distributed</name>
+  #   <value>true</value>
+  # </property>
 echo "
 <configuration>
   <property>
-    <name>hbase.rootdir</name>
-    <value>file:///hbase</value>
-  </property>
-  <property>
-    <name>hbase.cluster.distributed</name>
-    <value>true</value>
+    <name>hbase.zookeeper.property.dataDir</name>
+    <value>/tmp/zookeeper</value>
   </property>
 </configuration>
 " > hbase-site.xml
@@ -63,23 +64,30 @@ else
   echo "HBase: user already created." 1>&2
 fi
 
+# Check the log path for zookeeper
+if ! [ -d $HBASE_LOG_DIR ]; then
+  mkdir -p $HBASE_LOG_DIR
+  chown hbase:hbase -R $HBASE_LOG_DIR
+fi
+
 rm -rf ~/hbase/.ssh
 if (($ENABLE_VAGRANT)); then
   cp -r ~vagrant/.ssh ~hbase/.ssh
 else
   cp -r ~xnet/.ssh ~hbase/.ssh
 fi
+chown hbase:hbase -R ~hbase/.ssh
 
 echo "[Unit]
 Description=Apache HBase
-Requires=network.target
-After=network.target
+Requires=network.target zookeeper.service
+After=network.target zookeeper.service
 
 [Service]
 Type=forking
 User=hbase
 Group=hbase
-Environment=LOG_DIR=$HBASE_LOG_DIR
+Environment=HBASE_LOG_DIR=$HBASE_LOG_DIR
 ExecStart=$START_SCRIPT
 ExecStop=$STOP_SCRIPT
 Restart=on-failure
@@ -87,3 +95,5 @@ SyslogIdentifier=hbase
 
 [Install]
 WantedBy=multi-user.target" > $SERVICE_FILE
+
+systemctl daemon-reload
