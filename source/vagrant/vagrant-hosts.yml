@@ -30,7 +30,7 @@ hosts:
             before:
             after:
                 - hbase: "-m worker3"
-                - zeppelin:
+                # - zeppelin:
     worker2:
         <<: *host_defaults
         key: .vagrant/machines/worker2/virtualbox/private_key
@@ -52,14 +52,14 @@ hosts:
         provisioning:
             before:
             after:
-                - hbase: "-M -m worker3 -s worker1 worker2"
+                - hbase: "-M -m worker3 -s 'worker1 worker2'"
 # List of provisioning steps, follows the same conventions as vagrant-hosts.yml
 provisioning:
     - hosts: $hostspec
     - apt:
     - java:
-    - kafka: $hostspec
-    - flink:
+    # - kafka: $hostspec
+    # - flink:
 # Shared arguments to apply to all provisioning scripts
 # SPEC: Use '-v' to indicate Vagrant provisioning
 shared_args: -v

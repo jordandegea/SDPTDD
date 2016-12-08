@@ -14,7 +14,7 @@ JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
 HADOOP_VERSION="2.7.3"
 HADOOP_TGZ="hadoop-$HADOOP_VERSION.tar.gz"
-HADOOP_URL="http://apache.mediamirrors.org/common/hadoop-$HADOOP_VERSION/$HADOOP_TGZ"
+HADOOP_URL="http://apache.mediamirrors.org/hadoop/common/hadoop-$HADOOP_VERSION/$HADOOP_TGZ"
 HADOOP_HOME="/usr/local/hadoop"
 
 HBASE_VERSION="1.2.4"
@@ -31,14 +31,15 @@ STOP_SCRIPT="/usr/local/bin/hstop"
 if ! id -u hbase >/dev/null 2>&1; then
   echo "HBase: creating user..." 1>&2
   useradd -m -s /bin/bash hbase
+  sudo passwd -d hbase
 else
   echo "HBase: user already created." 1>&2
 fi
 
 # Check the log path for hbase
-if ! [ -d $KAFKA_LOG_DIR ]; then
-  mkdir -p $KAFKA_LOG_DIR
-  chown hbase:hbase -R $KAFKA_LOG_DIR
+if ! [ -d $HBASE_LOG_DIR ]; then
+  mkdir -p $HBASE_LOG_DIR
+  chown hbase:hbase -R $HBASE_LOG_DIR
 fi
 
 # Get options
@@ -67,29 +68,33 @@ while getopts ":m:s:M" opt; do
 done
 
 # Download Hadoop
-if (($FORCE_INSTALL)) || ! [ -d $HADOOP_HOME ]
-then
+if (($FORCE_INSTALL)) || ! [ -d $HADOOP_HOME ]; then
     echo "Hadoop: Download"
     get_file $HADOOP_URL $HADOOP_TGZ
-    tar -oxzf $HADOOP_TGZ -C .
-    rm $HADOOP_TGZ
-    rm -rf $HADOOP_HOME
-    mv hadoop* $HADOOP_HOME
+    tar -oxzf /vagrant/resources/$HADOOP_TGZ -C /vagrant/resources
+    mv /vagrant/resources/hadoop-$HADOOP_VERSION $HADOOP_HOME
 fi
 
 # Configure Hadoop
 echo "Hadoop: Configuration"
-echo "export HADOOP_HOME=$HADOOP_HOME
+
+if (($FORCE_INSTALL)) || ! grep -q "HADOOP_HOME" /home/hbase/.bashrc; then
+    echo "export HADOOP_HOME=$HADOOP_HOME
+export HADOOP_CONF_DIR=\$HADOOP_HOME/etc/hadoop
 export HADOOP_INSTALL=\$HADOOP_HOME
 export HADOOP_MAPRED_HOME=\$HADOOP_HOME
 export HADOOP_COMMON_HOME=\$HADOOP_HOME
 export HADOOP_HDFS_HOME=\$HADOOP_HOME
 export YARN_HOME=\$HADOOP_HOME
 export HADOOP_COMMON_LIB_NATIVE_DIR=\$HADOOP_HOME/lib/native
-export PATH=\$PATH:\$HADOOP_HOME/sbin:\$HADOOP_HOME/bin" > ~/.bashrc
+export PATH=\$PATH:\$HADOOP_HOME/sbin:\$HADOOP_HOME/bin" >> /home/hbase/.bashrc
+fi 
+
+source /home/hbase/.bashrc
 
 echo "
 export JAVA_HOME=$JAVA_HOME
+export HADOOP_OPTS=\"-Djava.library.path=$HADOOP_HOME/lib/native\"
 " >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh
 
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
@@ -101,13 +106,13 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
   </property>
 
   <property>
-    <name>dfs.name.dir</name>
-    <value>file=:///home/hadoop/hadoopdata/hdfs/namenode</value>
+    <name>dfs.namenode.edits.dir</name>
+    <value>file:///home/hbase/hadoopdata/hdfs/namenode</value>
   </property>
 
   <property>
-    <name>dfs.data.dir</name>
-    <value>file=:///home/hadoop/hadoopdata/hdfs/datanode</value>
+    <name>dfs.datanode.data.dir</name>
+    <value>file:///home/hbase/hadoopdata/hdfs/datanode</value>
   </property>
 </configuration>" > $HADOOP_HOME/etc/hadoop/hdfs-site.xml
 
@@ -117,6 +122,10 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
   <property>
     <name>fs.default.name</name>
     <value>hdfs://$MASTER:9OOO</value>
+  </property>
+  <property>
+    <name>hadoop.tmp.dir</name>
+    <value>/home/hbase/hadoopdata/tmp</value>
   </property>
 </configuration>" > $HADOOP_HOME/etc/hadoop/core-site.xml
 
@@ -184,15 +193,18 @@ export JAVA_HOME=$JAVA_HOME
 if (($IS_MASTER)); then
     echo "Hadoop-Hbase: Master"
     if (($FORCE_INSTALL)) || ! [ -f $START_SCRIPT ]; then
-        echo "$HADOOP_HOME/sbin/start-dfs.sh
+        echo "rm -rf /home/hbase/hadoopdata/tmp
+hdfs namenode -format
+hdfs getconf -namenodes
+$HADOOP_HOME/sbin/start-dfs.sh
 $HADOOP_HOME/sbin/start-yarn.sh
 $HBASE_HOME/bin/start-hbase.sh" > $START_SCRIPT
         chmod +x $START_SCRIPT
     fi
     if (($FORCE_INSTALL)) || ! [ -f $STOP_SCRIPT ]; then
-        echo "$HADOOP_HOME/sbin/stop-dfs.sh
+        echo "$HBASE_HOME/bin/stop-hbase.sh
 $HADOOP_HOME/sbin/stop-yarn.sh
-$HBASE_HOME/bin/stop-hbase.sh" > $STOP_SCRIPT
+$HADOOP_HOME/sbin/stop-dfs.sh" > $STOP_SCRIPT
         chmod +x $STOP_SCRIPT
     fi
 
@@ -222,6 +234,7 @@ fi
 systemctl daemon-reload
 
 if (($IS_MASTER)) && (($ENABLE_VAGRANT)); then
+    $STOP_SCRIPT
     $START_SCRIPT
     # systemctl enable hbase.service
     # systemctl start hbase.service
