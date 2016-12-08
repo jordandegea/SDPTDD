@@ -86,6 +86,19 @@ namespace :services do
     end
   end
 
+  desc "Restarts services according to service assignments in the host config file"
+  task :restart, :server do |task, args|
+    on hosts(args) do |host|
+      # Get the hostname as defined in the config file
+      hostname = host.properties.name
+
+      # Stop all enabled services
+      enabled_services(hostname).reverse.each do |service|
+        sudo "systemctl", "restart", "#{service}.service"
+      end
+    end
+  end
+
   desc "Prints the status of services according to service assignments in the host config file"
   task :status, :server do |task, args|
     on hosts(args) do |host|
