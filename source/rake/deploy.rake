@@ -9,7 +9,7 @@ def provision(shared_args, p, args)
   provisioning_name, provisioning_args = [p.keys, p.values].flatten
 
   # Filter provisioners
-  allowed_provisioners = args[:what]&.split(';') || []
+  allowed_provisioners = (args[:what] || '').split(';')
   if allowed_provisioners.length > 0
     return unless allowed_provisioners.include? provisioning_name
   end
