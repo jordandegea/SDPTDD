@@ -149,6 +149,8 @@ User=zookeeper
 Group=zookeeper
 Environment=LOG_DIR=$ZOOKEEPER_LOG_DIR
 $MORE_ENV
+ExecStartPre=/bin/mkdir -p $ZOOKEEPER_DATA_DIR
+ExecStartPre=/bin/bash -c '/bin/echo $SERVER_ID >$ZOOKEEPER_ID_FILE'
 ExecStart=$KAFKA_INSTALL_DIR/bin/zookeeper-server-start.sh -daemon $ZOOKEEPER_CONFIG_FILE
 ExecStop=$KAFKA_INSTALL_DIR/bin/zookeeper-server-stop.sh $ZOOKEEPER_CONFIG_FILE
 Restart=on-failure
