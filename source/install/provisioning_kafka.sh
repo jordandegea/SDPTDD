@@ -249,9 +249,3 @@ fi
 
 # Reload unit files
 systemctl daemon-reload
-
-# Only start/enable services if we are running on vagrant
-if (($ENABLE_VAGRANT)); then
-    systemctl enable zookeeper.service kafka.service
-    systemctl start zookeeper.service kafka.service
-fi

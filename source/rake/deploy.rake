@@ -44,7 +44,7 @@ task :deploy, :server do |task, args|
 
     # Push source folders to the deploy directory
     $conf['source_folders'].each do |source_folder|
-      folder = Pathname.new(source_folder)
+      folder = Pathname.new(File.expand_path(File.join('..', source_folder), $config_source))
 
       Dir.glob(File.join(folder, '**')).each do |file|
         destination_file = File.join('deploy', Pathname.new(file).relative_path_from(folder))
