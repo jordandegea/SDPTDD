@@ -7,3 +7,9 @@
 *.tex.bak
 **/*.swp
 **/.DS_Store
+
+flink-1.1.3*
+hbase/
+kafka/
+source/hbase/
+
