@@ -78,19 +78,17 @@ fi
 # Configure Hadoop
 echo "Hadoop: Configuration"
 
-if (($FORCE_INSTALL)) || ! grep -q "HADOOP_HOME" /home/hbase/.bashrc; then
-    echo "export HADOOP_HOME=$HADOOP_HOME
-export HADOOP_CONF_DIR=\$HADOOP_HOME/etc/hadoop
-export HADOOP_INSTALL=\$HADOOP_HOME
-export HADOOP_MAPRED_HOME=\$HADOOP_HOME
-export HADOOP_COMMON_HOME=\$HADOOP_HOME
-export HADOOP_HDFS_HOME=\$HADOOP_HOME
-export YARN_HOME=\$HADOOP_HOME
-export HADOOP_COMMON_LIB_NATIVE_DIR=\$HADOOP_HOME/lib/native
-export PATH=\$PATH:\$HADOOP_HOME/sbin:\$HADOOP_HOME/bin" >> /home/hbase/.bashrc
-fi 
-
-source /home/hbase/.bashrc
+# if (($FORCE_INSTALL)) || ! [ -d /home/hbase/hbasebashrc ]; then
+#     echo "export HADOOP_HOME=$HADOOP_HOME
+# export HADOOP_CONF_DIR=\$HADOOP_HOME/etc/hadoop
+# export HADOOP_INSTALL=\$HADOOP_HOME
+# export HADOOP_MAPRED_HOME=\$HADOOP_HOME
+# export HADOOP_COMMON_HOME=\$HADOOP_HOME
+# export HADOOP_HDFS_HOME=\$HADOOP_HOME
+# export YARN_HOME=\$HADOOP_HOME
+# export HADOOP_COMMON_LIB_NATIVE_DIR=\$HADOOP_HOME/lib/native
+# export PATH=\$PATH:\$HADOOP_HOME/sbin:\$HADOOP_HOME/bin" >> /home/hbase/hbasebashrc
+# fi 
 
 echo "
 export JAVA_HOME=$JAVA_HOME
@@ -220,6 +218,15 @@ Type=forking
 User=hbase
 Group=hbase
 Environment=LOG_DIR=$HBASE_LOG_DIR
+Environment=HADOOP_HOME=$HADOOP_HOME
+Environment=HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+Environment=HADOOP_INSTALL=$HADOOP_HOME
+Environment=HADOOP_MAPRED_HOME=$HADOOP_HOME
+Environment=HADOOP_COMMON_HOME=$HADOOP_HOME
+Environment=HADOOP_HDFS_HOME=$HADOOP_HOME
+Environment=YARN_HOME=$HADOOP_HOME
+Environment=HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+Environment=PATH=$PATH:$HADOOP_HOME/sbin:$HADOOP_HOME/bin
 ExecStart=$START_SCRIPT
 ExecStop=$STOP_SCRIPT
 Restart=on-failure
@@ -234,8 +241,6 @@ fi
 systemctl daemon-reload
 
 if (($IS_MASTER)) && (($ENABLE_VAGRANT)); then
-    $STOP_SCRIPT
-    $START_SCRIPT
-    # systemctl enable hbase.service
-    # systemctl start hbase.service
+    systemctl enable hbase.service
+    systemctl start hbase.service
 fi
