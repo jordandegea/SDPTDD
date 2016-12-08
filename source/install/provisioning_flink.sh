@@ -27,7 +27,7 @@ tar -oxzf $filename -C /opt
 # Parameters
 FLINK_LOG_DIR=/var/log/flink
 FLINK_SERVICE_FILE=/etc/systemd/system/flink.service
-FLINK_INSTALL_DIR=/opt/$filename
+FLINK_INSTALL_DIR=/opt/$(basename "$filename" .tgz)
 FLINK_BRIDGE_SERVICE_FILE=/etc/systemd/system/flinkbridge.service
 
 # Create the flink user if necessary
