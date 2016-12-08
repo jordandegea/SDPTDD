@@ -56,6 +56,7 @@ hosts:
 # List of provisioning steps, follows the same conventions as vagrant-hosts.yml
 provisioning:
     - hosts: $hostspec
+    - ssh:
     - apt:
     - java:
     - kafka: $hostspec
@@ -68,3 +69,4 @@ shared_args: -v
 shared_script: ../install/provisioning_shared.sh
 source_folders:
     - ../install
+    - .vagrant

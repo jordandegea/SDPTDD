@@ -42,11 +42,23 @@ task :deploy, :server do |task, args|
     # Create the deploy directory
     execute :mkdir, '-p', 'deploy'
 
-    # Push source folders to the deploy directory
-    $conf['source_folders'].each do |source_folder|
-      folder = Pathname.new(File.expand_path(File.join('..', source_folder), $config_source))
+    # Host config node
+    host_conf = $conf['hosts'][host.properties.name]
 
-      Dir.glob(File.join(folder, '**')).each do |file|
+    # Source folders for file deployment
+    source_folders = $conf['source_folders'].dup
+
+    # Add host-specific source folders
+    source_folders.concat(host_conf['source_folders']) if host_conf['source_folders']
+
+    # Push source folders to the deploy directory
+    source_folders.each do |source_folder|
+      folder = Pathname.new(File.expand_path(File.join('..', source_folder), $config_source))
+      puts folder
+
+      Dir.glob(File.join(folder, '**', '*')).each do |file|
+        next if Dir.exist? file
+
         destination_file = File.join('deploy', Pathname.new(file).relative_path_from(folder))
         destination_dir = File.dirname(destination_file)
 
@@ -61,7 +73,7 @@ task :deploy, :server do |task, args|
     # Change to the deploy directory
     within 'deploy' do
       # Run 'before' provisioning scripts
-      ($conf['hosts'][host.properties.name]['provisioning']['before'] || []).each do |p|
+      (host_conf['provisioning']['before'] || []).each do |p|
         provision(shared_args, p)
       end
 
@@ -71,7 +83,7 @@ task :deploy, :server do |task, args|
       end
 
       # Run 'after' provisioning scripts
-      ($conf['hosts'][host.properties.name]['provisioning']['after'] || []).each do |p|
+      (host_conf['provisioning']['after'] || []).each do |p|
         provision(shared_args, p)
       end
     end
