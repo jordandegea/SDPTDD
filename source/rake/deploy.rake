@@ -4,9 +4,16 @@ require 'sshkit/sudo'
 include SSHKit::DSL
 
 # Runs a provisioning entry
-def provision(shared_args, p)
+def provision(shared_args, p, args)
   # Provisioning script name and args
   provisioning_name, provisioning_args = [p.keys, p.values].flatten
+
+  # Filter provisioners
+  allowed_provisioners = args[:what]&.split(';') || []
+  if allowed_provisioners.length > 0
+    return unless allowed_provisioners.include? provisioning_name
+  end
+
   script_name = "./provisioning_#{provisioning_name}.sh"
 
   # Specific variables
@@ -29,7 +36,7 @@ def provision(shared_args, p)
 end
 
 desc "Deploys everything to every server"
-task :deploy, :server do |task, args|
+task :deploy, [:server, :what] do |task, args|
   shared_args = $conf['shared_args'] || ''
 
   # Use "FORCE_PROVISION=yes vagrant provision" to re-run provisioning scripts
@@ -73,17 +80,17 @@ task :deploy, :server do |task, args|
     within 'deploy' do
       # Run 'before' provisioning scripts
       (host_conf['provisioning']['before'] || []).each do |p|
-        provision(shared_args, p)
+        provision(shared_args, p, args)
       end
 
       # Run 'shared' provisioning scripts
       $conf['provisioning'].each do |p|
-        provision(shared_args, p)
+        provision(shared_args, p, args)
       end
 
       # Run 'after' provisioning scripts
       (host_conf['provisioning']['after'] || []).each do |p|
-        provision(shared_args, p)
+        provision(shared_args, p, args)
       end
     end
 
