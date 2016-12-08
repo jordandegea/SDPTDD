@@ -72,7 +72,7 @@ else
 fi
 
 # Deploy jar
-# cp KafkaHbaseBridge.jar /opt
+cp KafkaHbaseBridge.jar /opt
 
 # Create systemd unit for flink service
 # Create the zookeeper systemd service
