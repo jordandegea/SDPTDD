@@ -72,32 +72,33 @@ else
 fi
 
 # Deploy jar
-# cp KafkaHbaseBridge.jar /opt
+cp KafkaHbaseBridge.jar /opt
+cp FakeTwitterProducer.jar /opt
 
 # Create systemd unit for flink service
 # Create the zookeeper systemd service
-# if (($FORCE_INSTALL)) || ! [ -f $FLINK_BRIDGE_SERVICE_FILE ]; then
-#   echo "Flink: installing Flink bridge systemd unit..." 1>&2
-# 
-#   # Install the unit file
-#   echo "[Unit]
-# Description=Flink Kafka bridge
-# Requires=network.target flink.service hbase.service
-# After=network.target flink.service hbase.service
-# 
-# [Service]
-# Type=oneshot
-# User=flink
-# Group=flink
-# Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR
-# ExecStart=$FLINK_INSTALL_DIR/bin/flink run /opt/KafkaHbaseBridge.jar --topic twitter --bootstrap.servers 
-# Restart=on-failure
-# SyslogIdentifier=flinkbridge
-# 
-# [Install]
-# WantedBy=multi-user.target" >$FLINK_SERVICE_FILE
-# else
-#   echo "Flink: Flink bridge systemd unit already installed." 1>&2
-# fi
+if (($FORCE_INSTALL)) || ! [ -f $FLINK_BRIDGE_SERVICE_FILE ]; then
+   echo "Flink: installing Flink bridge systemd unit..." 1>&2
+ 
+   # Install the unit file
+   echo "[Unit]
+ Description=Flink Kafka bridge
+ Requires=network.target flink.service hbase.service
+ After=network.target flink.service hbase.service
+ 
+ [Service]
+ Type=oneshot
+ User=flink
+ Group=flink
+ Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR
+ ExecStart=$FLINK_INSTALL_DIR/bin/flink run /opt/KafkaHbaseBridge.jar --port 9000 --topic paris --bootstrap.servers localhost:9092 --zookeeper.connect localhost:2181 --group.id parisconsumer --hbasetable paris --hbasequorum worker1,worker2,worker3 --hbaseport 2181
+ Restart=on-failure
+ SyslogIdentifier=flinkbridge
+ 
+ [Install]
+ WantedBy=multi-user.target" >$FLINK_SERVICE_FILE
+ else
+   echo "Flink: Flink bridge systemd unit already installed." 1>&2
+ fi
 
 systemctl daemon-reload
