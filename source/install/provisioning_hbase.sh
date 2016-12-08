@@ -74,6 +74,7 @@ if (($FORCE_INSTALL)) || ! [ -d $HADOOP_HOME ]; then
     tar -oxzf /vagrant/resources/$HADOOP_TGZ -C /vagrant/resources
     rm $HADOOP_TGZ
     rm -rf $HADOOP_HOME
+    mkdir $HADOOP_HOME
     mv /vagrant/resources/hadoop* $HADOOP_HOME
 fi
 
