@@ -19,6 +19,9 @@ if (($ENABLE_VAGRANT)); then
     # Base config
     printf "Host *\n\tStrictHostKeyChecking no\n\n" >~vagrant/.ssh/config
 
+    # Localhost config
+    printf "Host localhost\n\tIdentityFile ~/.ssh/%s\n\n" "$(hostname)" >>~vagrant/.ssh/config
+
     # We have the "machines" directory copied inside the current directory
     for MACHINE_DIR in $(ls machines); do
         # Get the machine name from the directory
@@ -44,6 +47,9 @@ else
 
     # Base config
     printf "Host *\n\tStrictHostKeyChecking no\n\n" >~xnet/.ssh/config
+
+    # Localhost config
+    printf "Host localhost\n\tIdentityFile ~/.ssh/xnet\n\n" >>~xnet/.ssh/config
 
     # Copy the key to .ssh
     cp xnet xnet.pub ~xnet/.ssh/
