@@ -59,29 +59,27 @@ def declare_provision_like_task(task_name, task_desc, shared_args_param_name,
 
           # Filter provisioners
           allowed_provisioners = (args[:what] || '').split(';')
-          if allowed_provisioners.length > 0
-            return unless allowed_provisioners.include? provisioning_name
+          if allowed_provisioners.length == 0 or allowed_provisioners.include? provisioning_name
+            script_name = "./#{script_template_name}_#{provisioning_name}.sh"
+
+            # Specific variables
+            if provisioning_args =~ /\$hostspec/
+              hostspec = $hosts.map do |hostname, host|
+                "-H #{hostname}@#{host.hostname}"
+              end.join(' ')
+
+              provisioning_args.gsub!(/\$hostspec/, hostspec)
+            end
+
+            # Get the full path to the current working directory
+            cwd = capture(:pwd)
+
+            # Make the script executable
+            execute :chmod, '+x', script_name
+
+            # Ensure sudo is in the right path and execute the provisioning script
+            sudo "bash -c \"cd #{cwd} && #{script_name} #{shared_args} #{provisioning_args}\""
           end
-
-          script_name = "./#{script_template_name}_#{provisioning_name}.sh"
-
-          # Specific variables
-          if provisioning_args =~ /\$hostspec/
-            hostspec = $hosts.map do |hostname, host|
-              "-H #{hostname}@#{host.hostname}"
-            end.join(' ')
-
-            provisioning_args.gsub!(/\$hostspec/, hostspec)
-          end
-
-          # Get the full path to the current working directory
-          cwd = capture(:pwd)
-
-          # Make the script executable
-          execute :chmod, '+x', script_name
-
-          # Ensure sudo is in the right path and execute the provisioning script
-          sudo "bash -c \"cd #{cwd} && #{script_name} #{shared_args} #{provisioning_args}\""
         end
       end
 
