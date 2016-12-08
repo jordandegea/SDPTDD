@@ -31,6 +31,7 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer08;
 //import org.apache.flink.streaming.util.serialization.SimpleStringSchema;
 
 import java.io.IOException;
+import java.util.UUID;
 
 
 import org.apache.flink.api.common.io.OutputFormat;
@@ -58,9 +59,15 @@ public class SendToHbase {
 		// parse input arguments
 		final ParameterTool parameterTool = ParameterTool.fromArgs(args);
 
-		if(parameterTool.getNumberOfParameters() < 4) {
-			System.out.println("Missing parameters!\nUsage: Kafka --topic <topic> " +
-					"--bootstrap.servers <kafka brokers> --zookeeper.connect <zk quorum> --group.id <some id>");
+		if(parameterTool.getNumberOfParameters() < 7) {
+			System.out.println("Missing parameters!\n" +
+                    "Usage: Kafka --topic <topic> " +
+					"--bootstrap.servers <kafka brokers> " +
+                    "--zookeeper.connect <zk quorum> " +
+                    "--group.id <some id> " +
+                    "--hbasetable <hbase table> " +
+                    "--hbasequorum <hbase zookeeper quorum> " +
+                    "--hbaseport <hbase zookeeper port>");
 			return;
 		}
 
@@ -77,37 +84,17 @@ public class SendToHbase {
 						parameterTool.getProperties()));
 
 		// write kafka stream to standard out.
-		messageStream.writeUsingOutputFormat(new HBaseOutputFormat());
+		messageStream.writeUsingOutputFormat(
+		        new HBaseOutputFormat(
+                        parameterTool.getRequired("hbasetable"),
+                        parameterTool.getRequired("hbasequorum"),
+                        Integer.parseInt(parameterTool.getRequired("hbaseport"))
+                ));
 
-
-		/*
-
-		final StreamExecutionEnvironment env = StreamExecutionEnvironment
-				.getExecutionEnvironment();
-
-		// data stream with random numbers
-		DataStream<String> dataStream = env.addSource(new SourceFunction<String>() {
-			private static final long serialVersionUID = 1L;
-
-			private volatile boolean isRunning = true;
-
-			@Override
-			public void run(SourceContext<String> out) throws Exception {
-				while (isRunning) {
-					out.collect(String.valueOf(Math.floor(Math.random() * 100)));
-				}
-
-			}
-
-			@Override
-			public void cancel() {
-				isRunning = false;
-			}
-		});
-		dataStream.writeUsingOutputFormat(new HBaseOutputFormat());
-*/
 		env.execute();
 	}
+
+
 
 	/**
 	 * This class implements an OutputFormat for HBase
@@ -122,9 +109,27 @@ public class SendToHbase {
 
 		private static final long serialVersionUID = 1L;
 
+        private String tablename = "table1";
+
+        public static final String HBASE_CONFIGURATION_ZOOKEEPER_QUORUM                     = "hbase.zookeeper.quorum";
+        public static final String HBASE_CONFIGURATION_ZOOKEEPER_CLIENTPORT                 = "hbase.zookeeper.property.clientPort";
+
+        private String hbaseZookeeperQuorum = "localhost";
+        private int hbaseZookeeperClientPort = 10000;
+
+        public HBaseOutputFormat(String tablename, String quorum, int port){
+            this.tablename = tablename;
+            this.hbaseZookeeperQuorum = quorum;
+            this.hbaseZookeeperClientPort = port;
+        }
+
 		@Override
 		public void configure(Configuration parameters) {
 			conf = HBaseConfiguration.create();
+
+            conf.set(HBASE_CONFIGURATION_ZOOKEEPER_QUORUM, hbaseZookeeperQuorum);
+            conf.setInt(HBASE_CONFIGURATION_ZOOKEEPER_CLIENTPORT, hbaseZookeeperClientPort);
+
 			try {
 				connection = ConnectionFactory.createConnection(conf);
 			} catch (IOException e) {
@@ -134,13 +139,13 @@ public class SendToHbase {
 
 		@Override
 		public void open(int taskNumber, int numTasks) throws IOException {
-			table = connection.getTable(TableName.valueOf("table1"));
+			table = connection.getTable(TableName.valueOf(tablename));
 			this.taskNumber = String.valueOf(taskNumber);
 		}
 
 		@Override
 		public void writeRecord(String record) throws IOException {
-			Put put = new Put(Bytes.toBytes(taskNumber + rowNumber));
+			Put put = new Put(Bytes.toBytes(taskNumber + UUID.randomUUID()));
 			put.add(Bytes.toBytes("colTest"), Bytes.toBytes("colTest"),
 					Bytes.toBytes(record));
 			rowNumber++;
