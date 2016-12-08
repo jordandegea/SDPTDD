@@ -3,103 +3,12 @@ require 'sshkit'
 require 'sshkit/sudo'
 include SSHKit::DSL
 
-# Runs a provisioning entry
-def provision(shared_args, p, args)
-  # Provisioning script name and args
-  provisioning_name, provisioning_args = [p.keys, p.values].flatten
+require_relative './provision_like_task.rb'
 
-  # Filter provisioners
-  allowed_provisioners = (args[:what] || '').split(';')
-  if allowed_provisioners.length > 0
-    return unless allowed_provisioners.include? provisioning_name
-  end
-
-  script_name = "./provisioning_#{provisioning_name}.sh"
-
-  # Specific variables
-  if provisioning_args =~ /\$hostspec/
-    hostspec = $hosts.map do |hostname, host|
-      "-H #{hostname}@#{host.hostname}"
-    end.join(' ')
-
-    provisioning_args.gsub!(/\$hostspec/, hostspec)
-  end
-
-  # Get the full path to the current working directory
-  cwd = capture(:pwd)
-
-  # Make the script executable
-  execute :chmod, '+x', script_name
-
-  # Ensure sudo is in the right path and execute the provisioning script
-  sudo "bash -c \"cd #{cwd} && #{script_name} #{shared_args} #{provisioning_args}\""
-end
-
-desc "Deploys everything to every server"
-task :deploy, [:server, :what] do |task, args|
-  shared_args = $conf['shared_args'] || ''
-
-  # Use "FORCE_PROVISION=yes vagrant provision" to re-run provisioning scripts
-  # and reinstall everything
-  if ENV['FORCE_PROVISION'] == 'yes'
-    shared_args += ' -f'
-  end
-
-  on hosts(args) do |host|
-    # Create the deploy directory
-    execute :mkdir, '-p', 'deploy'
-
-    # Host config node
-    host_conf = $conf['hosts'][host.properties.name]
-
-    # Source folders for file deployment
-    source_folders = $conf['source_folders'].dup
-
-    # Add host-specific source folders
-    source_folders.concat(host_conf['source_folders']) if host_conf['source_folders']
-
-    previous = SSHKit.config.output_verbosity
-    SSHKit.config.output_verbosity = Logger::INFO
-
-    # Push source folders to the deploy directory
-    source_folders.each do |source_folder|
-      folder = Pathname.new(File.expand_path(File.join('..', source_folder), $config_source))
-
-      Dir.glob(File.join(folder, '**', '*')).each do |file|
-        next if Dir.exist? file
-
-        destination_file = File.join('deploy', Pathname.new(file).relative_path_from(folder))
-        destination_dir = File.dirname(destination_file)
-
-        # Ensure the destination directory is created
-        execute :mkdir, '-p', destination_dir unless destination_dir == 'deploy'
-
-        # Upload the file
-        upload! file, destination_file
-      end
-    end
-
-    SSHKit.config.output_verbosity = previous
-
-    # Change to the deploy directory
-    within 'deploy' do
-      # Run 'before' provisioning scripts
-      (host_conf['provisioning']['before'] || []).each do |p|
-        provision(shared_args, p, args)
-      end
-
-      # Run 'shared' provisioning scripts
-      $conf['provisioning'].each do |p|
-        provision(shared_args, p, args)
-      end
-
-      # Run 'after' provisioning scripts
-      (host_conf['provisioning']['after'] || []).each do |p|
-        provision(shared_args, p, args)
-      end
-    end
-
-    # Remove the deploy directory
-    execute :rm, '-rf', 'deploy'
-  end
-end
+declare_provision_like_task(:deploy,
+                            "Deploys everything to every server",
+                            "shared_args",
+                            "deploy",
+                            "source_folders",
+                            "provisioning",
+                            "provisioning")
