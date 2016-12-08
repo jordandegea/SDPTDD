@@ -34,6 +34,7 @@ hosts:
         configuring:
             before:
             after:
+                - create_topics: "-f list_of_topics"
     worker2:
         <<: *host_defaults
         key: .vagrant/machines/worker2/virtualbox/private_key
@@ -71,11 +72,10 @@ provisioning:
     - kafka: $hostspec
     - flink:
 configuring:
-    - test
 # Shared arguments to apply to all provisioning scripts
 # SPEC: Use '-v' to indicate Vagrant provisioning
 shared_args: -v
-shared_configure_args:
+shared_configure_args: -v
 # Shared code for provisioning scripts
 # Available as /vagrant/provisioning_shared.sh
 shared_script: ../install/provisioning_shared.sh
