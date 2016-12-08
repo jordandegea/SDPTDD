@@ -38,7 +38,7 @@ hosts:
             before:
             after:
                 - hbase: "-m worker3"
-                # - zeppelin:
+                - zeppelin:
         configuring:
             before:
             after:

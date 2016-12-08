@@ -12,20 +12,15 @@ fi
 
 JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
-HADOOP_VERSION="2.7.3"
-HADOOP_TGZ="hadoop-$HADOOP_VERSION.tar.gz"
-HADOOP_URL="http://apache.mediamirrors.org/hadoop/common/hadoop-$HADOOP_VERSION/$HADOOP_TGZ"
-HADOOP_HOME="/usr/local/hadoop"
-
-HBASE_VERSION="1.2.4"
+HBASE_VERSION="1.0.3"
 HBASE_LOG_DIR="/var/log/hbase"
 HBASE_TGZ="hbase-$HBASE_VERSION-bin.tar.gz"
-HBASE_URL="http://wwwftp.ciril.fr/pub/apache/hbase/$HBASE_VERSION/$HBASE_TGZ"
+HBASE_URL="http://wwwftp.ciril.fr/pub/apache/hbase/hbase-$HBASE_VERSION/$HBASE_TGZ"
 HBASE_HOME="/usr/lib/hbase"
 
 SERVICE_FILE="/etc/systemd/system/hbase.service"
-START_SCRIPT="/usr/local/bin/hstart"
-STOP_SCRIPT="/usr/local/bin/hstop"
+START_SCRIPT="$HBASE_HOME/bin/start-hbase.sh"
+STOP_SCRIPT="$HBASE_HOME/bin/stop-hbase.sh"
 
 # Create the hbase user if necessary
 if ! id -u hbase >/dev/null 2>&1; then
@@ -42,8 +37,16 @@ if ! [ -d $HBASE_LOG_DIR ]; then
   chown hbase:hbase -R $HBASE_LOG_DIR
 fi
 
+# Deploy SSH config
+rm -rf ~/hbase/.ssh
+if (($ENABLE_VAGRANT)); then
+  cp -r ~vagrant/.ssh ~hbase/.ssh
+else
+  cp -r ~xnet/.ssh ~hbase/.ssh
+fi
+chown hbase:hbase -R ~hbase/.ssh
+
 # Get options
-IS_MASTER=0
 MASTER=""
 SLAVES=""
 while getopts ":m:s:M" opt; do
@@ -54,15 +57,9 @@ while getopts ":m:s:M" opt; do
     s)
       SLAVES="$OPTARG"
       ;;
-    M)
-      IS_MASTER=1
-      ;;
     :)
       echo "Missing argument: the option $opt needs an \
           argument." >&2
-      ;;
-    \?)
-      echo "Invalid option: -$OPTARG" >&2
       ;;
   esac
 done
@@ -79,20 +76,6 @@ fi
 
 # Configure Hadoop
 echo "Hadoop: Configuration"
-
-if (($FORCE_INSTALL)) || ! grep -q "HADOOP_HOME" /home/hbase/.bashrc; then
-    echo "export HADOOP_HOME=$HADOOP_HOME
-export HADOOP_CONF_DIR=\$HADOOP_HOME/etc/hadoop
-export HADOOP_INSTALL=\$HADOOP_HOME
-export HADOOP_MAPRED_HOME=\$HADOOP_HOME
-export HADOOP_COMMON_HOME=\$HADOOP_HOME
-export HADOOP_HDFS_HOME=\$HADOOP_HOME
-export YARN_HOME=\$HADOOP_HOME
-export HADOOP_COMMON_LIB_NATIVE_DIR=\$HADOOP_HOME/lib/native
-export PATH=\$PATH:\$HADOOP_HOME/sbin:\$HADOOP_HOME/bin" >> /home/hbase/.bashrc
-fi 
-
-source /home/hbase/.bashrc
 
 echo "
 export JAVA_HOME=$JAVA_HOME
@@ -140,104 +123,45 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
   </property>
 </configuration>" > $HADOOP_HOME/etc/hadoop/mapred-site.xml
 
-# Download HBase
-if (($FORCE_INSTALL)) || ! [ -d $HBASE_HOME ]
-then
-    echo "HBase: Download"
-    get_file $HBASE_URL $HBASE_TGZ
-    tar -oxzf $HBASE_TGZ -C .
-    rm $HBASE_TGZ
-    rm -rf $HBASE_HOME
-    mv hbase* $HBASE_HOME
-fi
-
-
-# Configure HBase
-echo "HBase: Configuration"
-cd $HBASE_HOME/conf
+echo "export JAVA_HOME=$JAVA_HOME
+export HBASE_MANAGES_ZK=false
+" >> $HBASE_HOME/conf/hbase-env.sh
 
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>
 <configuration>
- 
-  <property>
-    <name>hbase.rootdir</name>
-    <value>hdfs://$MASTER:9000/hbase</value>
-  </property>
- 
-   <property>
-    <name>hbase.cluster.distributed</name>
-    <value>true</value>
-  </property>
- 
   <property>
     <name>hbase.zookeeper.property.dataDir</name>
-    <value>hdfs://$MASTER:9000/zookeeper</value>
+    <value>/tmp/zookeeper</value>
   </property>
- 
-  <property>
-    <name>hbase.zookeeper.quorum</name>
-    <value>$MASTER $SLAVES</value>
-  </property>
- 
 </configuration>
-" > hbase-site.xml
+" > $HBASE_HOME/conf/hbase-site.xml
 
-rm -f regionservers
-for node in $SLAVES $MASTER; do
-    echo $node >> regionservers
-done
-
-echo "
-export JAVA_HOME=$JAVA_HOME
-" >> hbase-env.sh
-
-if (($IS_MASTER)); then
-    echo "Hadoop-Hbase: Master"
-    if (($FORCE_INSTALL)) || ! [ -f $START_SCRIPT ]; then
-        echo "rm -rf /home/hbase/hadoopdata/tmp
-hdfs namenode -format
-hdfs getconf -namenodes
-$HADOOP_HOME/sbin/start-dfs.sh
-$HADOOP_HOME/sbin/start-yarn.sh
-$HBASE_HOME/bin/start-hbase.sh" > $START_SCRIPT
-        chmod +x $START_SCRIPT
-    fi
-    if (($FORCE_INSTALL)) || ! [ -f $STOP_SCRIPT ]; then
-        echo "$HBASE_HOME/bin/stop-hbase.sh
-$HADOOP_HOME/sbin/stop-yarn.sh
-$HADOOP_HOME/sbin/stop-dfs.sh" > $STOP_SCRIPT
-        chmod +x $STOP_SCRIPT
-    fi
-
-    # Create the hbase systemd service
-    if (($FORCE_INSTALL)) || ! [ -f $SERVICE_FILE ]; then
-        echo "[Unit]
+echo "[Unit]
 Description=Apache HBase
-Requires=network.target
-After=network.target
+Requires=network.target zookeeper.service
+After=network.target zookeeper.service
 
 [Service]
 Type=forking
 User=hbase
 Group=hbase
-Environment=LOG_DIR=$HBASE_LOG_DIR
+Environment=HBASE_LOG_DIR=$HBASE_LOG_DIR
+Environment=HADOOP_HOME=$HADOOP_HOME
+Environment=HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
+Environment=HADOOP_INSTALL=$HADOOP_HOME
+Environment=HADOOP_MAPRED_HOME=$HADOOP_HOME
+Environment=HADOOP_COMMON_HOME=$HADOOP_HOME
+Environment=HADOOP_HDFS_HOME=$HADOOP_HOME
+Environment=YARN_HOME=$HADOOP_HOME
+Environment=HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+Environment=PATH=$PATH:$HADOOP_HOME/sbin:$HADOOP_HOME/bin
 ExecStart=$START_SCRIPT
 ExecStop=$STOP_SCRIPT
 Restart=on-failure
 SyslogIdentifier=hbase
 
 [Install]
-WantedBy=multi-user.target" > $SERVICE_FILE
-    fi
-fi
+WantedBy=multi-user.target" >$SERVICE_FILE
 
 # Reload unit files
 systemctl daemon-reload
-
-if (($IS_MASTER)) && (($ENABLE_VAGRANT)); then
-    $STOP_SCRIPT
-    $START_SCRIPT
-    # systemctl enable hbase.service
-    # systemctl start hbase.service
-fi
