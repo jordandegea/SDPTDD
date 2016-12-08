@@ -14,7 +14,7 @@ JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
 HADOOP_VERSION="2.7.3"
 HADOOP_TGZ="hadoop-$HADOOP_VERSION.tar.gz"
-HADOOP_URL="http://apache.mediamirrors.org/common/hadoop-$HADOOP_VERSION/$HADOOP_TGZ"
+HADOOP_URL="http://apache.mediamirrors.org/hadoop/common/hadoop-$HADOOP_VERSION/$HADOOP_TGZ"
 HADOOP_HOME="/usr/local/hadoop"
 
 HBASE_VERSION="1.2.4"
@@ -71,10 +71,10 @@ done
 if (($FORCE_INSTALL)) || ! [ -d $HADOOP_HOME ]; then
     echo "Hadoop: Download"
     get_file $HADOOP_URL $HADOOP_TGZ
-    tar -oxzf $HADOOP_TGZ -C .
+    tar -oxzf /vagrant/resources/$HADOOP_TGZ -C /vagrant/resources
     rm $HADOOP_TGZ
     rm -rf $HADOOP_HOME
-    mv hadoop* $HADOOP_HOME
+    mv /vagrant/resources/hadoop* $HADOOP_HOME
 fi
 
 # Configure Hadoop
