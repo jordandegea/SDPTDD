@@ -71,8 +71,10 @@ done
 if (($FORCE_INSTALL)) || ! [ -d $HADOOP_HOME ]; then
     echo "Hadoop: Download"
     get_file $HADOOP_URL $HADOOP_TGZ
-    tar -oxzf /vagrant/resources/$HADOOP_TGZ -C /vagrant/resources
-    mv /vagrant/resources/hadoop-$HADOOP_VERSION $HADOOP_HOME
+    tar xf $HADOOP_TGZ
+    
+    rm -rf $HADOOP_HOME
+    mv hadoop-$HADOOP_VERSION $HADOOP_HOME
 fi
 
 # Configure Hadoop
