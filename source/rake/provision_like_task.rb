@@ -50,7 +50,7 @@ def declare_provision_like_task(task_name, task_desc, shared_args_param_name,
       # Change to the working directory
       within working_directory_name do
         steps = (host_conf[main_param_name]['before'] || []).dup
-        steps.concat($conf[main_param_name])
+        steps.concat($conf[main_param_name] || [])
         steps.concat(host_conf[main_param_name]['after'] || [])
 
         steps.each do |p|
