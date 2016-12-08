@@ -12,6 +12,7 @@ GEM
       sshkit (~> 1.8)
 
 PLATFORMS
+  ruby
   x64-mingw32
 
 DEPENDENCIES
@@ -20,4 +21,4 @@ DEPENDENCIES
   sshkit-sudo (~> 0.1)
 
 BUNDLED WITH
-   1.13.2
+   1.13.5
