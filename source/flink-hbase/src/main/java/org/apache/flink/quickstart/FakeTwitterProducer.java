@@ -1,5 +1,6 @@
 package org.apache.flink.quickstart;
 
+import com.sun.org.apache.xpath.internal.functions.WrongNumberArgsException;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
@@ -53,7 +54,10 @@ public class FakeTwitterProducer extends KafkaProducer<String, String> {
 		));
 	}
 
-	public static void main(String[] argv) throws IOException {
+	public static void main(String[] argv) throws IOException, WrongNumberArgsException {
+		if (argv.length < 2) {
+			throw new WrongNumberArgsException("Arg 1 : rate\nArg 2 : kafka_address:9092");
+		}
 		int rate = Integer.parseInt(argv[0]);
 
 		/* Kafka properties */
