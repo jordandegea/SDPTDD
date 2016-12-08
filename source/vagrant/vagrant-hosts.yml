@@ -8,25 +8,37 @@ defaults:
     # Default options for hosts
     hosts: &host_defaults
         user: vagrant     # Default non-privileged user
+        cpus: 1           # Default number of CPUs for vagrant
+        memory: 512       # Default RAM amount (MB)
+# Known services definitions
+services:
+    - zookeeper
+    - kafka
+    - flink
+    - hbase
+    - zeppelin
 hosts:
     worker1:
         <<: *host_defaults
         key: .vagrant/machines/worker1/virtualbox/private_key
         ip: 10.20.1.100
         memory: 2048
-        cpus: 1
-        provision: # List of components to install on worker1
+        services: # List of services to enable/start on worker1
+            - zookeeper
+            - kafka
+        provisioning:
             before:
             after:
                 - hbase: "-m worker3"
-                - zeppelin:
+                # - zeppelin:
     worker2:
         <<: *host_defaults
         key: .vagrant/machines/worker2/virtualbox/private_key
         ip: 10.20.1.101
-        memory: 512
-        cpus: 1
-        provision: # List of components to install on worker2
+        services: # List of services to enable/start on worker2
+            - zookeeper
+            - kafka
+        provisioning:
             before:
             after:
                 - hbase: "-m worker3"
@@ -34,15 +46,17 @@ hosts:
         <<: *host_defaults
         key: .vagrant/machines/worker3/virtualbox/private_key
         ip: 10.20.1.102
-        memory: 512
-        cpus: 1
-        provision: # List of components to install on worker3
+        services: # List of services to enable/start on worker2
+            - zookeeper
+            - kafka
+        provisioning:
             before:
             after:
-                - hbase: "-M -m worker3 -s worker1 worker2"
+                - hbase: "-M -m worker3 -s 'worker1 worker2'"
 # List of provisioning steps, follows the same conventions as vagrant-hosts.yml
 provisioning:
     - hosts: $hostspec
+    - ssh:
     - apt:
     - java:
     - kafka: $hostspec
@@ -53,3 +67,6 @@ shared_args: -v
 # Shared code for provisioning scripts
 # Available as /vagrant/provisioning_shared.sh
 shared_script: ../install/provisioning_shared.sh
+source_folders:
+    - ../install
+    - .vagrant

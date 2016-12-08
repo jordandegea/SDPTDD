@@ -250,8 +250,9 @@ fi
 # Reload unit files
 systemctl daemon-reload
 
-# Only start/enable services if we are running on vagrant
-if (($ENABLE_VAGRANT)); then
-    systemctl enable zookeeper.service kafka.service
-    systemctl start zookeeper.service kafka.service
-fi
+
+# Due to a "Linux /etc/hosts" bug with distributed systems, it is necessary
+# to remove the "127.0.0.1<->workerX" definition from the "/etc/hosts" file.
+tail -n +2 /etc/hosts > tmp
+cat tmp > /etc/hosts
+rm -f tmp

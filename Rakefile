@@ -1,9 +1,22 @@
 require 'yaml'
 require 'sshkit'
 
-# Load hostfile
-config_source = ENV['RAKE_HOSTS'] || 'hosts.yml'
-config_file = File.expand_path(File.join('..', config_source), __FILE__)
+SSHKit.config.output_verbosity = Logger::DEBUG
+
+# Fetch the environment name
+environment = ENV['RAKE_ENV'] || 'development'
+
+# Compute the config name from this value
+$config_source = if environment == 'production'
+  'hosts.yml'
+elsif environment == 'development'
+  'source/vagrant/vagrant-hosts.yml'
+else
+  fail "Unknown RAKE_ENV '#{environment}'. Must be 'development' (vagrant) or 'production'."
+end
+
+# Load hostfile from config_source
+config_file = File.expand_path(File.join('..', $config_source), __FILE__)
 $conf = YAML.load_file(config_file)
 
 # Create SSHKit hosts
