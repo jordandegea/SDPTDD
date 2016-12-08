@@ -25,9 +25,7 @@ done
 # Create a working hostfile
 if (($ENABLE_VAGRANT)); then
     # Remove lines containing hostname
-    if grep "127.0.0.1\t$(hostname)\t$(hostname)" /etc/hosts 2>/dev/null ; then
-        sed -i "s/127.0.0.1\t$(hostname)\t$(hostname)//" /etc/hosts
-    fi
+    sed -i "s/127.0.0.1\t$(hostname)\t$(hostname)//" /etc/hosts
 
     # Ensure localhost is still defined
     if ! grep "127.0.0.1.*localhost" /etc/hosts 2>/dev/null ; then
