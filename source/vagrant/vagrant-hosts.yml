@@ -70,3 +70,4 @@ shared_script: ../install/provisioning_shared.sh
 source_folders:
     - ../install
     - .vagrant
+    - ../deploy

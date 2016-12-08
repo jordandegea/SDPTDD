@@ -58,6 +58,9 @@ task :deploy, [:server, :what] do |task, args|
     # Add host-specific source folders
     source_folders.concat(host_conf['source_folders']) if host_conf['source_folders']
 
+    previous = SSHKit.config.output_verbosity
+    SSHKit.config.output_verbosity = Logger::INFO
+
     # Push source folders to the deploy directory
     source_folders.each do |source_folder|
       folder = Pathname.new(File.expand_path(File.join('..', source_folder), $config_source))
@@ -75,6 +78,8 @@ task :deploy, [:server, :what] do |task, args|
         upload! file, destination_file
       end
     end
+
+    SSHKit.config.output_verbosity = previous
 
     # Change to the deploy directory
     within 'deploy' do
