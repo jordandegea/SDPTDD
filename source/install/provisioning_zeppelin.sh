@@ -33,8 +33,8 @@ if(($FORCE_INSTALL)) || ! [ -d $ZEPPELIN_INSTALL_DIR ]; then
 
 
 	echo "
-	export HBASE_HOME=/usr/lib/hbase
-	export HBASE_RUBY_SOURCES=/usr/lib/hbase/lib/ruby/
+	export HBASE_HOME=/usr/local/hbase
+	export HBASE_RUBY_SOURCES=/usr/local/hbase/lib/ruby/
 	" >> zeppelin/conf/zeppelin-env.sh
 
 
