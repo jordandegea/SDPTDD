@@ -16,7 +16,12 @@ HBASE_VERSION="1.0.3"
 HBASE_LOG_DIR="/var/log/hbase"
 HBASE_TGZ="hbase-$HBASE_VERSION-bin.tar.gz"
 HBASE_URL="http://wwwftp.ciril.fr/pub/apache/hbase/hbase-$HBASE_VERSION/$HBASE_TGZ"
-HBASE_HOME="/usr/lib/hbase"
+HBASE_HOME="/usr/local/hbase"
+
+HADOOP_VERSION="2.7.3"
+HADOOP_TGZ="hadoop-$HADOOP_VERSION.tar.gz"
+HADOOP_URL="http://apache.mediamirrors.org/hadoop/common/hadoop-$HADOOP_VERSION/$HADOOP_TGZ"
+HADOOP_HOME="/usr/local/hadoop"
 
 SERVICE_FILE="/etc/systemd/system/hbase.service"
 START_SCRIPT="$HBASE_HOME/bin/start-hbase.sh"
@@ -49,10 +54,18 @@ chown hbase:hbase -R ~hbase/.ssh
 # Get options
 MASTER=""
 SLAVES=""
-while getopts ":m:s:M" opt; do
+ALL_HOSTS=""
+IS_MASTER=0
+while getopts ":m:s:Mh:" opt; do
   case "$opt" in
     m)
       MASTER="$OPTARG"
+      ;;
+    M)
+      IS_MASTER=1
+      ;;
+    h)
+      ALL_HOSTS="$OPTARG"
       ;;
     s)
       SLAVES="$OPTARG"
@@ -72,6 +85,16 @@ if (($FORCE_INSTALL)) || ! [ -d $HADOOP_HOME ]; then
     
     rm -rf $HADOOP_HOME
     mv hadoop-$HADOOP_VERSION $HADOOP_HOME
+fi
+
+# Download HBase
+if (($FORCE_INSTALL)) || ! [ -d $HBASE_HOME ]; then
+    echo "HBase: Download"
+    get_file $HBASE_URL $HBASE_TGZ
+    tar xf $HBASE_TGZ
+
+    rm -rf $HBASE_HOME
+    mv hbase-$HBASE_VERSION $HBASE_HOME
 fi
 
 # Configure Hadoop
@@ -106,13 +129,19 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <configuration>
   <property>
     <name>fs.default.name</name>
-    <value>hdfs://$MASTER:9OOO</value>
+    <value>hdfs://$MASTER:9000</value>
   </property>
   <property>
     <name>hadoop.tmp.dir</name>
     <value>/home/hbase/hadoopdata/tmp</value>
   </property>
 </configuration>" > $HADOOP_HOME/etc/hadoop/core-site.xml
+
+# TODO: Configure HDFS
+# http://www.michael-noll.com/tutorials/running-hadoop-on-ubuntu-linux-multi-node-cluster/
+#  - Setup the HDFS master (on master)
+#  - Setup the HDFS slaves (on master)
+#  - Setup the HDFS systemd service (hdfs start/stop)
 
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>
@@ -124,17 +153,29 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 </configuration>" > $HADOOP_HOME/etc/hadoop/mapred-site.xml
 
 echo "export JAVA_HOME=$JAVA_HOME
-export HBASE_MANAGES_ZK=false
+export HBASE_MANAGE_ZK=false
+export HBASE_LOG_DIR=$HBASE_LOG_DIR
 " >> $HBASE_HOME/conf/hbase-env.sh
 
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <configuration>
   <property>
-    <name>hbase.zookeeper.property.dataDir</name>
-    <value>/tmp/zookeeper</value>
+    <name>hbase.rootdir</name>
+    <value>hdfs://$MASTER:9000/hbase</value>
+  </property>
+  <property>
+    <name>hbase.cluster.distributed</name>
+    <value>true</value>
   </property>
 </configuration>
 " > $HBASE_HOME/conf/hbase-site.xml
+
+# Create the regionservers file
+rm -f $HBASE_HOME/conf/regionservers
+echo "" >$HBASE_HOME/conf/regionservers
+for SRV in $ALL_HOSTS; do
+    echo "$SRV" >>$HBASE_HOME/conf/regionservers
+done
 
 echo "[Unit]
 Description=Apache HBase
@@ -145,7 +186,6 @@ After=network.target zookeeper.service
 Type=forking
 User=hbase
 Group=hbase
-Environment=HBASE_LOG_DIR=$HBASE_LOG_DIR
 Environment=HADOOP_HOME=$HADOOP_HOME
 Environment=HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop
 Environment=HADOOP_INSTALL=$HADOOP_HOME

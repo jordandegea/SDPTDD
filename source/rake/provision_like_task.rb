@@ -76,6 +76,10 @@ def declare_provision_like_task(task_name, task_desc, shared_args_param_name,
               provisioning_args.gsub!(/\$hostspec/, hostspec)
             end
 
+            if provisioning_args =~ /\$hoststring/
+              provisioning_args.gsub!(/\$hoststring/, "'#{$hosts.keys.join(' ')}'")
+            end
+
             # Get the full path to the current working directory
             cwd = capture(:pwd)
 

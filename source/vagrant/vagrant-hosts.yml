@@ -31,13 +31,13 @@ hosts:
             - zookeeper
             - kafka
             - flink
-            # - hbase
+            - hbase
             # - flink_paris
-            - flink_producer_fake
+            # - flink_producer_fake
         provisioning:
             before:
             after:
-                - hbase: "-m worker3"
+                - hbase: "-m worker3 -h $hoststring"
                 - zeppelin:
         configuring:
             before:
@@ -51,12 +51,12 @@ hosts:
             - zookeeper
             - kafka
             - flink
-            # - hbase
+            - hbase
             # - flink_london
         provisioning:
             before:
             after:
-                - hbase: "-m worker3"
+                - hbase: "-m worker3 -h $hoststring"
         configuring:
             before:
             after:
@@ -68,12 +68,12 @@ hosts:
             - zookeeper
             - kafka
             - flink
-            # - hbase
+            - hbase
             # - flink_nyc
         provisioning:
             before:
             after:
-                - hbase: "-M -m worker3 -s 'worker1 worker2'"
+                - hbase: "-M -m worker3 -h $hoststring"
         configuring:
             before:
             after:
