@@ -7,7 +7,7 @@ task :reboot, :server do |task, args|
   on hosts(args) do |host|
     begin
       sudo 'reboot'
-    rescue IOError
+    rescue IOError, Errno::ECONNRESET
       # success
     end
   end
