@@ -2,8 +2,13 @@ require 'sshkit'
 require 'sshkit/sudo'
 include SSHKit::DSL
 
-def enabled_services(hostname)
-  $conf['hosts'][hostname]['services']
+def enabled_services(hostname, args = nil)
+  filter = (args[:services] || '').split(';')
+  filter = $conf['hosts'][hostname]['services'] if filter.length == 0
+
+  $conf['services'].select { |service| 
+    $conf['hosts'][hostname]['services'].include? service and filter.include? service
+  }
 end
 
 def disabled_services(hostname)
@@ -48,65 +53,56 @@ namespace :services do
   end
 
   desc "Starts services according to service assignments in the host config file"
-  task :start, :server do |task, args|
+  task :start, [:server, :services] do |task, args|
     on hosts(args) do |host|
       # Get the hostname as defined in the config file
       hostname = host.properties.name
 
       # Start all enabled services
-      enabled_services(hostname).each do |service|
+      enabled_services(hostname, args).each do |service|
         sudo "systemctl", "start", "#{service}.service"
       end
     end
   end
 
   desc "Stops services according to service assignments in the host config file"
-  task :stop, :server do |task, args|
+  task :stop, [:server, :services] do |task, args|
     on hosts(args) do |host|
       # Get the hostname as defined in the config file
       hostname = host.properties.name
 
       # Stop all enabled services
-      enabled_services(hostname).reverse.each do |service|
-        sudo "systemctl", "stop", "#{service}.service"
+      enabled_services(hostname, args).reverse.each do |service|
+        begin
+          sudo "systemctl", "stop", "#{service}.service"
+        rescue => e
+          warn e
+        end
       end
     end
   end
 
   desc "Kills services according to service assignments in the host config file"
-  task :kill, :server do |task, args|
+  task :kill, [:server, :services] do |task, args|
     on hosts(args) do |host|
       # Get the hostname as defined in the config file
       hostname = host.properties.name
 
       # Stop all enabled services
-      enabled_services(hostname).reverse.each do |service|
+      enabled_services(hostname, args).reverse.each do |service|
         sudo "systemctl", "kill", "#{service}.service"
       end
     end
   end
 
-  desc "Restarts services according to service assignments in the host config file"
-  task :restart, :server do |task, args|
-    on hosts(args) do |host|
-      # Get the hostname as defined in the config file
-      hostname = host.properties.name
-
-      # Stop all enabled services
-      enabled_services(hostname).reverse.each do |service|
-        sudo "systemctl", "restart", "#{service}.service"
-      end
-    end
-  end
-
   desc "Prints the status of services according to service assignments in the host config file"
-  task :status, :server do |task, args|
+  task :status, [:server, :services] do |task, args|
     on hosts(args) do |host|
       # Get the hostname as defined in the config file
       hostname = host.properties.name
 
       # Stop all enabled services
-      enabled_services(hostname).each do |service|
+      enabled_services(hostname, args).each do |service|
         info capture("systemctl", "status", "#{service}.service")
       end
     end
