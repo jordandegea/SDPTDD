@@ -22,8 +22,8 @@ HBASE_URL="http://apache.mediamirrors.org/hbase/hbase-1.0.3/hbase-1.0.3-bin.tar.
 HBASE_HOME="/usr/lib/hbase"
 
 SERVICE_FILE="/etc/systemd/system/hbase.service"
-START_SCRIPT="/usr/local/bin/hstart"
-STOP_SCRIPT="/usr/local/bin/hstop"
+START_SCRIPT="$HBASE_HOME/bin/start-hbase.sh"
+STOP_SCRIPT="$HBASE_HOME/bin/stop-hbase.sh"
 
 # Create the hbase user if necessary
 if ! id -u hbase >/dev/null 2>&1; then
@@ -40,12 +40,32 @@ if ! [ -d $HBASE_LOG_DIR ]; then
 	chown hbase:hbase -R $HBASE_LOG_DIR
 fi
 
+# Deploy SSH config
+rm -rf ~/hbase/.ssh
+if (($ENABLE_VAGRANT)); then
+  cp -r ~vagrant/.ssh ~hbase/.ssh
+else
+  cp -r ~xnet/.ssh ~hbase/.ssh
+fi
+chown hbase:hbase -R ~hbase/.ssh
+
 # Download Hadoop
 if (($FORCE_INSTALL)) || ! [ -d $HADOOP_HOME ]; then
 	echo "Hadoop: Download"
 	get_file $HADOOP_URL $HADOOP_TGZ
-	tar -oxzf $HADOOP_TGZ -C /opt
+	tar xf $HADOOP_TGZ -C /opt
+	rm -rf $HADOOP_HOME
 	mv /opt/hadoop-2.5.2 $HADOOP_HOME
+fi
+
+# Download HBase
+if (($FORCE_INSTALL)) || ! [ -d $HBASE_HOME ]; then
+    echo "HBase: Download"
+    get_file $HBASE_URL $HBASE_TGZ
+    tar xf $HBASE_TGZ
+
+    rm -rf $HBASE_HOME
+    mv hbase-1.0.3 $HBASE_HOME
 fi
 
 # Configure Hadoop
@@ -74,30 +94,16 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 </configuration>" > $HADOOP_HOME/etc/hadoop/core-site.xml
 
 
-# Download HBase
-if (($FORCE_INSTALL)) || ! [ -d $HBASE_HOME ]
-then
-	echo "HBase: Download"
-	get_file $HBASE_URL $HBASE_TGZ
-	tar -oxzf $HBASE_TGZ -C .
-	rm $HBASE_TGZ
-	rm -rf $HBASE_HOME
-	mv hbase* $HBASE_HOME
-fi
-
 
 # Configure HBase
 echo "HBase: Configuration"
-cd $HBASE_HOME/conf
 
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>
 <configuration>
 <property>
 <name>hbase.cluster.distributed</name>
 <value>true</value>
 </property>
-</configuration>
 
 <property>
 <name>hbase.rootdir</name>
@@ -105,54 +111,51 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 </property>
 
 <property>
-<name>hbase.rootdir</name>
-<value>hdfs://localhost:8020/hbase</value>
-</property>
-
-<property>
 <name>hbase.zookeeper.quorum</name>
 <value>worker1,worker2,worker3</value>
 </property>
-" > hbase-site.xml
+</configuration>
+" > $HBASE_HOME/conf/hbase-site.xml
 
 echo "
 export JAVA_HOME=$JAVA_HOME
 export HBASE_MANAGES_ZK=false
-" >> hbase-env.sh
+export HBASE_LOG_DIR=$HBASE_LOG_DIR
+" >> $HBASE_HOME/conf/hbase-env.sh
 
 if (($FORCE_INSTALL)) || ! [ -f $START_SCRIPT ]; then
-	echo "
-	$HADOOP_HOME/bin/hdfs namenode -format
-	$HADOOP_HOME/sbin/start-dfs.sh
-	$HBASE_HOME/bin/start-hbase.sh
-	echo 'create \'test\', \'test\' | $HBASE_HOME/bin/hbase shell'" > $START_SCRIPT
+	echo "#!/bin/bash
+$HADOOP_HOME/sbin/start-dfs.sh
+$HBASE_HOME/bin/start-hbase.sh" > $START_SCRIPT
 	chmod +x $START_SCRIPT
 fi
 if (($FORCE_INSTALL)) || ! [ -f $STOP_SCRIPT ]; then
-	echo "$HBASE_HOME/bin/stop-hbase.sh
-	$HADOOP_HOME/sbin/stop-dfs.sh" > $STOP_SCRIPT
+	echo "#!/bin/bash
+$HBASE_HOME/bin/stop-hbase.sh
+$HADOOP_HOME/sbin/stop-dfs.sh" > $STOP_SCRIPT
 	chmod +x $STOP_SCRIPT
 fi
 
 # Create the hbase systemd service
 if (($FORCE_INSTALL)) || ! [ -f $SERVICE_FILE ]; then
 	echo "[Unit]
-	Description=Apache HBase
-	Requires=network.target
-	After=network.target
+Description=Apache HBase
+Requires=network.target
+After=network.target
 
-	[Service]
-	Type=forking
-	User=hbase
-	Group=hbase
-	Environment=LOG_DIR=$HBASE_LOG_DIR
-	ExecStart=$START_SCRIPT
-	ExecStop=$STOP_SCRIPT
-	Restart=on-failure
-	SyslogIdentifier=hbase
+[Service]
+Type=forking
+User=hbase
+Group=hbase
+Environment=LOG_DIR=$HBASE_LOG_DIR
+Environment=HBASE_LOG_DIR=$HBASE_LOG_DIR
+ExecStart=$START_SCRIPT
+ExecStop=$STOP_SCRIPT
+Restart=on-failure
+SyslogIdentifier=hbase
 
-	[Install]
-	WantedBy=multi-user.target" > $SERVICE_FILE
+[Install]
+WantedBy=multi-user.target" > $SERVICE_FILE
 fi
 
 # Reload unit files

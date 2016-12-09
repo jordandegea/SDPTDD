@@ -35,7 +35,8 @@ OPTIND="$PARSED_ARGUMENTS"
 # Detect what is the temporary directory
 RESOURCES_DIRECTORY='/tmp'
 if (($ENABLE_VAGRANT)); then
-  RESOURCES_DIRECTORY='/vagrant/resources'
+	RESOURCES_DIRECTORY="/vagrant/resources/$(hostname)"
+	mkdir -p $RESOURCES_DIRECTORY
 fi
 
 # Tools

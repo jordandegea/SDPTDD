@@ -11,6 +11,9 @@ def declare_provision_like_task(task_name, task_desc, shared_args_param_name,
       shared_args += ' -f'
     end
 
+    previous = SSHKit.config.output_verbosity
+    SSHKit.config.output_verbosity = Logger::INFO
+
     on hosts(args) do |host|
       # Create the working directory
       execute :mkdir, '-p', working_directory_name
@@ -23,9 +26,6 @@ def declare_provision_like_task(task_name, task_desc, shared_args_param_name,
 
       # Add host-specific source folders
       source_folders.concat(host_conf[source_folders_param_name]) if host_conf[source_folders_param_name]
-
-      previous = SSHKit.config.output_verbosity
-      SSHKit.config.output_verbosity = Logger::INFO
 
       # Push source folders to the working directory
       source_folders.each do |source_folder|
@@ -44,8 +44,13 @@ def declare_provision_like_task(task_name, task_desc, shared_args_param_name,
           upload! file, destination_file
         end
       end
+    end
 
-      SSHKit.config.output_verbosity = previous
+    SSHKit.config.output_verbosity = previous
+
+    on hosts(args) do |host|
+      # Host config node
+      host_conf = $conf['hosts'][host.properties.name]
 
       # Change to the working directory
       within working_directory_name do
@@ -69,6 +74,10 @@ def declare_provision_like_task(task_name, task_desc, shared_args_param_name,
               end.join(' ')
 
               provisioning_args.gsub!(/\$hostspec/, hostspec)
+            end
+
+            if provisioning_args =~ /\$hoststring/
+              provisioning_args.gsub!(/\$hoststring/, "'#{$hosts.keys.join(' ')}'")
             end
 
             # Get the full path to the current working directory
