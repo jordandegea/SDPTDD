@@ -100,3 +100,5 @@ source_folders:
     - ../deploy
 configure_folders:
     - ../configure
+run:
+    format_hdfs: /usr/local/hadoop/bin/hdfs namenode -format
