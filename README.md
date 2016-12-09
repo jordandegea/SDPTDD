@@ -1,7 +1,30 @@
 # SDPTDD
 Système distribué pour traitement de données.
 
+## Informations
 
+Environnement de déploiement : **Vagrant**
+
+Outil de deploiement : **Rake**
+
+## Pour commencer
+
+### Lancer en developpement local
+
+```bash
+./start_vagrant.sh
+export RAKE_ENV=development
+./deploy.sh
+```
+
+### Lancer en production
+
+Le document hosts.yml contient les informations de connexion aux machines de production. 
+
+```bash
+export RAKE_ENV=production
+./deploy.sh
+```
 
 
 ## Utilisation de Rake pour les tâches de maintenance
@@ -72,7 +95,17 @@ rake services:kill[,<service1>;<service2>]
 rake services:enable
 ```
 
-### Environnement de test Vagrant
+### Execution OneShot de commande
+
+```bash
+# Lancer la commande <commande> (défini dans le yaml config)
+rake run:<commande>[<server1>,<server2>]
+```
+
+
+
+
+## Environnement de test Vagrant
 
 Le dossier source/vagrant contient :
 
