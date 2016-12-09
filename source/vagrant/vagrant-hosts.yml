@@ -42,7 +42,7 @@ hosts:
         configuring:
             before:
             after:
-                - create_topics: "-f list_of_topics"
+                - create_topics: "-t paris -t london -t nyc"
     worker2:
         <<: *host_defaults
         key: .vagrant/machines/worker2/virtualbox/private_key
