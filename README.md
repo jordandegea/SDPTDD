@@ -3,6 +3,8 @@ Système distribué pour traitement de données.
 
 # Utilisation de Rake pour les tâches de maintenance
 
+## Installation
+
 ```bash
 # Installation de Bundler (once)
 gem install bundler
@@ -10,7 +12,11 @@ gem install bundler
 # Installation de Rake + SSHKit (once)
 # En cas d'incompatibilité avec Gemfile.lock sur le dépôt : bundle update
 bundle
+```
 
+## Environnement
+
+```bash
 # Utilisation de l'environnement de développement
 export RAKE_ENV=development
 # Ne pas oublier de démarrer les machines virtuelles pour l'environnement de développement
@@ -18,7 +24,10 @@ export RAKE_ENV=development
 
 # Utilisation de l'environnement de production
 export RAKE_ENV=production
+```
+## Deploiement
 
+```bash
 # Listing des tâches Rake avec leur description
 rake -T
 
@@ -30,7 +39,11 @@ rake deploy
 
 # Uniquement sur deux serveurs (définis dans hosts.yml)
 rake deploy[server-2;server-3]
+```
 
+## Services
+
+```bash
 # Démarrage des services
 rake services:start
 
@@ -42,6 +55,15 @@ rake services:stop
 
 # Kill des services
 rake services:kill
+
+# Kill tous les services de <server1> et <server2>
+rake services:kill[<server1>;<server2>]
+
+# Kill les services <service1> et <service2> de <server1> et <server2>
+rake services:kill[<server1>;<server2>,<service1>;<service2>]
+
+# Kill les services <service1> et <service2> sur tous les serveurs
+rake services:kill[,<service1>;<service2>]
 
 # Activation au démarrage (enable)
 rake services:enable
