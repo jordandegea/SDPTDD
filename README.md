@@ -1,9 +1,12 @@
 # SDPTDD
 Système distribué pour traitement de données.
 
-# Utilisation de Rake pour les tâches de maintenance
 
-## Installation
+
+
+## Utilisation de Rake pour les tâches de maintenance
+
+### Installation
 
 ```bash
 # Installation de Bundler (once)
@@ -14,7 +17,7 @@ gem install bundler
 bundle
 ```
 
-## Environnement
+### Environnement
 
 ```bash
 # Utilisation de l'environnement de développement
@@ -25,7 +28,7 @@ export RAKE_ENV=development
 # Utilisation de l'environnement de production
 export RAKE_ENV=production
 ```
-## Deploiement
+### Deploiement
 
 ```bash
 # Listing des tâches Rake avec leur description
@@ -41,7 +44,7 @@ rake deploy
 rake deploy[server-2;server-3]
 ```
 
-## Services
+### Services
 
 ```bash
 # Démarrage des services
@@ -69,7 +72,7 @@ rake services:kill[,<service1>;<service2>]
 rake services:enable
 ```
 
-## Environnement de test Vagrant
+### Environnement de test Vagrant
 
 Le dossier source/vagrant contient :
 
