@@ -21,6 +21,7 @@ services:
     - flink_london
     - flink_nyc
     - flink_producer_fake
+# Hosts definitions
 hosts:
     worker1:
         <<: *host_defaults
@@ -37,7 +38,6 @@ hosts:
         provisioning:
             before:
             after:
-                - hbase: "-m worker3 -h $hoststring"
                 - zeppelin:
         configuring:
             before:
@@ -56,7 +56,6 @@ hosts:
         provisioning:
             before:
             after:
-                - hbase: "-m worker3 -h $hoststring"
         configuring:
             before:
             after:
@@ -73,7 +72,6 @@ hosts:
         provisioning:
             before:
             after:
-                - hbase: "-M -m worker3 -h $hoststring"
         configuring:
             before:
             after:
@@ -85,6 +83,7 @@ provisioning:
     - java:
     - kafka: $hostspec
     - flink: -t paris -t london -t nyc
+    - hbase:
 configuring:
 # Shared arguments to apply to all provisioning scripts
 # SPEC: Use '-v' to indicate Vagrant provisioning

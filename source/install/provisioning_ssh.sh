@@ -4,11 +4,7 @@
 set -eo pipefail
 
 # Load the shared provisioning script
-if [ -f './provisioning_shared.sh' ]; then
-  source ./provisioning_shared.sh
-else
-  source /vagrant/provisioning_shared.sh
-fi
+source ./provisioning_shared.sh
 
 if (($ENABLE_VAGRANT)); then
     # Ensure directory is created
@@ -21,6 +17,9 @@ if (($ENABLE_VAGRANT)); then
 
     # Localhost config
     printf "Host localhost\n\tIdentityFile ~/.ssh/%s\n\n" "$(hostname)" >>~vagrant/.ssh/config
+
+    # 0.0.0.0 config
+    printf "Host 0.0.0.0\n\tIdentityFile ~/.ssh/%s\n\n" "$(hostname)" >>~vagrant/.ssh/config
 
     # We have the "machines" directory copied inside the current directory
     for MACHINE_DIR in $(ls machines); do
@@ -50,6 +49,9 @@ else
 
     # Localhost config
     printf "Host localhost\n\tIdentityFile ~/.ssh/xnet\n\n" >>~xnet/.ssh/config
+
+    # 0.0.0.0 config
+    printf "Host 0.0.0.0\n\tIdentityFile ~/.ssh/xnet\n\n" >>~xnet/.ssh/config
 
     # Copy the key to .ssh
     cp xnet xnet.pub ~xnet/.ssh/

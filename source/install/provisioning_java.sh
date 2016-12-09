@@ -1,11 +1,7 @@
 #!/bin/bash
 
 # Load the shared provisioning script
-if [ -f './provisioning_shared.sh' ]; then
-  source ./provisioning_shared.sh
-else
-  source /vagrant/provisioning_shared.sh
-fi
+source ./provisioning_shared.sh
 
 JAVA_VERSION=$(java -version 2>&1)
 if ! [[ "$JAVA_VERSION" =~ 1\.8 ]]; then

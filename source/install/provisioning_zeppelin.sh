@@ -4,11 +4,7 @@
 set -eo pipefail
 
 # Load the shared provisioning script
-if [ -f './provisioning_shared.sh' ]; then
-  source ./provisioning_shared.sh
-else
-  source /vagrant/provisioning_shared.sh
-fi
+source ./provisioning_shared.sh
 
 ZEPPELIN_VERSION=0.6.2
 ZEPPELIN_NAME=zeppelin-$ZEPPELIN_VERSION
@@ -33,8 +29,8 @@ if(($FORCE_INSTALL)) || ! [ -d $ZEPPELIN_INSTALL_DIR ]; then
 
 
 	echo "
-	export HBASE_HOME=/usr/lib/hbase
-	export HBASE_RUBY_SOURCES=/usr/lib/hbase/lib/ruby/
+	export HBASE_HOME=/usr/local/hbase
+	export HBASE_RUBY_SOURCES=/usr/local/hbase/lib/ruby/
 	" >> zeppelin/conf/zeppelin-env.sh
 
 
