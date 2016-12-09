@@ -4,11 +4,7 @@
 set -eo pipefail
 
 # Load the shared provisioning script
-if [ -f './provisioning_shared.sh' ]; then
-  source ./provisioning_shared.sh
-else
-  source /vagrant/provisioning_shared.sh
-fi
+source ./provisioning_shared.sh
 
 # Parsing the ID, specified as an argument, of the Zookeeper/Kafka
 # daemons inside the Kafka Cluster.
