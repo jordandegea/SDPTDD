@@ -223,7 +223,7 @@ under the License.
 							<transformers>
 								<!-- add Main-Class to manifest file -->
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>org.apache.flink.quickstart.SendToHbase</mainClass>
+									<mainClass>org.apache.flink.quickstart.KafkaHBaseBridge</mainClass>
 								</transformer>
 							</transformers>
 							<createDependencyReducedPom>false</createDependencyReducedPom>
@@ -240,7 +240,7 @@ under the License.
 				<configuration>
 					<archive>
 						<manifestEntries>
-							<Main-Class>org.apache.flink.quickstart.SendToHbase</Main-Class>
+							<Main-Class>org.apache.flink.quickstart.KafkaHBaseBridge</Main-Class>
 						</manifestEntries>
 					</archive>
 				</configuration>

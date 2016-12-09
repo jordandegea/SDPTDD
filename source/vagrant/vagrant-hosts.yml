@@ -33,8 +33,8 @@ hosts:
             - kafka
             - flink
             - hbase
-            # - flink_paris
-            # - flink_producer_fake
+            - flink_paris
+            - flink_producer_fake
         provisioning:
             before:
             after:
