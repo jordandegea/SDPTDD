@@ -13,7 +13,22 @@ fi
 ZEPPELIN_VERSION=0.6.2
 ZEPPELIN_NAME=zeppelin-$ZEPPELIN_VERSION
 ZEPPELIN_FILENAME=$ZEPPELIN_NAME-bin-all.tgz
-ZEPPELIN_INSTALL_DIR=/usr/local/zeppelin
+ZEPPELIN_INSTALL_DIR="/usr/local/zeppelin"
+ZEPPELIN_LOG_DIR="/usr/local/zeppelin/logs"
+
+
+SERVICE_FILE="/etc/systemd/system/zeppelin.service"
+START_SCRIPT="$ZEPPELIN_INSTALL_DIR/bin/zeppelin-daemon.sh start"
+STOP_SCRIPT="$ZEPPELIN_INSTALL_DIR/bin/zeppelin-daemon.sh stop"
+
+# Create the hbase user if necessary
+if ! id -u zeppelin >/dev/null 2>&1; then
+	echo "Zeppelin: creating user..." 1>&2
+	useradd -m -s /bin/bash zeppelin
+	sudo passwd -d zeppelin
+else
+	echo "Zeppelin: user already created." 1>&2
+fi
 
 if(($FORCE_INSTALL)) || ! [ -d $ZEPPELIN_INSTALL_DIR ]; then
 	# Download Zeppelin
@@ -44,3 +59,30 @@ if(($FORCE_INSTALL)) || ! [ -d $ZEPPELIN_INSTALL_DIR ]; then
 else
   echo "Zeppelin: already installed." 1>&2
 fi
+
+# Create the hbase systemd service
+if (($FORCE_INSTALL)) || ! [ -f $SERVICE_FILE ]; then
+	echo "[Unit]
+Description=Apache Zeppelin
+Requires=network.target
+After=network.target
+
+[Service]
+Type=forking
+User=zeppelin
+Group=zeppelin
+Environment=LOG_DIR=$ZEPPELIN_LOG_DIR
+Environment=HBASE_LOG_DIR=$ZEPPELIN_INSTALL_DIR
+ExecStart=$START_SCRIPT
+ExecStop=$STOP_SCRIPT
+Restart=on-failure
+SyslogIdentifier=zeppelin
+
+[Install]
+WantedBy=multi-user.target" > $SERVICE_FILE
+fi
+
+# Reload unit files
+# systemctl daemon-reload #temp removed
+
+/usr/local/zeppelin/bin/zeppelin-daemon.sh start # temporary (bypass service)
