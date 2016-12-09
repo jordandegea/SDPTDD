@@ -1,14 +1,20 @@
-# SDTD - "Twitter & Meteo"
+      _____ _____ _______ _____  
+     / ____|  __  \__   __|  __ \ 
+    | (___ | |  | |  | |  | |  | |
+     \___ \| |  | |  | |  | |  | |
+     ____) | |__| |  | |  | |__| |
+    |_____/|______/  |_|  |_____/ 
+
 Système distribué pour traitement de données.
 
 
-## Sujet
+# Sujet - "Twitter & Meteo"
 
 L'objectif de ce projet est d'estimer l'**humeur** des gens dans différentes régions suivant la **météo**. Nous récupérons des flux twitters sur différentes régions. Sur chaque tweet, nous attribuons une appréciation. Puis nous stockons chaque tweet traité et son appreciation dans la base. A intervalle régulier, nous enregistrons l'appréciation générale sur une période donnée dans dans la base. 
 
-## Composants
+# Composants
 
-### Kafka
+## Kafka
 
 >**Kafka** est un système de messagerie distribué. Il joue le rôle de *broker* pour des flux de données : des **producteurs** envoient des flux de données à Kafka, qui va les stocker et permettre à des **consommateurs** de traiter ces flux.
 
@@ -23,7 +29,7 @@ L'objectif de ce projet est d'estimer l'**humeur** des gens dans différentes r�
 >**Utilisé par :** Netflix, PayPal, Uber...
 
 
-### Flink
+## Flink
 
 >**Apache Flink** est un framework de traitement temps-réel. Il permet donc de traiter des données arrivant en temps-réel, plutôt que par *batch*, et donc d'avoir un temps de latence extrêmement court.
 
@@ -31,7 +37,7 @@ L'objectif de ce projet est d'estimer l'**humeur** des gens dans différentes r�
 
 >**Utilisé par :** Bouygues Telecom, Alibaba, Amadeus, ATOS...
 
-### HBase
+## HBase
 
 >HBase est une base de données distribuée non-relationnelle. Cette technologie permet de stocker de larges quantités de données, et est très efficace pour les applications ayant un haut débit de données.
 
@@ -42,7 +48,7 @@ L'objectif de ce projet est d'estimer l'**humeur** des gens dans différentes r�
 >**HBase** assure une cohérence stricte des écritures et lectures, c'est à dire qu'une lecture renvoie toujours le résultat de la dernière écriture effectuée.
 HBase gère de manière automatique la réplication au sein du cluster ainsi que le basculement en cas de panne.
 
-### Zeppelin
+## Zeppelin
 
 >**Zeppelin** fournit une interface web de visualisation de données. Son principal intérêt est d'être capable d'analyser et mettre en forme de grandes quantités de données, et de s'intégrer très bien aux autres technologies (faisant partie de l'écosystème Apache).
 
@@ -50,45 +56,45 @@ HBase gère de manière automatique la réplication au sein du cluster ainsi que
 
 >Zeppelin, en tant que simple outil de visualisation, ne garantit rien en termes de tolérance aux fautes. Cependant, Zeppelin intervient en bout de chaîne et son plantage n'a aucune incidence sur le fonctionnement du reste des composants du système. 
 
-## Architecture
+# Architecture
 
-#### Producer : Flink
+### Producer : Flink
 
 Le **Producer** s'inscrit sur un flux twitter pour récupérer les tweets sur les régions désirées. A chaque réception de tweets, le produceur distribue les tweets sur **Kafka**
 
-#### Distributeur : Kafka
+### Distributeur : Kafka
 
 Notre **Kafka** est découpé en ville, chaque *topic* correspond à une ville. Kafka stocke message par message les tweets pour chaque *topic*. 
 
-#### Traitement : Flink
+### Traitement : Flink
 
 Nos **Flink** de traitement sont découpés en ville. Il récupère message par message, les tweets de leur ville dans le 'topic' 
 associé dans **Kafka**. Il traite chaque tweet afin d'attribuer une appréciation au tweet et de calculer l'appréciation général. Ces **Flink** se chargent aussi de récupérer la météo pour sa ville. 
 
-#### Base de données : HBase
+### Base de données : HBase
 
 Nous stockons chaque tweet dans une table correspondant à sa ville. 
 Nous stockons les appréciations pour chaque ville dans une table différente. 
 
-#### Visualisation : Zeppelin
+### Visualisation : Zeppelin
 
 Nous visualisons nos données grâce à **Zeppelin**
 
-## Equipe
+# Equipe
 
     ABOUBACAR Salim     DE GEA Jordan           DUCLOT William      
     HEINISCH Pierre     PEREZ Joseph            RACHDI Imane    
     STOFFEL Mathieu     TAVERNIER Vincent       THIOLLIERE Guillaume
 
-## Informations
+# Informations
 
 Environnement de déploiement : **Vagrant**
 
 Outil de deploiement : **Rake**
 
-## Pour commencer
+# Pour commencer
 
-### Lancer en developpement local
+## Lancer en developpement local
 
 ```bash
 ./start_vagrant.sh
@@ -96,7 +102,7 @@ export RAKE_ENV=development
 ./deploy.sh
 ```
 
-### Lancer en production
+## Lancer en production
 
 Le document hosts.yml contient les informations de connexion aux machines de production. 
 
@@ -106,9 +112,9 @@ export RAKE_ENV=production
 ```
 
 
-## Utilisation de Rake pour les tâches de maintenance
+# Utilisation de Rake pour les tâches de maintenance
 
-### Installation
+## Installation
 
 ```bash
 # Installation de Bundler (once)
@@ -119,7 +125,7 @@ gem install bundler
 bundle
 ```
 
-### Environnement
+## Environnement
 
 ```bash
 # Utilisation de l'environnement de développement
@@ -130,7 +136,7 @@ export RAKE_ENV=development
 # Utilisation de l'environnement de production
 export RAKE_ENV=production
 ```
-### Deploiement
+## Deploiement
 
 ```bash
 # Listing des tâches Rake avec leur description
@@ -146,7 +152,7 @@ rake deploy
 rake deploy[server-2;server-3]
 ```
 
-### Services
+## Services
 
 ```bash
 # Démarrage des services
@@ -174,7 +180,7 @@ rake services:kill[,<service1>;<service2>]
 rake services:enable
 ```
 
-### Execution OneShot de commande
+## Execution OneShot de commande
 
 ```bash
 # Lancer la commande <commande> (défini dans le yaml config)
@@ -184,7 +190,7 @@ rake run:<commande>[<server1>,<server2>]
 
 
 
-## Environnement de test Vagrant
+# Environnement de test Vagrant
 
 Le dossier source/vagrant contient :
 
@@ -234,8 +240,8 @@ Si _vagrant-hostmanager_ est configuré correctement, les machines peuvent être
 Le réseau privé utilisé pour les machines Vagrant est 10.20.1.0/24. Par défaut l'adresse de la machine hôte est
 10.20.1.1.
 
-### Troubleshooting
+## Troubleshooting
 
-#### vagrant plugin install vagrant-hostmanager échoue
+### vagrant plugin install vagrant-hostmanager échoue
 
 sous debian il peut être nécessaire d'installer le paquet ruby-dev.
