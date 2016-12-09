@@ -45,12 +45,9 @@ if ! [ -d $FLINK_LOG_DIR ]; then
 fi
 
 # Create systemd unit for flink service
-# Create the zookeeper systemd service
-if (($FORCE_INSTALL)) || ! [ -f $FLINK_SERVICE_FILE ]; then
-  echo "Flink: installing Flink systemd unit..." 1>&2
+echo "Flink: installing Flink systemd unit..." 1>&2
 
-  # Install the unit file
-  echo "[Unit]
+echo "[Unit]
 Description=Apache Flink
 Requires=network.target
 After=network.target
@@ -67,9 +64,6 @@ SyslogIdentifier=flink
 
 [Install]
 WantedBy=multi-user.target" >$FLINK_SERVICE_FILE
-else
-  echo "Flink: Flink systemd unit already installed." 1>&2
-fi
 
 # Deploy jar
 cp KafkaHbaseBridge.jar /opt
@@ -98,7 +92,6 @@ User=flink
 Group=flink
 Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR
 ExecStart=$FLINK_INSTALL_DIR/bin/flink run /opt/KafkaHbaseBridge.jar --port 9000 --topic $TOPIC_NAME --bootstrap.servers localhost:9092 --zookeeper.connect localhost:2181 --group.id parisconsumer --hbasetable $TOPIC_NAME --hbasequorum worker1,worker2,worker3 --hbaseport 2181
-Restart=on-failure
 SyslogIdentifier=flink_$TOPIC_NAME
 
 [Install]
@@ -121,7 +114,6 @@ User=flink
 Group=flink
 Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR
 ExecStart=$FLINK_INSTALL_DIR/bin/flink run /opt/FakeTwitterProducer.jar 1 localhost:9092
-Restart=on-failure
 SyslogIdentifier=flink_producer_fake
 
 [Install]
