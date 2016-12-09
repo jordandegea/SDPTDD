@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
+import java.util.Random;
 
 /**
  * Created by willol on 08/12/16.
@@ -17,6 +18,7 @@ public class FakeTwitterProducer extends KafkaProducer<String, String> {
 	private int rate;
 	private double lastCheck;
 	private String fakeTweet;
+    private Random rnd = new Random();
 
 	public FakeTwitterProducer(Properties props, int rate) throws IOException {
 		super(props);
@@ -24,12 +26,13 @@ public class FakeTwitterProducer extends KafkaProducer<String, String> {
 		this.lastCheck = System.currentTimeMillis() / 1000.0;
 
 		/* read the fake tweet */
-		File file = new File("src/main/java/org/apache/flink/quickstart/fake_tweet.json");
+		File file = new File("fake_tweet.json");
 		FileInputStream fis = new FileInputStream(file);
 		byte[] data = new byte[(int) file.length()];
 		fis.read(data);
 		fis.close();
 		this.fakeTweet = new String(data, "UTF-8");
+        this.fakeTweet.replace('\n', ' ');
 	}
 
 	public String generateTweet() {
@@ -47,9 +50,21 @@ public class FakeTwitterProducer extends KafkaProducer<String, String> {
 		}
 	}
 
-	public void sendToKafka(String data) {
+	public void sendToKafka(String data){
+        String topic = "paris";
+        switch(rnd.nextInt(3)){
+            case 1:
+                topic = "london";
+                break;
+            case 2:
+                topic = "nyc";
+                break;
+            default:
+                break;
+        }
+
 		this.send(new ProducerRecord<String, String>(
-				"twitter",
+				topic,
 				data
 		));
 	}

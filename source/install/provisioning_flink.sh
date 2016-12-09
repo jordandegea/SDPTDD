@@ -6,25 +6,30 @@ set -eo pipefail
 # Load the shared provisioning script
 source ./provisioning_shared.sh
 
+# Parameters
+FLINK_LOG_DIR=/var/log/flink
+FLINK_SERVICE_FILE=/etc/systemd/system/flink.service
+FLINK_INSTALL_DIR=/usr/local/flink
+FLINK_CONF_FILE=${FLINK_INSTALL_DIR}/conf/flink-conf.yaml
+FLINK_BRIDGE_SERVICE_FILE=/etc/systemd/system/flinkbridge.service
+
+
+
 filename="flink-1.1.3"
-bindir="/opt/$filename/bin"
+bindir="${FLINK_INSTALL_DIR}/bin"
 
 function downloadFlink {
-	filename="$filename.tgz"
-	echo "Flink: downloading..."
-	get_file "http://apache.mirrors.ovh.net/ftp.apache.org/dist/flink/flink-1.1.3/flink-1.1.3-bin-hadoop1-scala_2.10.tgz" $filename
+  filename="$filename.tgz"
+  echo "Flink: downloading..."
+  get_file "http://apache.mirrors.ovh.net/ftp.apache.org/dist/flink/flink-1.1.3/flink-1.1.3-bin-hadoop1-scala_2.10.tgz" $filename
 }
 
 echo "Setting up Flink"
 
 downloadFlink
-tar -oxzf $filename -C /opt
+tar -oxzf $filename -C /usr/local
+mv /usr/local/$(basename "$filename" .tgz) ${FLINK_INSTALL_DIR}
 
-# Parameters
-FLINK_LOG_DIR=/var/log/flink
-FLINK_SERVICE_FILE=/etc/systemd/system/flink.service
-FLINK_INSTALL_DIR=/opt/$(basename "$filename" .tgz)
-FLINK_BRIDGE_SERVICE_FILE=/etc/systemd/system/flinkbridge.service
 
 # Create the flink user if necessary
 if ! id -u flink >/dev/null 2>&1; then
@@ -42,6 +47,18 @@ fi
 
 # Create systemd unit for flink service
 echo "Flink: installing Flink systemd unit..." 1>&2
+
+echo "
+jobmanager.rpc.address: localhost
+jobmanager.rpc.port: 6123
+jobmanager.heap.mb: 256
+taskmanager.heap.mb: 512
+taskmanager.numberOfTaskSlots: 4
+taskmanager.memory.preallocate: false
+parallelism.default: 4
+jobmanager.web.port: 8081
+" > ${FLINK_CONF_FILE}
+
 
 echo "[Unit]
 Description=Apache Flink
@@ -62,8 +79,10 @@ SyslogIdentifier=flink
 WantedBy=multi-user.target" >$FLINK_SERVICE_FILE
 
 # Deploy jar
-cp KafkaHbaseBridge.jar /opt
-cp FakeTwitterProducer.jar /opt
+cp KafkaHbaseBridge.jar ${FLINK_INSTALL_DIR}
+cp FakeTwitterProducer.jar ${FLINK_INSTALL_DIR}
+cp KafkaConsoleBridge.jar ${FLINK_INSTALL_DIR}
+cp fake_tweet.json ${FLINK_INSTALL_DIR}
 
 # Create systemd unit for flink service
 
@@ -75,6 +94,9 @@ while getopts ":t:" opt; do
         t)
             TOPIC_NAME="$OPTARG"
 
+# ExecStart=$FLINK_INSTALL_DIR/bin/flink run ${FLINK_INSTALL_DIR}/KafkaHbaseBridge.jar --port 9000 --topic $TOPIC_NAME --bootstrap.servers localhost:9092 --zookeeper.connect localhost:2181 --group.id parisconsumer --hbasetable $TOPIC_NAME --hbasequorum worker1,worker2,worker3 --hbaseport 2181
+
+
             # Install the unit file
             # TODO: Use -H
             echo "[Unit]
@@ -83,11 +105,11 @@ Requires=network.target flink.service hbase.service
 After=network.target flink.service hbase.service
 
 [Service]
-Type=oneshot
+Type=forking
 User=flink
 Group=flink
-Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR
-ExecStart=$FLINK_INSTALL_DIR/bin/flink run /opt/KafkaHbaseBridge.jar --port 9000 --topic $TOPIC_NAME --bootstrap.servers localhost:9092 --zookeeper.connect localhost:2181 --group.id parisconsumer --hbasetable $TOPIC_NAME --hbasequorum worker1,worker2,worker3 --hbaseport 2181
+Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR/$TOPIC_NAME
+ExecStart=/bin/bash -c 'nohup ${FLINK_INSTALL_DIR}/bin/flink run ${FLINK_INSTALL_DIR}/KafkaConsoleBridge.jar --port 9000 --topic $TOPIC_NAME --bootstrap.servers worker1:9092,worker2:9092,worker3:9092 --zookeeper.connect localhost:2181 --group.id parisconsumer --hbasetable $TOPIC_NAME --hbasequorum worker1,worker2,worker3 --hbaseport 2181 &'
 SyslogIdentifier=flink_$TOPIC_NAME
 
 [Install]
@@ -105,11 +127,12 @@ Requires=network.target flink.service hbase.service
 After=network.target flink.service hbase.service
 
 [Service]
-Type=oneshot
+Type=forking
 User=flink
 Group=flink
-Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR
-ExecStart=$FLINK_INSTALL_DIR/bin/flink run /opt/FakeTwitterProducer.jar 1 localhost:9092
+Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR/flink_producer_fake
+WorkingDirectory=${FLINK_INSTALL_DIR}
+ExecStart=/bin/bash -c 'nohup $FLINK_INSTALL_DIR/bin/flink run ${FLINK_INSTALL_DIR}/FakeTwitterProducer.jar 1 worker1:9092,worker2:9092,worker3:9092 &'
 SyslogIdentifier=flink_producer_fake
 
 [Install]
