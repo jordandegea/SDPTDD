@@ -1,5 +1,3 @@
 #/bin/sh
 
-rake deploy 
-rake services:start 
-rake configure
+rake deploy services:start configure
