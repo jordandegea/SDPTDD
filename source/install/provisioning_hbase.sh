@@ -4,11 +4,7 @@
 set -eo pipefail
 
 # Load the shared provisioning script
-if [ -f './provisioning_shared.sh' ]; then
-	source ./provisioning_shared.sh
-else
-	source /vagrant/provisioning_shared.sh
-fi
+source ./provisioning_shared.sh
 
 JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
@@ -50,13 +46,13 @@ fi
 chown hbase:hbase -R ~hbase/.ssh
 
 # Download Hadoop
-if (($FORCE_INSTALL)) || ! [ -d $HADOOP_HOME ]; then
-	echo "Hadoop: Download"
-	get_file $HADOOP_URL $HADOOP_TGZ
-	tar xf $HADOOP_TGZ -C /opt
-	rm -rf $HADOOP_HOME
-	mv /opt/hadoop-2.5.2 $HADOOP_HOME
-fi
+#if (($FORCE_INSTALL)) || ! [ -d $HADOOP_HOME ]; then
+#	echo "Hadoop: Download"
+#	get_file $HADOOP_URL $HADOOP_TGZ
+#	tar xf $HADOOP_TGZ -C /opt
+#	rm -rf $HADOOP_HOME
+#	mv /opt/hadoop-2.5.2 $HADOOP_HOME
+#fi
 
 # Download HBase
 if (($FORCE_INSTALL)) || ! [ -d $HBASE_HOME ]; then
@@ -69,29 +65,29 @@ if (($FORCE_INSTALL)) || ! [ -d $HBASE_HOME ]; then
 fi
 
 # Configure Hadoop
-echo "Hadoop: Configuration"
-
-echo "
-export JAVA_HOME=$JAVA_HOME
-" >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh
-
-echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>
-<configuration>
-<property>
-<name>dfs.replication</name>
-<value>1</value>
-</property>
-</configuration>" > $HADOOP_HOME/etc/hadoop/hdfs-site.xml
-
-echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>
-<configuration>
-<property>
-<name>fs.defaultFS</name>
-<value>hdfs://localhost:9000</value>
-</property>
-</configuration>" > $HADOOP_HOME/etc/hadoop/core-site.xml
+#echo "Hadoop: Configuration"
+#
+#echo "
+#export JAVA_HOME=$JAVA_HOME
+#" >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+#
+#echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+#<?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>
+#<configuration>
+#<property>
+#<name>dfs.replication</name>
+#<value>1</value>
+#</property>
+#</configuration>" > $HADOOP_HOME/etc/hadoop/hdfs-site.xml
+#
+#echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+#<?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>
+#<configuration>
+#<property>
+#<name>fs.defaultFS</name>
+#<value>hdfs://localhost:9000</value>
+#</property>
+#</configuration>" > $HADOOP_HOME/etc/hadoop/core-site.xml
 
 
 
@@ -101,38 +97,25 @@ echo "HBase: Configuration"
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <configuration>
 <property>
-<name>hbase.cluster.distributed</name>
-<value>true</value>
-</property>
-
-<property>
-<name>hbase.rootdir</name>
-<value>hdfs://localhost:9000/hbase</value>
-</property>
-
-<property>
-<name>hbase.zookeeper.quorum</name>
-<value>worker1,worker2,worker3</value>
+<name>hbase.zookeeper.property.clientPort</name>
+<value>10123</value>
 </property>
 </configuration>
 " > $HBASE_HOME/conf/hbase-site.xml
 
 echo "
 export JAVA_HOME=$JAVA_HOME
-export HBASE_MANAGES_ZK=false
 export HBASE_LOG_DIR=$HBASE_LOG_DIR
 " >> $HBASE_HOME/conf/hbase-env.sh
 
 if (($FORCE_INSTALL)) || ! [ -f $START_SCRIPT ]; then
 	echo "#!/bin/bash
-$HADOOP_HOME/sbin/start-dfs.sh
 $HBASE_HOME/bin/start-hbase.sh" > $START_SCRIPT
 	chmod +x $START_SCRIPT
 fi
 if (($FORCE_INSTALL)) || ! [ -f $STOP_SCRIPT ]; then
 	echo "#!/bin/bash
-$HBASE_HOME/bin/stop-hbase.sh
-$HADOOP_HOME/sbin/stop-dfs.sh" > $STOP_SCRIPT
+$HBASE_HOME/bin/stop-hbase.sh" > $STOP_SCRIPT
 	chmod +x $STOP_SCRIPT
 fi
 

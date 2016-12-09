@@ -4,11 +4,7 @@
 set -eo pipefail
 
 # Load the shared provisioning script
-if [ -f './provisioning_shared.sh' ]; then
-	source ./provisioning_shared.sh
-else
-	source /vagrant/provisioning_shared.sh
-fi
+source ./provisioning_shared.sh
 
 filename="flink-1.1.3"
 bindir="/opt/$filename/bin"
