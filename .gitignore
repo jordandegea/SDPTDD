@@ -13,3 +13,6 @@ hbase/
 kafka/
 source/hbase/
 
+
+flink-bin/*
+
