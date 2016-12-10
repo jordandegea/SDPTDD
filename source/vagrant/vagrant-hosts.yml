@@ -89,10 +89,6 @@ configuring:
 # SPEC: Use '-v' to indicate Vagrant provisioning
 shared_args: -v
 shared_configure_args: -v
-# Shared code for provisioning scripts
-# Available as /vagrant/provisioning_shared.sh
-shared_script: ../install/provisioning_shared.sh
-shared_configure_script: ../configure/configure_shared.sh
 source_folders:
     - ../install
     - .vagrant
