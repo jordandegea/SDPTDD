@@ -82,8 +82,8 @@ provisioning:
     - apt:
     - java:
     - kafka: $hostspec
-    - flink: -t paris -t london -t nyc
-    - hbase:
+    - flink: -t paris -t london -t nyc -q $hoststring
+    - hbase: -q $hoststring
 configuring:
 # Shared arguments to apply to all provisioning scripts
 # SPEC: Use '-v' to indicate Vagrant provisioning

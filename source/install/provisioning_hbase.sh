@@ -21,6 +21,16 @@ SERVICE_FILE="/etc/systemd/system/hbase.service"
 START_SCRIPT="$HBASE_HOME/bin/start-hbase.sh"
 STOP_SCRIPT="$HBASE_HOME/bin/stop-hbase.sh"
 
+# Read HBase quorum from args
+while getopts ":q:" opt; do
+    case "$opt" in
+        q)
+        HBASE_QUORUM=$(tr ' ' , <<<"$OPTARG")
+        ;;
+    esac
+done
+OPTIND=1
+
 # Create the hbase user if necessary
 if ! id -u hbase >/dev/null 2>&1; then
 	echo "HBase: creating user..." 1>&2
@@ -107,7 +117,7 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 
 <property>
 <name>hbase.zookeeper.quorum</name>
-<value>worker1,worker2,worker3</value>
+<value>$HBASE_QUORUM</value>
 </property>
 </configuration>
 " > $HBASE_HOME/conf/hbase-site.xml
