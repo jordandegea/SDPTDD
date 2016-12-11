@@ -7,7 +7,7 @@
 
 Système distribué pour traitement de données.
 
-[Précédent](README.md)
+[Précédent](../README.md)
 # Comportement
 
 Nous considérons 3 serveurs. Nous souhaitons garantir le fonctionnement du service en tolérant deux fautes. 

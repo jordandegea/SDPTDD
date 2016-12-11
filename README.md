@@ -19,15 +19,15 @@ L'objectif de ce projet est d'estimer l'**humeur** des gens dans diff√©rentes r√
     STOFFEL Mathieu     TAVERNIER Vincent       THIOLLIERE Guillaume
 
 
-# [Composants](COMPONENTS.md)
+# [Composants](./misc/COMPONENTS.md)
 
-# [Architecture](ARCHITECTURE.md)
+# [Architecture](./misc/ARCHITECTURE.md)
 
-# [Comportement](BEHAVIOR.md)
+# [Comportement](./misc/BEHAVIOR.md)
 
 # Configurations et Aides
 
-## [HBASE](misc/HBASE.md)
+## [HBASE](./misc/HBASE.md)
 
 # Informations
 
