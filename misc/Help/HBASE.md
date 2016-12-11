@@ -72,7 +72,3 @@ disable 'test'
 drop 'test'
 
 ```
-
-## Structure des tables
-
-Table **Feelings**

@@ -9,7 +9,7 @@ Système distribué pour traitement de données.
 
 [Précédent](../README.md)
 
-# Configuration & Aide HBASE
+# Configuration & Aide pour HBase
 
 ## [Pour commencer](Help/HBASE.md)
 
