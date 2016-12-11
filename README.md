@@ -25,7 +25,9 @@ L'objectif de ce projet est d'estimer l'**humeur** des gens dans diff√©rentes r√
 
 # [Comportement](BEHAVIOR.md)
 
+# Configurations et Aides
 
+## [HBASE](misd/HBASE.md)
 
 # Informations
 
