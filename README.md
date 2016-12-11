@@ -27,9 +27,15 @@ L'objectif de ce projet est d'estimer l'**humeur** des gens dans diff√©rentes r√
 
 # Configurations et Aides
 
-## [Hbase](./misc/HBASE.md)
+## [Flink en tant que Producer](./misc/FLINK_PRODUCER.md)
+
+## [Kafka](./misc/KAFKA.md)
 
 ## [Flink en tant que Traitement](./misc/FLINK_PROCESS.md)
+
+## [HBase](./misc/HBASE.md)
+
+## [Zeppelin](./misc/ZEPPELIN.md)
 
 # Informations
 
