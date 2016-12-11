@@ -90,9 +90,9 @@ configuring:
 shared_args: -v
 shared_configure_args: -v
 source_folders:
-    - ../install
+    - ../source/provision
     - .vagrant
-    - ../deploy
+    - ../source/provision/files
 configure_folders:
     - ../configure
 run:

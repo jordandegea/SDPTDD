@@ -1,5 +1,5 @@
 #/bin/sh
 
-cd source/vagrant/
+cd vagrant/
 vagrant destroy -f
 vagrant up

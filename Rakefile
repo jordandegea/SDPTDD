@@ -10,7 +10,7 @@ environment = ENV['RAKE_ENV'] || 'development'
 $config_source = if environment == 'production'
   'hosts.yml'
 elsif environment == 'development'
-  'source/vagrant/vagrant-hosts.yml'
+  'vagrant/vagrant-hosts.yml'
 else
   fail "Unknown RAKE_ENV '#{environment}'. Must be 'development' (vagrant) or 'production'."
 end
