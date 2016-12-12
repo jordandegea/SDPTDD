@@ -92,7 +92,6 @@ shared_configure_args: -v
 source_folders:
     - ../source/provision
     - .vagrant
-    - ../source/provision/files
 configure_folders:
     - ../configure
 run:

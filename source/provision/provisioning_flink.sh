@@ -87,10 +87,10 @@ SyslogIdentifier=flink
 WantedBy=multi-user.target" >$FLINK_SERVICE_FILE
 
 # Deploy jar
-cp KafkaHbaseBridge.jar ${FLINK_INSTALL_DIR}
-cp FakeTwitterProducer.jar ${FLINK_INSTALL_DIR}
-cp KafkaConsoleBridge.jar ${FLINK_INSTALL_DIR}
-cp fake_tweet.json ${FLINK_INSTALL_DIR}
+cp files/KafkaHbaseBridge.jar ${FLINK_INSTALL_DIR}
+cp files/FakeTwitterProducer.jar ${FLINK_INSTALL_DIR}
+cp files/KafkaConsoleBridge.jar ${FLINK_INSTALL_DIR}
+cp files/fake_tweet.json ${FLINK_INSTALL_DIR}
 
 # Create systemd unit for flink service
 
