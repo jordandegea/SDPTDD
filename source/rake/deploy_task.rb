@@ -5,13 +5,13 @@ include SSHKit::DSL
 
 # Transfers files from the local host to all the hosts defined in the environment, from the source folders config
 # to the working directory for this deployment task.
-def file_transfer_bootstrap(args, source_folders_param, working_directory)
+def file_transfer_bootstrap(args, source_folders_param, working_directory, deploy_root)
   previous = SSHKit.config.output_verbosity
   SSHKit.config.output_verbosity = Logger::INFO
 
   on hosts(args) do |host|
     # Create the working directory
-    host_transfer(host, source_folders_param, working_directory)
+    host_transfer(host, source_folders_param, working_directory, deploy_root)
   end
 
   SSHKit.config.output_verbosity = previous
@@ -19,14 +19,14 @@ end
 
 # An utility methods that tranfers the files from the source folders to a single host, in the working directory for the
 # current deploy task.
-def host_transfer(host, source_folders_param, working_directory)
+def host_transfer(host, source_folders_param, working_directory, deploy_root)
   execute :mkdir, '-p', working_directory
 
   # Host config node
   host_conf = $conf['hosts'][host.properties.name]
 
   # Source folders for file deployment
-  source_folders = $conf[source_folders_param].dup
+  source_folders = deploy_root[source_folders_param].dup
 
   # Add host-specific source folders
   source_folders.concat(host_conf[source_folders_param]) if host_conf[source_folders_param]
@@ -56,7 +56,7 @@ end
 # This method assumes that the bootstrap step has been performed, allowing SSH access from any host to any other host.
 # It uses that assumption to upload all the files to one host, and then pull the uploaded files from all other hosts.
 # This strategy minimizes the required upstream bandwidth.
-def file_transfer_tree(args, source_folders_param, working_directory)
+def file_transfer_tree(args, source_folders_param, working_directory, deploy_root)
   previous = SSHKit.config.output_verbosity
   SSHKit.config.output_verbosity = Logger::INFO
 
@@ -69,7 +69,7 @@ def file_transfer_tree(args, source_folders_param, working_directory)
 
   # Upload all the files to this host
   on root_host do |host|
-    host_transfer(host, source_folders_param, working_directory)
+    host_transfer(host, source_folders_param, working_directory, deploy_root)
   end
 
   # Then, from all other hosts, use SFTP to pull from the root host
@@ -95,20 +95,27 @@ def substitute_args!(provisioning_args)
   end
 end
 
-def declare_provision_like_task(
+def declare_deploy_task(
   task_name,
   task_desc,
-  shared_args_param,
   source_folders_param,
-  param_name,
   opts = {})
 
   # Name of the working directory for the deploy procedure
   working_directory_name = task_name.id2name
 
+  # Name of the main parameter in config files
+  param_name = task_name.id2name
+
+  # Name of the shared args parameter
+  shared_args_param = "shared_args"
+
+  # Root key for deploy tasks
+  deploy_root = $conf['deploy'] || {}
+
   desc task_desc
   task task_name, [:server, :what] do |task, args|
-    shared_args = $conf[shared_args_param] || ''
+    shared_args = deploy_root[shared_args_param] || ''
 
     # Use "FORCE_PROVISION=yes vagrant provision" to re-run provisioning scripts
     # and reinstall everything
@@ -117,9 +124,9 @@ def declare_provision_like_task(
     end
 
     if opts[:bootstrap]
-      file_transfer_bootstrap(args, source_folders_param, working_directory_name)
+      file_transfer_bootstrap(args, source_folders_param, working_directory_name, deploy_root)
     else
-      file_transfer_tree(args, source_folders_param, working_directory_name)
+      file_transfer_tree(args, source_folders_param, working_directory_name, deploy_root)
     end
 
     on hosts(args) do |host|
@@ -128,9 +135,10 @@ def declare_provision_like_task(
 
       # Change to the working directory
       within working_directory_name do
-        steps = (host_conf[param_name]['before'] || []).dup
-        steps.concat($conf[param_name] || [])
-        steps.concat(host_conf[param_name]['after'] || [])
+        host_conf_node = host_conf[param_name] || {}
+        steps = (host_conf_node['before'] || []).dup
+        steps.concat(deploy_root[param_name] || [])
+        steps.concat(host_conf_node['after'] || [])
 
         steps.each do |p|
           # Provisioning script name and args

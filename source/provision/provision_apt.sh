@@ -4,7 +4,7 @@
 set -eo pipefail
 
 # Load the shared provisioning script
-source ./provisioning_shared.sh
+source ./provision_shared.sh
 
 # Setup local package cache
 # Source: https://superuser.com/questions/303621/local-cache-for-apt-packages

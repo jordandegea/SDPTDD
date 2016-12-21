@@ -2,8 +2,7 @@
 # Define the workers in the Vagrant testing environment
 # Each entry defines the hostname of the machine
 #
-# Components to be provisioned are defined as ../install/provisioning_component.sh
-# Order is significant
+# Default config options, referenced using YAML syntax
 defaults:
     # Default options for hosts
     hosts: &host_defaults
@@ -21,6 +20,31 @@ services:
     - flink_london
     - flink_nyc
     - flink_producer_fake
+# Deployment specifications
+deploy:
+    # Shared arguments to apply to all provision scripts
+    # SPEC: Use '-v' to indicate Vagrant provision
+    shared_args: -v
+    # List of provisioning steps.
+    provision:
+        - hosts: $hostspec
+        - ssh:
+        - apt:
+        - java:
+        - kafka: $hostspec
+        - flink: -t paris -t london -t nyc -q $hoststring
+        - hbase: -q $hoststring
+    # List of source folders to include in the ~/deploy directory when provision
+    # Note that the *contents* of mentioned directories are copied in the deploy
+    # directory
+    source_folders:
+        - ../source/provision
+        - .vagrant
+    configure_folders:
+        - ../configure
+# One-shot run command specifications
+run:
+    format_hdfs: /usr/local/hadoop/bin/hdfs namenode -format
 # Hosts definitions
 hosts:
     worker1:
@@ -35,12 +59,10 @@ hosts:
             - hbase
             - flink_paris
             - flink_producer_fake
-        provisioning:
-            before:
+        provision:
             after:
                 - zeppelin:
-        configuring:
-            before:
+        configure:
             after:
                 - create_topics: "-t paris -t london -t nyc"
     worker2:
@@ -53,12 +75,6 @@ hosts:
             - flink
             - hbase
             # - flink_london
-        provisioning:
-            before:
-            after:
-        configuring:
-            before:
-            after:
     worker3:
         <<: *host_defaults
         key: .vagrant/machines/worker3/virtualbox/private_key
@@ -69,30 +85,3 @@ hosts:
             - flink
             - hbase
             # - flink_nyc
-        provisioning:
-            before:
-            after:
-        configuring:
-            before:
-            after:
-# List of provisioning steps, follows the same conventions as vagrant-hosts.yml
-provisioning:
-    - hosts: $hostspec
-    - ssh:
-    - apt:
-    - java:
-    - kafka: $hostspec
-    - flink: -t paris -t london -t nyc -q $hoststring
-    - hbase: -q $hoststring
-configuring:
-# Shared arguments to apply to all provisioning scripts
-# SPEC: Use '-v' to indicate Vagrant provisioning
-shared_args: -v
-shared_configure_args: -v
-source_folders:
-    - ../source/provision
-    - .vagrant
-configure_folders:
-    - ../configure
-run:
-    format_hdfs: /usr/local/hadoop/bin/hdfs namenode -format

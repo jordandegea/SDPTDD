@@ -1,8 +1,19 @@
-require_relative './provision_like_task.rb'
+require_relative './deploy_task.rb'
 
-declare_provision_like_task(:deploy,
-                            "Deploys everything to every server",
-                            "shared_args",
-                            "source_folders",
-                            "provisioning",
-                            bootstrap: true)
+namespace :deploy do
+  declare_deploy_task(:provision,
+                      "Deploys everything to every server",
+                      "source_folders",
+                      bootstrap: true)
+
+  declare_deploy_task(:configure,
+                      "Configures every server",
+                      "configure_folders",
+                      bootstrap: true)
+end
+
+desc "Deploys everything to every server"
+task :deploy => 'deploy:provision'
+
+desc "Configures every server"
+task :configure => 'deploy:configure'
