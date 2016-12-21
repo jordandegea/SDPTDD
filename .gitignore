@@ -17,3 +17,4 @@ source/hbase/
 flink-bin/*
 
 Gemfile.lock
+.idea/
