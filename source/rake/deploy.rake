@@ -2,7 +2,8 @@ require_relative './deploy_task.rb'
 
 namespace :deploy do
   declare_deploy_task(:bootstrap, "Prepares the cluster for distributed deployment",
-                      bootstrap: true)
+                      bootstrap: true,
+                      quiet: true)
 
   declare_deploy_task(:provision, "Deploys everything to every server",
                       dependencies: ['deploy:bootstrap'])
