@@ -24,7 +24,7 @@ namespace :deploy do
                       dependencies: %w(deploy:bootstrap))
 
   desc "Performs a full deploy"
-  task :full, [:server, :what] => %w(deploy:system deploy:software deploy:code deploy:settings)
+  task :full, [:server, :what] => %w(deploy:system deploy:software deploy:settings deploy:code)
 
   desc "Performs a full user deploy"
   task :soft, [:server, :what] => %w(deploy:software deploy:code deploy:settings)
