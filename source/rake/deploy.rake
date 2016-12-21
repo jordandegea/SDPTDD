@@ -22,10 +22,22 @@ namespace :deploy do
 
   declare_deploy_task(:configure, "Configures every server",
                       dependencies: %w(deploy:bootstrap))
+
+  desc "Performs a full deploy"
+  task :full, [:server, :what] => %w(deploy:system deploy:software deploy:code deploy:settings)
+
+  desc "Performs a full user deploy"
+  task :soft, [:server, :what] => %w(deploy:software deploy:code deploy:settings)
+
+  desc "Performs a user deploy"
+  task :user, [:server, :what] => %w(deploy:code deploy:settings)
+
+  desc "Performs a fast deploy"
+  task :fast, [:server, :what] => %w(deploy:settings)
 end
 
 desc "Deploys everything to every server"
-task :deploy, [:server, :what] => %w(deploy:system deploy:software deploy:code deploy:settings)
+task :deploy, [:server, :what] => 'deploy:full'
 
 desc "Configures every server"
 task :configure, [:server, :what] => 'deploy:configure'
