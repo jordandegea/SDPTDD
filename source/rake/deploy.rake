@@ -9,16 +9,19 @@ namespace :deploy do
                       bootstrap: true)
 
   declare_deploy_task(:software, "Installs core software",
-                      dependencies: ['deploy:bootstrap'])
+                      dependencies: %w(deploy:bootstrap),
+                      weak_dependencies: %w(deploy:system))
 
   declare_deploy_task(:settings, "Configures core software",
-                      dependencies: ['deploy:bootstrap'])
+                      dependencies: %w(deploy:bootstrap),
+                      weak_dependencies: %w(deploy:system deploy:software))
 
   declare_deploy_task(:code, "Installs application code",
-                      dependencies: ['deploy:bootstrap'])
+                      dependencies: %w(deploy:bootstrap),
+                      weak_dependencies: %w(deploy:system deploy:software deploy:settings))
 
   declare_deploy_task(:configure, "Configures every server",
-                      dependencies: ['deploy:bootstrap'])
+                      dependencies: %w(deploy:bootstrap))
 end
 
 desc "Deploys everything to every server"

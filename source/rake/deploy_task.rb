@@ -133,8 +133,23 @@ def declare_deploy_task(
       end
     end
 
+    warned_user = false
+    mtx = Mutex.new
+
     with_log_level(if opts[:quiet] then Logger::WARN else Logger::DEBUG end) do
       on hosts(args) do |host|
+        mtx.synchronize do
+          if opts[:weak_dependencies]
+            unless warned_user
+              needed_tasks = opts[:weak_dependencies].select { |task| not Rake::Task[task].already_invoked }.to_a
+              if needed_tasks.length > 0
+                warn "make sure you already ran the following deployment tasks: #{needed_tasks.join(', ')}"
+              end
+              warned_user = true
+            end
+          end
+        end
+
         # Host config node
         host_conf = $conf['hosts'][host.properties.name]
 
