@@ -1,14 +1,10 @@
 require_relative './deploy_task.rb'
 
 namespace :deploy do
-  declare_deploy_task(:provision,
-                      "Deploys everything to every server",
-                      "source_folders",
+  declare_deploy_task(:provision, "Deploys everything to every server",
                       bootstrap: true)
 
-  declare_deploy_task(:configure,
-                      "Configures every server",
-                      "configure_folders",
+  declare_deploy_task(:configure, "Configures every server",
                       bootstrap: true)
 end
 

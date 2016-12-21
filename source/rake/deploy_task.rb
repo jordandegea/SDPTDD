@@ -98,7 +98,6 @@ end
 def declare_deploy_task(
   task_name,
   task_desc,
-  source_folders_param,
   opts = {})
 
   # Name of the working directory for the deploy procedure
@@ -109,6 +108,9 @@ def declare_deploy_task(
 
   # Name of the shared args parameter
   shared_args_param = "shared_args"
+
+  # Name of the source folders parameter
+  source_folders_param = "#{task_name.id2name}_folders"
 
   # Root key for deploy tasks
   deploy_root = $conf['deploy'] || {}
