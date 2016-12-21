@@ -6,7 +6,7 @@ def enabled_services(hostname, args = nil)
   filter = (args[:services] || '').split(';')
   filter = $conf['hosts'][hostname]['services'] if filter.length == 0
 
-  $conf['services'].select { |service| 
+  $conf['services'].select { |service|
     $conf['hosts'][hostname]['services'].include? service and filter.include? service
   }
 end
@@ -90,12 +90,12 @@ namespace :services do
 
       # Stop all enabled services
       enabled_services(hostname, args).reverse.each do |service|
-	begin
+        begin
           sudo "systemctl", "kill", "#{service}.service"
         rescue => e
           warn e
         end
-     end
+      end
     end
   end
 
