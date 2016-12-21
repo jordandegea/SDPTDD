@@ -35,9 +35,9 @@ function downloadFlink {
 echo "Setting up Flink"
 
 downloadFlink
-tar -oxzf $filename -C /usr/local
+tar -xzf $filename -C /usr/local
+rm -rf $FLINK_INSTALL_DIR
 mv /usr/local/$(basename "$filename" .tgz) ${FLINK_INSTALL_DIR}
-
 
 # Create the flink user if necessary
 if ! id -u flink >/dev/null 2>&1; then
