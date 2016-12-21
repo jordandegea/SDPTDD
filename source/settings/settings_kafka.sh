@@ -6,6 +6,9 @@ set -eo pipefail
 # Load the shared provisioning script
 source ./deploy_shared.sh
 
+# Kafka parameters
+source ./kafka_shared.sh
+
 # Parsing the ID, specified as an argument, of the Zookeeper/Kafka
 # daemons inside the Kafka Cluster.
 SERVER_ID=$(hostname | tr -d 'a-z\-')
@@ -42,65 +45,6 @@ if [[ $SERVER_ID -eq 0 ]]; then
   COLOR_END='\033[0m'
   echo -e "${COLOR_BLUE}[WARNING]${COLOR_END} A unique positive ID \
 should be precised thanks to the option '-i'."
-fi
-
-# Installation parameters
-KAFKA_VERSION=0.10.1.0
-KAFKA_NAME=kafka_2.11-$KAFKA_VERSION
-KAFKA_FILENAME=$KAFKA_NAME.tgz
-KAFKA_INSTALL_DIR=/usr/local/kafka
-KAFKA_CHECKSUM=45c7d032324e16c2e19a7d904a4d65c6
-
-KAFKA_SERVICE_FILE=/etc/systemd/system/kafka.service
-
-ZOOKEEPER_SERVICE_FILE=/etc/systemd/system/zookeeper.service
-
-LOG4J_PATH=$KAFKA_INSTALL_DIR/config/log4j.properties
-
-KAFKA_LOG_DIR=/var/log/kafka
-ZOOKEEPER_LOG_DIR=/var/log/zookeeper
-
-# Configuration parameters.
-ZOOKEEPER_CONFIG_FILE="${KAFKA_INSTALL_DIR}/config/zookeeper.properties"
-ZOOKEEPER_DATA_DIR="/tmp/zookeeper"
-ZOOKEEPER_ID_FILE="${ZOOKEEPER_DATA_DIR}/myid"
-
-KAFKA_CONFIG_FILE="${KAFKA_INSTALL_DIR}/config/server.properties"
-
-# Install Kafka
-if (($FORCE_INSTALL)) || ! [ -d $KAFKA_INSTALL_DIR ]; then
-  # Download Kafka
-  echo "Kafka: downloading..." 1>&2
-
-  get_file "http://apache.mindstudios.com/kafka/$KAFKA_VERSION/$KAFKA_FILENAME" $KAFKA_FILENAME
-
-  # Check download integrity
-  echo "$KAFKA_CHECKSUM *$KAFKA_FILENAME" >$KAFKA_FILENAME.md5
-  md5sum -c $KAFKA_FILENAME.md5
-
-  # Extract archive
-  echo "Kafka: installing..." 1>&2
-  tar xf $KAFKA_FILENAME
-
-  # Remove the windows scripts from bin
-  rm -rf $KAFKA_NAME/bin/windows
-
-  # Install to the chosen location
-  rm -rf $KAFKA_INSTALL_DIR
-  mv $KAFKA_NAME $KAFKA_INSTALL_DIR
-
-  # Symlink all files to /usr/local/bin
-  for BINARY in $KAFKA_INSTALL_DIR/bin/*; do
-    FN=/usr/local/bin/$(basename "$BINARY" .sh)
-    echo "#!/bin/bash
-$BINARY \"\$@\"" >"$FN"
-    chmod +x "$FN"
-  done
-
-  # Cleanup
-  rm -f $KAFKA_FILENAME $KAFKA_FILENAME.md5
-else
-  echo "Kafka: already installed." 1>&2
 fi
 
 # Create the kafka user if necessary

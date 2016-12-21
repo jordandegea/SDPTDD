@@ -6,20 +6,8 @@ set -eo pipefail
 # Load the shared provisioning script
 source ./deploy_shared.sh
 
-JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
-
-HADOOP_TGZ="hadoop-2.5.2.tar.gz"
-HADOOP_URL="http://apache.mindstudios.com/hadoop/common/hadoop-2.5.2/hadoop-2.5.2.tar.gz"
-HADOOP_HOME="/usr/local/hadoop"
-
-HBASE_LOG_DIR="/var/log/hbase"
-HBASE_TGZ="hbase-1.0.3.tar.gz"
-HBASE_URL="http://apache.mediamirrors.org/hbase/hbase-1.0.3/hbase-1.0.3-bin.tar.gz"
-HBASE_HOME="/usr/local/hbase"
-
-SERVICE_FILE="/etc/systemd/system/hbase.service"
-START_SCRIPT="$HBASE_HOME/bin/start-hbase.sh"
-STOP_SCRIPT="$HBASE_HOME/bin/stop-hbase.sh"
+# HBase parameters
+source ./hbase_shared.sh
 
 # Read HBase quorum from args
 while getopts ":q:" opt; do
@@ -31,19 +19,22 @@ while getopts ":q:" opt; do
 done
 OPTIND=1
 
+# Configure Hadoop
+echo "Hadoop: Configuration"
+
 # Create the hbase user if necessary
 if ! id -u hbase >/dev/null 2>&1; then
-	echo "HBase: creating user..." 1>&2
-	useradd -m -s /bin/bash hbase
-	sudo passwd -d hbase
+  echo "HBase: creating user..." 1>&2
+  useradd -m -s /bin/bash hbase
+  sudo passwd -d hbase
 else
-	echo "HBase: user already created." 1>&2
+  echo "HBase: user already created." 1>&2
 fi
 
 # Check the log path for hbase
 if ! [ -d $HBASE_LOG_DIR ]; then
-	mkdir -p $HBASE_LOG_DIR
-	chown hbase:hbase -R $HBASE_LOG_DIR
+  mkdir -p $HBASE_LOG_DIR
+  chown hbase:hbase -R $HBASE_LOG_DIR
 fi
 
 # Deploy SSH config
@@ -54,27 +45,6 @@ else
   cp -r ~xnet/.ssh ~hbase/.ssh
 fi
 chown hbase:hbase -R ~hbase/.ssh
-
-# Download Hadoop
-if (($FORCE_INSTALL)) || ! [ -d $HADOOP_HOME ]; then
-	echo "Hadoop: Download"
-	get_file $HADOOP_URL $HADOOP_TGZ
-	tar xf $HADOOP_TGZ
-	rm -rf $HADOOP_HOME
-	mv hadoop-2.5.2 $HADOOP_HOME
-fi
-
-# Download HBase
-if (($FORCE_INSTALL)) || ! [ -d $HBASE_HOME ]; then
-    echo "HBase: Download"
-    get_file $HBASE_URL $HBASE_TGZ
-    tar xf $HBASE_TGZ
-    rm -rf $HBASE_HOME
-    mv hbase-1.0.3 $HBASE_HOME
-fi
-
-# Configure Hadoop
-echo "Hadoop: Configuration"
 
 echo "
 export JAVA_HOME=$JAVA_HOME
@@ -97,7 +67,6 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <value>hdfs://localhost:9000</value>
 </property>
 </configuration>" > $HADOOP_HOME/etc/hadoop/core-site.xml
-
 
 
 # Configure HBase
@@ -129,22 +98,22 @@ export HBASE_LOG_DIR=$HBASE_LOG_DIR
 " >> $HBASE_HOME/conf/hbase-env.sh
 
 if (($FORCE_INSTALL)) || ! [ -f $START_SCRIPT ]; then
-	echo "#!/bin/bash
+  echo "#!/bin/bash
 $HADOOP_HOME/sbin/start-dfs.sh
 $HBASE_HOME/bin/hbase-daemons.sh {start,stop} zookeeper
 $HBASE_HOME/bin/start-hbase.sh" > $START_SCRIPT
-	chmod +x $START_SCRIPT
+  chmod +x $START_SCRIPT
 fi
 if (($FORCE_INSTALL)) || ! [ -f $STOP_SCRIPT ]; then
-	echo "#!/bin/bash
+  echo "#!/bin/bash
 $HADOOP_HOME/sbin/stop-dfs.sh
 $HBASE_HOME/bin/stop-hbase.sh" > $STOP_SCRIPT
-	chmod +x $STOP_SCRIPT
+  chmod +x $STOP_SCRIPT
 fi
 
 # Create the hbase systemd service
 if (($FORCE_INSTALL)) || ! [ -f $SERVICE_FILE ]; then
-	echo "[Unit]
+  echo "[Unit]
 Description=Apache HBase
 Requires=network.target
 After=network.target

@@ -6,12 +6,8 @@ set -eo pipefail
 # Load the shared provisioning script
 source ./deploy_shared.sh
 
-# Parameters
-FLINK_LOG_DIR=/var/log/flink
-FLINK_SERVICE_FILE=/etc/systemd/system/flink.service
-FLINK_INSTALL_DIR=/usr/local/flink
-FLINK_CONF_FILE=${FLINK_INSTALL_DIR}/conf/flink-conf.yaml
-FLINK_BRIDGE_SERVICE_FILE=/etc/systemd/system/flinkbridge.service
+# Load flink setup parameters
+source ./flink_shared.sh
 
 # Read HBase quorum from args
 while getopts ":q:" opt; do
@@ -22,22 +18,6 @@ while getopts ":q:" opt; do
     esac
 done
 OPTIND=1
-
-filename="flink-1.1.3"
-bindir="${FLINK_INSTALL_DIR}/bin"
-
-function downloadFlink {
-  filename="$filename.tgz"
-  echo "Flink: downloading..."
-  get_file "http://apache.mirrors.ovh.net/ftp.apache.org/dist/flink/flink-1.1.3/flink-1.1.3-bin-hadoop1-scala_2.10.tgz" $filename
-}
-
-echo "Setting up Flink"
-
-downloadFlink
-tar -xzf $filename -C /usr/local
-rm -rf $FLINK_INSTALL_DIR
-mv /usr/local/$(basename "$filename" .tgz) ${FLINK_INSTALL_DIR}
 
 # Create the flink user if necessary
 if ! id -u flink >/dev/null 2>&1; then
@@ -86,12 +66,6 @@ SyslogIdentifier=flink
 [Install]
 WantedBy=multi-user.target" >$FLINK_SERVICE_FILE
 
-# Deploy jar
-cp files/KafkaHbaseBridge.jar ${FLINK_INSTALL_DIR}
-cp files/FakeTwitterProducer.jar ${FLINK_INSTALL_DIR}
-cp files/KafkaConsoleBridge.jar ${FLINK_INSTALL_DIR}
-cp files/fake_tweet.json ${FLINK_INSTALL_DIR}
-
 # Create systemd unit for flink service
 
 # Create the services
@@ -101,9 +75,6 @@ while getopts ":t:" opt; do
     case "$opt" in
         t)
             TOPIC_NAME="$OPTARG"
-
-# ExecStart=$FLINK_INSTALL_DIR/bin/flink run ${FLINK_INSTALL_DIR}/KafkaHbaseBridge.jar --port 9000 --topic $TOPIC_NAME --bootstrap.servers localhost:9092 --zookeeper.connect localhost:2181 --group.id parisconsumer --hbasetable $TOPIC_NAME --hbasequorum worker1,worker2,worker3 --hbaseport 2181
-
 
             # Install the unit file
             # TODO: Use -H

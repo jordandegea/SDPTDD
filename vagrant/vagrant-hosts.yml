@@ -29,12 +29,19 @@ deploy:
     bootstrap:
         - hosts: $hostspec
         - ssh: $hostspec
-    provision:
+    system:
         - apt:
         - java:
+    software:
+        - kafka:
+        - flink:
+        - hbase:
+    settings:
         - kafka: $hostspec
         - flink: -t paris -t london -t nyc -q $hoststring
         - hbase: -q $hoststring
+    code:
+        - flink:
     # List of source folders to include in the ~/deploy directory when provision
     # Note that the *contents* of mentioned directories are copied in the deploy
     # directory
@@ -42,9 +49,18 @@ deploy:
         - ../source/shared
         - ../source/bootstrap
         - .vagrant
-    provision_folders:
+    system_folders:
         - ../source/shared
-        - ../source/provision
+        - ../source/system
+    software_folders:
+        - ../source/shared
+        - ../source/software
+    settings_folders:
+        - ../source/shared
+        - ../source/settings
+    code_folders:
+        - ../source/shared
+        - ../source/code
     configure_folders:
         - ../source/shared
         - ../source/configure
@@ -65,7 +81,10 @@ hosts:
             - hbase
             - flink_paris
             - flink_producer_fake
-        provision:
+        software:
+            after:
+                - zeppelin:
+        settings:
             after:
                 - zeppelin:
         configure:
