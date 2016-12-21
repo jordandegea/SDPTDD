@@ -4,7 +4,7 @@
 set -eo pipefail
 
 # Load the shared provisioning script
-source ./provision_shared.sh
+source ./deploy_shared.sh
 
 JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 

@@ -26,9 +26,10 @@ deploy:
     # SPEC: Use '-v' to indicate Vagrant provision
     shared_args: -v
     # List of provisioning steps.
-    provision:
+    bootstrap:
         - hosts: $hostspec
-        - ssh:
+        - ssh: $hostspec
+    provision:
         - apt:
         - java:
         - kafka: $hostspec
@@ -37,11 +38,16 @@ deploy:
     # List of source folders to include in the ~/deploy directory when provision
     # Note that the *contents* of mentioned directories are copied in the deploy
     # directory
-    provision_folders:
-        - ../source/provision
+    bootstrap_folders:
+        - ../source/shared
+        - ../source/bootstrap
         - .vagrant
+    provision_folders:
+        - ../source/shared
+        - ../source/provision
     configure_folders:
-        - ../configure
+        - ../source/shared
+        - ../source/configure
 # One-shot run command specifications
 run:
     format_hdfs: /usr/local/hadoop/bin/hdfs namenode -format

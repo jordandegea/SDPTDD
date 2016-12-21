@@ -4,7 +4,7 @@
 set -eo pipefail
 
 # Load the shared provisioning script
-source ./provision_shared.sh
+source ./deploy_shared.sh
 
 # Parsing the ID, specified as an argument, of the Zookeeper/Kafka
 # daemons inside the Kafka Cluster.

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ./configure_shared.sh
+source ./deploy_shared.sh
 
 while getopts ":t:" arg; do
     case $arg in

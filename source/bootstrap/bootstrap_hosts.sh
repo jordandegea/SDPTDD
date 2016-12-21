@@ -4,7 +4,7 @@
 set -eo pipefail
 
 # Load the shared provisioning script
-source ./provision_shared.sh
+source ./deploy_shared.sh
 
 # Parse host definitions from the command line
 HOST_DEFS=$(printf "# Cluster hostnames config\n")

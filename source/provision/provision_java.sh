@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Load the shared provisioning script
-source ./provision_shared.sh
+source ./deploy_shared.sh
 
 JAVA_VERSION=$(java -version 2>&1)
 if ! [[ "$JAVA_VERSION" =~ 1\.8 ]]; then

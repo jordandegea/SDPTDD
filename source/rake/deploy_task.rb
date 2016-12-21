@@ -116,7 +116,7 @@ def declare_deploy_task(
   deploy_root = $conf['deploy'] || {}
 
   desc task_desc
-  task task_name, [:server, :what] do |task, args|
+  task task_name, [:server, :what] => (opts[:dependencies] || []) do |task, args|
     shared_args = deploy_root[shared_args_param] || ''
 
     # Use "FORCE_PROVISION=yes vagrant provision" to re-run provisioning scripts

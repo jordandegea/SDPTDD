@@ -4,7 +4,7 @@
 set -eo pipefail
 
 # Load the shared provisioning script
-source ./provision_shared.sh
+source ./deploy_shared.sh
 
 if (($ENABLE_VAGRANT)); then
     # Ensure directory is created
