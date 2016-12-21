@@ -1,6 +1,7 @@
 require 'pathname'
 require 'sshkit'
 require 'sshkit/sudo'
+require 'open3'
 include SSHKit::DSL
 
 def with_log_level(level)
@@ -38,19 +39,41 @@ def host_transfer(host, source_folders_param, working_directory, deploy_root)
 
   # Push source folders to the working directory
   source_folders.each do |source_folder|
-    folder = Pathname.new(File.expand_path(File.join('..', source_folder), $config_source))
+    folder = File.expand_path(File.join('..', source_folder), $config_source)
 
-    Dir.glob(File.join(folder, '**', '*')).each do |file|
-      next if Dir.exist? file
+    begin
+      Open3.popen2e("sftp", "-i", host.ssh_options[:keys][0], "#{host.user}@#{host.hostname}") do |stdin, stdout, wait_thr|
+        info "[#{host.properties.name}] uploading #{folder}"
 
-      destination_file = File.join(working_directory, Pathname.new(file).relative_path_from(folder))
-      destination_dir = File.dirname(destination_file)
+        stdin.puts "lcd '#{folder}'"
+        stdin.puts "cd #{working_directory}"
+        stdin.puts "put -r ."
+        stdin.close
 
-      # Ensure the destination directory is created
-      execute :mkdir, '-p', destination_dir unless destination_dir == working_directory
+        stdout.each do |line|
+          debug "[#{host.properties.name}] #{line}"
+        end
 
-      # Upload the file
-      upload! file, destination_file
+        unless wait_thr.value.success?
+          fail "aborting because an error occurred transferring files"
+        end
+      end
+    rescue => e
+      warn "[#{host.properties.name}] failed to transfer using SFTP, trying using Net::SCP, this will be slower"
+
+      folder = Pathname.new(folder)
+      Dir.glob(File.join(folder, '**', '*')).each do |file|
+        next if Dir.exist? file
+
+        destination_file = File.join(working_directory, Pathname.new(file).relative_path_from(folder))
+        destination_dir = File.dirname(destination_file)
+
+        # Ensure the destination directory is created
+        execute :mkdir, '-p', destination_dir unless destination_dir == working_directory
+
+        # Upload the file
+        upload! file, destination_file
+      end
     end
   end
 end
