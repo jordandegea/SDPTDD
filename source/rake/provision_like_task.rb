@@ -1,6 +1,13 @@
-def declare_provision_like_task(task_name, task_desc, shared_args_param_name,
-  working_directory_name, source_folders_param_name, main_param_name,
-  script_template_name)
+def declare_provision_like_task(
+  task_name,
+  task_desc,
+  shared_args_param_name,
+  source_folders_param_name,
+  param_name)
+
+  # Name of the working directory for the deploy procedure
+  working_directory_name = task_name.id2name
+
   desc task_desc
   task task_name, [:server, :what] do |task, args|
     shared_args = $conf[shared_args_param_name] || ''
@@ -54,9 +61,9 @@ def declare_provision_like_task(task_name, task_desc, shared_args_param_name,
 
       # Change to the working directory
       within working_directory_name do
-        steps = (host_conf[main_param_name]['before'] || []).dup
-        steps.concat($conf[main_param_name] || [])
-        steps.concat(host_conf[main_param_name]['after'] || [])
+        steps = (host_conf[param_name]['before'] || []).dup
+        steps.concat($conf[param_name] || [])
+        steps.concat(host_conf[param_name]['after'] || [])
 
         steps.each do |p|
           # Provisioning script name and args
@@ -65,7 +72,7 @@ def declare_provision_like_task(task_name, task_desc, shared_args_param_name,
           # Filter provisioners
           allowed_provisioners = (args[:what] || '').split(';')
           if allowed_provisioners.length == 0 or allowed_provisioners.include? provisioning_name
-            script_name = "./#{script_template_name}_#{provisioning_name}.sh"
+            script_name = "./#{param_name}_#{provisioning_name}.sh"
 
             # Specific variables
             if provisioning_args =~ /\$hostspec/

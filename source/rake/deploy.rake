@@ -8,7 +8,5 @@ require_relative './provision_like_task.rb'
 declare_provision_like_task(:deploy,
                             "Deploys everything to every server",
                             "shared_args",
-                            "deploy",
                             "source_folders",
-                            "provisioning",
                             "provisioning")
