@@ -11,16 +11,15 @@ source ./zeppelin_shared.sh
 
 # Create the hbase user if necessary
 if ! id -u zeppelin >/dev/null 2>&1; then
-	echo "Zeppelin: creating user..." 1>&2
-	useradd -m -s /bin/bash zeppelin
-	sudo passwd -d zeppelin
+  echo "Zeppelin: creating user..." 1>&2
+  useradd -m -s /bin/bash zeppelin
+  sudo passwd -d zeppelin
 else
-	echo "Zeppelin: user already created." 1>&2
+  echo "Zeppelin: user already created." 1>&2
 fi
 
 # Create the hbase systemd service
-if (($FORCE_INSTALL)) || ! [ -f $SERVICE_FILE ]; then
-	echo "[Unit]
+echo "[Unit]
 Description=Apache Zeppelin
 Requires=network.target
 After=network.target
@@ -38,7 +37,6 @@ SyslogIdentifier=zeppelin
 
 [Install]
 WantedBy=multi-user.target" > $SERVICE_FILE
-fi
 
 # Reload unit files
 # systemctl daemon-reload #temp removed

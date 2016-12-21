@@ -68,17 +68,16 @@ if [[ ! -d "$ZOOKEEPER_DATA_DIR" ]]; then
 fi
 
 # Create the zookeeper systemd service
-if (($FORCE_INSTALL)) || ! [ -f $ZOOKEEPER_SERVICE_FILE ]; then
-  echo "Kafka: installing Zookeeper systemd unit..." 1>&2
+echo "Kafka: installing Zookeeper systemd unit..." 1>&2
 
-  # Yes, KAFKA_HEAP_OPTS for ZOOKEEPER
-  MORE_ENV=''
-  if (($ENABLE_VAGRANT)); then
-    MORE_ENV="Environment=KAFKA_HEAP_OPTS=-Xmx126M -Xms126M"
-  fi
+# Yes, KAFKA_HEAP_OPTS for ZOOKEEPER
+MORE_ENV=''
+if (($ENABLE_VAGRANT)); then
+  MORE_ENV="Environment=KAFKA_HEAP_OPTS=-Xmx126M -Xms126M"
+fi
 
-  # Install the unit file
-  echo "[Unit]
+# Install the unit file
+echo "[Unit]
 Description=Apache Zookeeper
 Requires=network.target
 After=network.target
@@ -98,9 +97,6 @@ SyslogIdentifier=zookeeper
 
 [Install]
 WantedBy=multi-user.target" >$ZOOKEEPER_SERVICE_FILE
-else
-  echo "Kafka: Zookeeper systemd unit already installed." 1>&2
-fi
 
 # Modifying the Zookeeper configuration file
 
@@ -136,16 +132,15 @@ if ! [ -d $KAFKA_LOG_DIR ]; then
 fi
 
 # Create the kafka systemd service
-if (($FORCE_INSTALL)) || ! [ -f $KAFKA_SERVICE_FILE ]; then
-  echo "Kafka: installing Kafka systemd unit..." 1>&2
+echo "Kafka: installing Kafka systemd unit..." 1>&2
 
-  MORE_ENV=''
-  if (($ENABLE_VAGRANT)); then
-    MORE_ENV="Environment=KAFKA_HEAP_OPTS=-Xmx256M -Xms256M"
-  fi
+MORE_ENV=''
+if (($ENABLE_VAGRANT)); then
+  MORE_ENV="Environment=KAFKA_HEAP_OPTS=-Xmx256M -Xms256M"
+fi
 
-  # Install the unit file
-  echo "[Unit]
+# Install the unit file
+echo "[Unit]
 Description=Apache Kafka server (broker)
 Requires=zookeeper.service network.target
 After=zookeeper.service network.target
@@ -163,9 +158,6 @@ SyslogIdentifier=kafka
 
 [Install]
 WantedBy=multi-user.target" >$KAFKA_SERVICE_FILE
-else
-  echo "Kafka: Kafka systemd unit already installed." 1>&2
-fi
 
 # Modifying the Kafka configuration file, taking into account the 
 # specifics of each broker.

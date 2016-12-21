@@ -97,23 +97,19 @@ export JAVA_HOME=$JAVA_HOME
 export HBASE_LOG_DIR=$HBASE_LOG_DIR
 " >> $HBASE_HOME/conf/hbase-env.sh
 
-if (($FORCE_INSTALL)) || ! [ -f $START_SCRIPT ]; then
-  echo "#!/bin/bash
+echo "#!/bin/bash
 $HADOOP_HOME/sbin/start-dfs.sh
 $HBASE_HOME/bin/hbase-daemons.sh {start,stop} zookeeper
 $HBASE_HOME/bin/start-hbase.sh" > $START_SCRIPT
-  chmod +x $START_SCRIPT
-fi
-if (($FORCE_INSTALL)) || ! [ -f $STOP_SCRIPT ]; then
-  echo "#!/bin/bash
+chmod +x $START_SCRIPT
+
+echo "#!/bin/bash
 $HADOOP_HOME/sbin/stop-dfs.sh
 $HBASE_HOME/bin/stop-hbase.sh" > $STOP_SCRIPT
-  chmod +x $STOP_SCRIPT
-fi
+chmod +x $STOP_SCRIPT
 
 # Create the hbase systemd service
-if (($FORCE_INSTALL)) || ! [ -f $SERVICE_FILE ]; then
-  echo "[Unit]
+echo "[Unit]
 Description=Apache HBase
 Requires=network.target
 After=network.target
@@ -131,7 +127,6 @@ SyslogIdentifier=hbase
 
 [Install]
 WantedBy=multi-user.target" > $SERVICE_FILE
-fi
 
 # Reload unit files
 systemctl daemon-reload

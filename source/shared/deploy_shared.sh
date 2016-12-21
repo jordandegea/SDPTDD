@@ -15,12 +15,12 @@ PARSED_ARGUMENTS=1
 while getopts ":vf" opt; do
   case $opt in
     v)
-      echo "Running in vagrant mode." >&2
+      # echo "Running in vagrant mode." >&2
       ENABLE_VAGRANT=1
       let "PARSED_ARGUMENTS = PARSED_ARGUMENTS + 1"
       ;;
     f)
-      echo "Running in force mode." >&2
+      # echo "Running in force mode." >&2
       FORCE_INSTALL=1
       let "PARSED_ARGUMENTS = PARSED_ARGUMENTS + 1"
       ;;

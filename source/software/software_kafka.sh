@@ -9,8 +9,7 @@ source ./deploy_shared.sh
 # Kafka parameters
 source ./kafka_shared.sh
 
-# Install Kafka
- if (($FORCE_INSTALL)) || ! [ -d $KAFKA_INSTALL_DIR ]; then
+if (($FORCE_INSTALL)) || ! [ -d $KAFKA_INSTALL_DIR ]; then
   # Download Kafka
   echo "Kafka: downloading..." 1>&2
 

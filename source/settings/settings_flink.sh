@@ -36,8 +36,7 @@ fi
 # Create systemd unit for flink service
 echo "Flink: installing Flink systemd unit..." 1>&2
 
-echo "
-jobmanager.rpc.address: localhost
+echo "jobmanager.rpc.address: localhost
 jobmanager.rpc.port: 6123
 jobmanager.heap.mb: 256
 taskmanager.heap.mb: 512
