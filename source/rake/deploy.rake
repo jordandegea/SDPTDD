@@ -3,10 +3,11 @@ require_relative './deploy_task.rb'
 namespace :deploy do
   declare_deploy_task(:bootstrap, "Prepares the cluster for distributed deployment",
                       bootstrap: true,
-                      quiet: true)
+                      extra_quiet: true)
 
   declare_deploy_task(:system, "Installs system software and packages",
-                      bootstrap: true)
+                      bootstrap: true,
+                      quiet: true)
 
   declare_deploy_task(:software, "Installs core software",
                       dependencies: %w(deploy:bootstrap),

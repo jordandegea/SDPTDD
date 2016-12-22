@@ -148,7 +148,7 @@ def declare_deploy_task(
       shared_args += ' -f'
     end
 
-    with_log_level(if opts[:quiet] then Logger::WARN else Logger::INFO end) do
+    with_log_level(if opts[:extra_quiet] then Logger::WARN else Logger::INFO end) do
       if opts[:bootstrap]
         file_transfer_bootstrap(args, source_folders_param, working_directory_name, deploy_root)
       else
@@ -159,7 +159,7 @@ def declare_deploy_task(
     warned_user = false
     mtx = Mutex.new
 
-    with_log_level(if opts[:quiet] then Logger::WARN else Logger::DEBUG end) do
+    with_log_level(if opts[:extra_quiet] then Logger::WARN else (if opts[:quiet] then Logger::INFO else Logger::DEBUG end) end) do
       on hosts(args) do |host|
         mtx.synchronize do
           if opts[:weak_dependencies]
