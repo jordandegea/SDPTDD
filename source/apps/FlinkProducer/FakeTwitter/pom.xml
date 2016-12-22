@@ -20,13 +20,12 @@ under the License.
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.apache.flink.quickstart</groupId>
-	<artifactId>flink-java-project</artifactId>
+	<groupId>fr.ensimag.twitter_weather</groupId>
+	<artifactId>flink-producer-fake-twitter</artifactId>
 	<version>0.1</version>
 	<packaging>jar</packaging>
 
-	<name>Flink Quickstart Job</name>
-	<url>http://www.myorganization.org</url>
+	<name>FlinkProducer FakeTwitter</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -213,7 +212,7 @@ under the License.
 							<transformers>
 								<!-- add Main-Class to manifest file -->
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>org.apache.flink.quickstart.FakeTwitterProducer</mainClass>
+									<mainClass>fr.ensimag.twitter_weather.FakeTwitterProducer</mainClass>
 								</transformer>
 							</transformers>
 							<createDependencyReducedPom>false</createDependencyReducedPom>
@@ -230,7 +229,7 @@ under the License.
 				<configuration>
 					<archive>
 						<manifestEntries>
-							<Main-Class>org.apache.flink.quickstart.FakeTwitterProducer</Main-Class>
+							<Main-Class>fr.ensimag.twitter_weather.FakeTwitterProducer</Main-Class>
 						</manifestEntries>
 					</archive>
 				</configuration>

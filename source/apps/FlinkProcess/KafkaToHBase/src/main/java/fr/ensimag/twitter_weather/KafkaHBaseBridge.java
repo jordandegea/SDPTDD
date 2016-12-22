@@ -1,4 +1,4 @@
-package org.apache.flink.quickstart;
+package fr.ensimag.twitter_weather;
 
 /**
  * Created by willol on 07/12/16.

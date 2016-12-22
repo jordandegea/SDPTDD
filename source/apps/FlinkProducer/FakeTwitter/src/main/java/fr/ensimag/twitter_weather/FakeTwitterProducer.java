@@ -1,4 +1,4 @@
-package org.apache.flink.quickstart;
+package fr.ensimag.twitter_weather;
 
 import com.sun.org.apache.xpath.internal.functions.WrongNumberArgsException;
 import org.apache.kafka.clients.producer.KafkaProducer;

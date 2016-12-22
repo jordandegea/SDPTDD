@@ -20,13 +20,12 @@ under the License.
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.apache.flink.quickstart</groupId>
-	<artifactId>flink-java-project</artifactId>
-	<version>0.1</version>
-	<packaging>jar</packaging>
+    <groupId>fr.ensimag.twitter_weather</groupId>
+    <artifactId>flink-kafka-hbase-bridge</artifactId>
+    <version>0.1</version>
+    <packaging>jar</packaging>
 
-	<name>Flink Quickstart Job</name>
-	<url>http://www.myorganization.org</url>
+	<name>Flink Kafka-HBase bridge</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -223,7 +222,7 @@ under the License.
 							<transformers>
 								<!-- add Main-Class to manifest file -->
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>org.apache.flink.quickstart.KafkaHBaseBridge</mainClass>
+									<mainClass>fr.ensimag.twitter_weather.KafkaHBaseBridge</mainClass>
 								</transformer>
 							</transformers>
 							<createDependencyReducedPom>false</createDependencyReducedPom>
@@ -240,7 +239,7 @@ under the License.
 				<configuration>
 					<archive>
 						<manifestEntries>
-							<Main-Class>org.apache.flink.quickstart.KafkaHBaseBridge</Main-Class>
+							<Main-Class>fr.ensimag.twitter_weather.KafkaHBaseBridge</Main-Class>
 						</manifestEntries>
 					</archive>
 				</configuration>
