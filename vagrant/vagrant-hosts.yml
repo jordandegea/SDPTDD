@@ -12,6 +12,7 @@ defaults:
 # Known services definitions
 services:
     - zookeeper
+    - service-watcher
     - kafka
     - flink
     - hbase
@@ -37,10 +38,12 @@ deploy:
         - flink:
         - hbase:
     settings:
+        - service_watcher:
         - kafka: $hostspec
         - flink: -t paris -t london -t nyc -q $hoststring
         - hbase: -q $hoststring
     code:
+        - service_watcher:
         - flink:
     # List of source folders to include in the ~/deploy directory when provision
     # Note that the *contents* of mentioned directories are copied in the deploy
@@ -76,6 +79,7 @@ hosts:
         memory: 2048
         services: # List of services to enable/start on worker1
             - zookeeper
+            - service-watcher
             - kafka
             - flink
             - hbase
@@ -96,6 +100,7 @@ hosts:
         ip: 10.20.1.101
         services: # List of services to enable/start on worker2
             - zookeeper
+            - service-watcher
             - kafka
             - flink
             - hbase
@@ -106,6 +111,7 @@ hosts:
         ip: 10.20.1.102
         services: # List of services to enable/start on worker3
             - zookeeper
+            - service-watcher
             - kafka
             - flink
             - hbase
