@@ -205,8 +205,8 @@ def declare_deploy_task(
                 # Ensure sudo is in the right path and execute the provisioning script
                 sudo "bash -c \"cd #{cwd} && #{script_name} #{shared_args} #{provisioning_args}\""
               rescue SSHKit::Command::Failed => e
-                error "failed task #{param_name}:#{provisioning_name}: #{e.message}"
-                warn "aborting provisioning of host #{host.properties.name}"
+                error "[#{host.properties.name}] failed task #{param_name}:#{provisioning_name}: #{e.message}"
+                warn "[#{host.properties.name}] aborting provisioning of host due to errors"
                 break
               end
             end
