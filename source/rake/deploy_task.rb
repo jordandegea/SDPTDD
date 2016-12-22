@@ -42,7 +42,7 @@ def host_transfer(host, source_folders_param, working_directory, deploy_root)
     folder = File.expand_path(File.join('..', source_folder), $config_source)
 
     begin
-      Open3.popen2e("sftp", "-i", host.ssh_options[:keys][0], "#{host.user}@#{host.hostname}") do |stdin, stdout, wait_thr|
+      Open3.popen2e("sftp", "-o", "StrictHostKeyChecking=no", "-i", host.ssh_options[:keys][0], "#{host.user}@#{host.hostname}") do |stdin, stdout, wait_thr|
         info "[#{host.properties.name}] uploading #{folder}"
 
         stdin.puts "lcd '#{folder}'"
