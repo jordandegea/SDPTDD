@@ -4,11 +4,19 @@ version '0.1'
 
 repositories {
     mavenCentral()
+
+    flatDir {
+        dirs "lib"
+    }
 }
 
 dependencies {
     // https://mvnrepository.com/artifact/org.apache.zookeeper/zookeeper
     compile group: 'org.apache.zookeeper', name: 'zookeeper', version: '3.4.8'
+    // libmatthew
+    compile name: 'libmatthew-java-debug-disable', version: '1.1'
+    compile name: 'libmatthew-java-unix', version: '0.5'
+    compile name: 'libmatthew-java-hexdump', version: '0.2'
 }
 
 jar {

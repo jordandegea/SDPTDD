@@ -1,8 +1,12 @@
 package fr.ensimag.twitter_weather;
 
+import de.thjom.java.systemd.Manager;
+import de.thjom.java.systemd.Systemd;
+import de.thjom.java.systemd.Unit;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
+import org.freedesktop.dbus.exceptions.DBusException;
 
 import java.io.IOException;
 
@@ -14,7 +18,7 @@ public class ServiceWatcher {
         System.err.println("Usage: java -jar ServiceWatcher.jar zookeeper1:port1[,zookeeper2:port2]");
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException {
+    public static void main(String[] args) throws IOException, InterruptedException, DBusException {
         // Check arguments
         if (args.length == 0) {
             printUsage();
@@ -38,10 +42,14 @@ public class ServiceWatcher {
 
         System.out.println("ServiceWatcher connected to ZooKeeper, waiting for events...");
 
-        // Connect to systemd
+        Systemd systemd = Systemd.get();
+        Manager manager = systemd.getManager();
 
         // Ugly wait loop
         while (true) {
+            Unit unit = manager.getUnit("zookeeper.service");
+            System.out.println("zookeeper.service active state: " + unit.getActiveState());
+
             Thread.sleep(1000);
         }
     }

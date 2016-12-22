@@ -17,4 +17,5 @@ if ! [[ -d "$SERVICE_WATCHER_INSTALL_DIR" ]]; then
 fi
 
 # Deploy jar
+cp files/libunix-java.so $SERVICE_WATCHER_INSTALL_DIR
 cp files/ServiceWatcher.jar $SERVICE_WATCHER_INSTALL_DIR

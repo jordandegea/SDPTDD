@@ -16,7 +16,7 @@ if ! [[ -d "$SERVICE_WATCHER_INSTALL_DIR" ]]; then
   mkdir -p "$SERVICE_WATCHER_INSTALL_DIR"
 fi
 
-# Create the hbase systemd service
+# Create the ServiceWatcher systemd service
 echo "[Unit]
 Description=Twitter Weather ServiceWatcher
 Requires=network.target zookeeper.service
@@ -24,10 +24,10 @@ After=network.target zookeeper.service
 
 [Service]
 Type=simple
-User=zookeeper
-Group=zookeeper
+User=root
+Group=root
 Environment=LOG_DIR=$ZOOKEEPER_LOG_DIR
-ExecStart=/usr/bin/java -jar $SERVICE_WATCHER_INSTALL_DIR/ServiceWatcher.jar localhost:2181
+ExecStart=/usr/bin/java -Djava.library.path=$SERVICE_WATCHER_INSTALL_DIR -jar $SERVICE_WATCHER_INSTALL_DIR/ServiceWatcher.jar localhost:2181
 SyslogIdentifier=service-watcher
 
 [Install]
