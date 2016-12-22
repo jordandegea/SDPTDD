@@ -33,6 +33,7 @@ deploy:
     system:
         - apt:
         - java:
+        - python:
     software:
         - kafka:
         - flink:

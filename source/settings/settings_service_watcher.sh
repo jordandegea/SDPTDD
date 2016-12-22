@@ -9,13 +9,20 @@ source ./deploy_shared.sh
 # Load ServiceWatcher install parameters
 source ./service_watcher_shared.sh
 
-echo "ServiceWatcher: configuring..." 2>&1
-
 if ! [[ -d "$SERVICE_WATCHER_INSTALL_DIR" ]]; then
   rm -rf "$SERVICE_WATCHER_INSTALL_DIR"
   mkdir -p "$SERVICE_WATCHER_INSTALL_DIR"
 fi
 
+echo "ServiceWatcher: configuring..." 2>&1
+
+if (($ENABLE_VAGRANT)); then
+  cp files/service_watcher_config_vagrant.yml $SERVICE_WATCHER_INSTALL_DIR/config.yml
+else
+  cp files/service_watcher_config.yml $SERVICE_WATCHER_INSTALL_DIR/config.yml
+fi
+
+# TODO: Use ZooKeeper quorum from -H
 # Create the ServiceWatcher systemd service
 echo "[Unit]
 Description=Twitter Weather ServiceWatcher
@@ -26,8 +33,8 @@ After=network.target zookeeper.service
 Type=simple
 User=root
 Group=root
-Environment=LOG_DIR=$ZOOKEEPER_LOG_DIR
-ExecStart=/usr/bin/java -Djava.library.path=$SERVICE_WATCHER_INSTALL_DIR -jar $SERVICE_WATCHER_INSTALL_DIR/ServiceWatcher.jar localhost:2181
+WorkingDirectory=$SERVICE_WATCHER_INSTALL_DIR
+ExecStart=/usr/bin/python $SERVICE_WATCHER_INSTALL_DIR/service_watcher.py localhost:2181 $SERVICE_WATCHER_INSTALL_DIR/config.yml
 SyslogIdentifier=service-watcher
 
 [Install]

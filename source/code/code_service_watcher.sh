@@ -16,6 +16,17 @@ if ! [[ -d "$SERVICE_WATCHER_INSTALL_DIR" ]]; then
   mkdir -p "$SERVICE_WATCHER_INSTALL_DIR"
 fi
 
-# Deploy jar
-cp files/libunix-java.so $SERVICE_WATCHER_INSTALL_DIR
-cp files/ServiceWatcher.jar $SERVICE_WATCHER_INSTALL_DIR
+if [[ -f $SERVICE_WATCHER_CONFIG ]]; then
+  cp $SERVICE_WATCHER_CONFIG /tmp/service_watcher_config.yml
+  rm -rf $SERVICE_WATCHER_INSTALL_DIR/*
+  mv /tmp/service_watcher_config.yml $SERVICE_WATCHER_CONFIG
+else
+  rm -rf $SERVICE_WATCHER_INSTALL_DIR/*
+fi
+
+# Extract code archive
+tar --strip-components=1 -C "$SERVICE_WATCHER_INSTALL_DIR" -xf "files/service_watcher.tar.xz"
+
+# Install requirements
+apt-get install -y libyaml-dev python-gi
+pip install -r "$SERVICE_WATCHER_INSTALL_DIR/requirements.txt"
