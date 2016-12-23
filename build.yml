@@ -13,6 +13,6 @@ build_outputs:
             - source/apps/ServiceWatcher/**
         build_script: |
             #!/bin/bash
-            cd source/apps/ServiceWatcher
-            make
+            cd source/apps
+            tar --exclude=.idea -cJvf ../code/files/service_watcher.tar.xz ServiceWatcher
         groups: [ python, service_watcher ]
