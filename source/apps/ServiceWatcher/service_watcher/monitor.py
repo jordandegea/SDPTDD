@@ -104,4 +104,5 @@ class Monitor:
 
     def _on_sigterm(self, sig, frame):
         logging.warning("caught SIGTERM, trying to exit")
-        sys.exit()
+        self.main_loop.quit()
+        logging.warning("main_loop should exit")

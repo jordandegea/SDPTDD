@@ -35,12 +35,12 @@ User=root
 Group=root
 WorkingDirectory=$SERVICE_WATCHER_INSTALL_DIR
 ExecStart=/usr/bin/python $SERVICE_WATCHER_INSTALL_DIR/service_watcher.py localhost:2181 $SERVICE_WATCHER_INSTALL_DIR/config.yml
-ExecStop=/bin/kill -15 \$MAINPID
 Restart=on-failure
-SyslogIdentifier=service-watcher
+SyslogIdentifier=service_watcher
 
 [Install]
-WantedBy=multi-user.target" > /etc/systemd/system/service-watcher.service
+WantedBy=multi-user.target" > /etc/systemd/system/service_watcher.service
+rm -f /etc/systemd/system/service-watcher.service
 
 # Reload unit files
 systemctl daemon-reload
