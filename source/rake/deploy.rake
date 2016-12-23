@@ -1,5 +1,11 @@
 require_relative './deploy_task.rb'
 
+file 'source/code/files/service_watcher.tar.xz' => Dir.glob('source/apps/ServiceWatcher/**') do
+  Dir.chdir('source/apps/ServiceWatcher') do
+    sh 'make'
+  end
+end
+
 namespace :deploy do
   declare_deploy_task(:bootstrap, "Prepares the cluster for distributed deployment",
                       bootstrap: true,
@@ -18,7 +24,7 @@ namespace :deploy do
                       weak_dependencies: %w(deploy:system deploy:software))
 
   declare_deploy_task(:code, "Installs application code",
-                      dependencies: %w(deploy:bootstrap),
+                      dependencies: %w(deploy:bootstrap source/code/files/service_watcher.tar.xz),
                       weak_dependencies: %w(deploy:system deploy:software deploy:settings))
 
   declare_deploy_task(:configure, "Configures every server",
