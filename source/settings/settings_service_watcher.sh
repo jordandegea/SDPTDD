@@ -34,7 +34,9 @@ Type=simple
 User=root
 Group=root
 WorkingDirectory=$SERVICE_WATCHER_INSTALL_DIR
-ExecStart=/usr/bin/python $SERVICE_WATCHER_INSTALL_DIR/service_watcher.py localhost:2181 $SERVICE_WATCHER_INSTALL_DIR/config.yml
+ExecStart=/usr/bin/python $SERVICE_WATCHER_INSTALL_DIR/service_watcher.py localhost:2181 $SERVICE_WATCHER_INSTALL_DIR/config.yml -d
+ExecStop=/bin/kill -15 \$MAINPID
+Restart=on-failure
 SyslogIdentifier=service-watcher
 
 [Install]
