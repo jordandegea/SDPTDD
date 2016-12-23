@@ -8,11 +8,45 @@
 # The build_script should be executable, and should, when run from the root directory, create the output file which is
 # the key of the build output definition.
 build_outputs:
-    source/code/files/service_watcher.tar.xz:
-        dependencies:
-            - source/apps/ServiceWatcher/**
-        build_script: |
-            #!/bin/bash
-            cd source/apps
-            tar --exclude=.idea -cJvf ../code/files/service_watcher.tar.xz ServiceWatcher
-        groups: [ python, service_watcher ]
+  source/code/files/service_watcher.tar.xz:
+    dependencies:
+      - source/apps/ServiceWatcher/**
+    build_script: |
+      #!/bin/bash
+      cd source/apps
+      tar --exclude=.idea -cJvf ../code/files/service_watcher.tar.xz ServiceWatcher
+    groups: [ python, service_watcher ]
+  source/code/files/KafkaConsoleBridge.jar:
+    dependencies:
+      - source/apps/FlinkProcess/KafkaToConsole/src/**
+      - source/apps/FlinkProcess/KafkaToConsole/pom.xml
+    build_script: |
+      #!/bin/bash
+      (cd source/apps/FlinkProcess/KafkaToConsole && mvn package)
+      cp source/apps/FlinkProcess/KafkaToConsole/target/flink-kafka-to-console-0.1.jar source/code/files/KafkaConsoleBridge.jar
+    groups: [ java, kafka_to_console, flink_process ]
+  source/code/files/KafkaHbaseBridge.jar:
+    dependencies:
+      - source/apps/FlinkProcess/KafkaToHBase/src/**
+      - source/apps/FlinkProcess/KafkaToHBase/pom.xml
+    build_script: |
+      #!/bin/bash
+      (cd source/apps/FlinkProcess/KafkaToHBase && mvn package)
+      cp source/apps/FlinkProcess/KafkaToHBase/target/flink-kafka-hbase-bridge-0.1.jar source/code/files/KafkaHbaseBridge.jar
+    groups: [ java, kafka_to_hbase, flink_process ]
+  source/code/files/FakeTwitterProducer.jar:
+    dependencies:
+      - source/apps/FlinkProducer/FakeTwitter/src/**
+      - source/apps/FlinkProducer/FakeTwitter/pom.xml
+    build_script: |
+      #!/bin/bash
+      (cd source/apps/FlinkProducer/FakeTwitter && mvn package)
+      cp source/apps/FlinkProducer/FakeTwitter/target/flink-producer-fake-twitter-0.1.jar source/code/files/FakeTwitterProducer.jar
+    groups: [ java, fake_twitter, flink_producer ]
+  source/code/files/fake_tweet.json:
+    dependencies:
+      - source/apps/FlinkProducer/FakeTwitter/fake_tweet.json
+    build_script:
+      #!/bin/bash
+      cp source/apps/FlinkProducer/FakeTwitter/fake_tweet.json source/code/files/fake_tweet.json
+    groups: [ seed_data ]
