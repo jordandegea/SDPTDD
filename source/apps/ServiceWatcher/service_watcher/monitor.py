@@ -42,6 +42,18 @@ class Monitor:
         self.start_systemd()
         logging.info("connected to systemd")
 
+        # Initially, all units must be stopped, because we are not the leader
+        for service in self.config.services:
+            service_name = service['name']
+            unit = self.get_unit_by_name(service_name)
+
+            if unit.ActiveState == 'running':
+                logging.info("%s should not be running yet" % service_name)
+                unit.Stop()
+            elif unit.ActiveState == 'failed':
+                logging.info("resetting failed state of %s" % service_name)
+                unit.ResetFailed()
+
         # Start the main loop
         try:
             self.main_loop.run()
@@ -73,12 +85,12 @@ class Monitor:
         # Stop listening for DBus notifications
         self.systemd.Unsubscribe()
 
-    def get_unit_by_name(self, full_name):
+    def get_unit_by_name(self, name):
         # Auto append .service
-        if not full_name.endswith(".service"):
-            full_name = "%s.service" % full_name
+        if not name.endswith(".service"):
+            name = "%s.service" % name
         # Get bus path
-        unit_path = self.systemd.LoadUnit(full_name)
+        unit_path = self.systemd.LoadUnit(name)
         # Return unit object from bus
         return self.bus.get(".systemd1", unit_path)
 
@@ -90,5 +102,6 @@ class Monitor:
         except GLib.Error:
             logging.error("failed getting job details for %d, unit is currently %s" % ( job_id, self.get_unit_by_name(job_unit_name).ActiveState ))
 
-    def _on_sigterm(self, *args):
-        self.main_loop.quit()
+    def _on_sigterm(self, sig, frame):
+        logging.warning("caught SIGTERM, trying to exit")
+        sys.exit()
