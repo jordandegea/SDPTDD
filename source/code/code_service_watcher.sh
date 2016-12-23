@@ -28,5 +28,5 @@ fi
 tar --strip-components=1 -C "$SERVICE_WATCHER_INSTALL_DIR" -xf "files/service_watcher.tar.xz"
 
 # Install requirements
-apt-get install -y libyaml-dev python-gi
-pip install -r "$SERVICE_WATCHER_INSTALL_DIR/requirements.txt"
+apt-get -qq install -y libyaml-dev python-gi
+pip install --quiet -r "$SERVICE_WATCHER_INSTALL_DIR/requirements.txt"
