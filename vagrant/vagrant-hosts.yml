@@ -4,116 +4,116 @@
 #
 # Default config options, referenced using YAML syntax
 defaults:
-    # Default options for hosts
-    hosts: &host_defaults
-        user: vagrant     # Default non-privileged user
-        cpus: 1           # Default number of CPUs for vagrant
-        memory: 512       # Default RAM amount (MB)
+  # Default options for hosts
+  hosts: &host_defaults
+    user: vagrant     # Default non-privileged user
+    cpus: 1           # Default number of CPUs for vagrant
+    memory: 512       # Default RAM amount (MB)
 # Known services definitions
 services:
-    - zookeeper
-    - service-watcher
-    - kafka
-    - flink
-    - hbase
-    - zeppelin
-    - flink_paris
-    - flink_london
-    - flink_nyc
-    - flink_producer_fake
+  - zookeeper
+  - service-watcher
+  - kafka
+  - flink
+  - hbase
+  - zeppelin
+  - flink_paris
+  - flink_london
+  - flink_nyc
+  - flink_producer_fake
 # Deployment specifications
 deploy:
-    # Shared arguments to apply to all provision scripts
-    # SPEC: Use '-v' to indicate Vagrant provision
-    shared_args: -v
-    # List of provisioning steps.
-    bootstrap:
-        - hosts: $hostspec
-        - ssh: $hostspec
-    system:
-        - apt:
-        - java:
-        - python:
-    software:
-        - kafka:
-        - flink:
-        - hbase:
-    settings:
-        - service_watcher:
-        - kafka: $hostspec
-        - flink: -t paris -t london -t nyc -q $hoststring
-        - hbase: -q $hoststring
-    code:
-        - service_watcher:
-        - flink:
-    # List of source folders to include in the ~/deploy directory when provision
-    # Note that the *contents* of mentioned directories are copied in the deploy
-    # directory
-    bootstrap_folders:
-        - ../source/shared
-        - ../source/bootstrap
-        - .vagrant
-    system_folders:
-        - ../source/shared
-        - ../source/system
-    software_folders:
-        - ../source/shared
-        - ../source/software
-    settings_folders:
-        - ../source/shared
-        - ../source/settings
-    code_folders:
-        - ../source/shared
-        - ../source/code
-    configure_folders:
-        - ../source/shared
-        - ../source/configure
+  # Shared arguments to apply to all provision scripts
+  # SPEC: Use '-v' to indicate Vagrant provision
+  shared_args: -v
+  # List of provisioning steps.
+  bootstrap:
+    - hosts: $hostspec
+    - ssh: $hostspec
+  system:
+    - apt:
+    - java:
+    - python:
+  software:
+    - kafka:
+    - flink:
+    - hbase:
+  settings:
+    - service_watcher:
+    - kafka: $hostspec
+    - flink: -t paris -t london -t nyc -q $hoststring
+    - hbase: -q $hoststring
+  code:
+    - service_watcher:
+    - flink:
+  # List of source folders to include in the ~/deploy directory when provision
+  # Note that the *contents* of mentioned directories are copied in the deploy
+  # directory
+  bootstrap_folders:
+    - ../source/shared
+    - ../source/bootstrap
+    - .vagrant
+  system_folders:
+    - ../source/shared
+    - ../source/system
+  software_folders:
+    - ../source/shared
+    - ../source/software
+  settings_folders:
+    - ../source/shared
+    - ../source/settings
+  code_folders:
+    - ../source/shared
+    - ../source/code
+  configure_folders:
+    - ../source/shared
+    - ../source/configure
 # One-shot run command specifications
 run:
-    format_hdfs: /usr/local/hadoop/bin/hdfs namenode -format
+  format_hdfs: /usr/local/hadoop/bin/hdfs namenode -format
 # Hosts definitions
 hosts:
-    worker1:
-        <<: *host_defaults
-        key: .vagrant/machines/worker1/virtualbox/private_key
-        ip: 10.20.1.100
-        memory: 2048
-        services: # List of services to enable/start on worker1
-            - zookeeper
-            - service-watcher
-            - kafka
-            - flink
-            - hbase
-            - flink_paris
-            - flink_producer_fake
-        software:
-            after:
-                - zeppelin:
-        settings:
-            after:
-                - zeppelin:
-        configure:
-            after:
-                - create_topics: "-t paris -t london -t nyc"
-    worker2:
-        <<: *host_defaults
-        key: .vagrant/machines/worker2/virtualbox/private_key
-        ip: 10.20.1.101
-        services: # List of services to enable/start on worker2
-            - zookeeper
-            - service-watcher
-            - kafka
-            - flink
-            - hbase
-            # - flink_london
-    worker3:
-        <<: *host_defaults
-        key: .vagrant/machines/worker3/virtualbox/private_key
-        ip: 10.20.1.102
-        services: # List of services to enable/start on worker3
-            - zookeeper
-            - service-watcher
-            - kafka
-            - flink
-            - hbase
-            # - flink_nyc
+  worker1:
+    <<: *host_defaults
+    key: .vagrant/machines/worker1/virtualbox/private_key
+    ip: 10.20.1.100
+    memory: 2048
+    services: # List of services to enable/start on worker1
+      - zookeeper
+      - service-watcher
+      - kafka
+      - flink
+      - hbase
+      - flink_paris
+      - flink_producer_fake
+    software:
+      after:
+        - zeppelin:
+    settings:
+      after:
+        - zeppelin:
+    configure:
+      after:
+        - create_topics: "-t paris -t london -t nyc"
+  worker2:
+    <<: *host_defaults
+    key: .vagrant/machines/worker2/virtualbox/private_key
+    ip: 10.20.1.101
+    services: # List of services to enable/start on worker2
+      - zookeeper
+      - service-watcher
+      - kafka
+      - flink
+      - hbase
+      # - flink_london
+  worker3:
+    <<: *host_defaults
+    key: .vagrant/machines/worker3/virtualbox/private_key
+    ip: 10.20.1.102
+    services: # List of services to enable/start on worker3
+      - zookeeper
+      - service-watcher
+      - kafka
+      - flink
+      - hbase
+      # - flink_nyc
