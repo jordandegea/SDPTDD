@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Fail if any command fail
-set -eo pipefail
+set -e
 
 # Load the shared provisioning script
 source ./deploy_shared.sh
@@ -10,7 +10,7 @@ source ./deploy_shared.sh
 source ./service_watcher_shared.sh
 
 # Read HBase and ZooKeeper quorum from args
-while getopts ":z:" opt; do
+while getopts ":vfz:" opt; do
     case "$opt" in
         z)
         ZOOKEEPER_QUORUM="$OPTARG"
@@ -27,13 +27,13 @@ fi
 echo "ServiceWatcher: configuring..." 2>&1
 
 if (($ENABLE_VAGRANT)); then
-  cp files/service_watcher_config_vagrant.yml $SERVICE_WATCHER_INSTALL_DIR/config.yml
+  cp files/service_watcher_config_vagrant.yml $SERVICE_WATCHER_CONFIG
 else
-  cp files/service_watcher_config.yml $SERVICE_WATCHER_INSTALL_DIR/config.yml
+  cp files/service_watcher_config.yml $SERVICE_WATCHER_CONFIG
 fi
 
 # Replace ZooKeeper quorum in config file
-sed -i "s/zookeeper_quorum_replace_me/$ZOOKEEPER_QUORUM/" $SERVICE_WATCHER_INSTALL_DIR/config.yml
+sed -i "s/zookeeper_quorum_replace_me/$ZOOKEEPER_QUORUM/" $SERVICE_WATCHER_CONFIG
 
 # Create the ServiceWatcher systemd service
 echo "[Unit]
@@ -46,7 +46,7 @@ Type=simple
 User=root
 Group=root
 WorkingDirectory=$SERVICE_WATCHER_INSTALL_DIR
-ExecStart=/usr/bin/python $SERVICE_WATCHER_INSTALL_DIR/service_watcher.py monitor --config $SERVICE_WATCHER_INSTALL_DIR/config.yml
+ExecStart=/usr/bin/python $SERVICE_WATCHER_INSTALL_DIR/service_watcher.py monitor --config $SERVICE_WATCHER_CONFIG
 Restart=on-failure
 SyslogIdentifier=service_watcher
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Fail if any command fail
-set -eo pipefail
+set -e
 
 # Load the shared provisioning script
 source ./deploy_shared.sh
@@ -14,7 +14,7 @@ source ./kafka_shared.sh
 SERVER_ID=$(hostname | tr -d 'a-z\-')
 QUORUM_SPEC=""
 ZOOKEEPER_CONNECT=""
-while getopts ":H:" opt; do
+while getopts ":vfH:" opt; do
   case "$opt" in
     H)
       while IFS='@' read -ra ADDR; do
@@ -25,13 +25,6 @@ while getopts ":H:" opt; do
         QUORUM_SPEC=$(printf "%s\nserver.%d=%s:2888:3888" "$QUORUM_SPEC" "$SRV_ID" "$SRV_HOSTNAME")
         ZOOKEEPER_CONNECT=$(printf "%s,%s:2181" "$ZOOKEEPER_CONNECT" "$SRV_HOSTNAME")
       done <<< "$OPTARG"
-      ;;
-    :)
-      echo "Missing argument: the option $opt needs an \
-          argument." >&2
-      ;;
-    \?)
-      echo "Invalid option: -$OPTARG" >&2
       ;;
   esac
 done

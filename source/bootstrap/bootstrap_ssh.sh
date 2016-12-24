@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Fail if any command fail
-set -eo pipefail
+set -e
 
 # Load the shared provisioning script
 source ./deploy_shared.sh
@@ -57,7 +57,7 @@ else
     cp xnet xnet.pub ~xnet/.ssh/
     chmod 0600 ~xnet/.ssh/xnet
 
-    while getopts ":H:" opt; do
+    while getopts ":vfH:" opt; do
         case "$opt" in
             H)
             while IFS='@' read -ra ADDR; do

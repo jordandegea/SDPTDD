@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Fail if any command fail
-set -eo pipefail
+set -e
 
 # Load the shared provisioning script
 source ./deploy_shared.sh
@@ -10,15 +10,15 @@ source ./deploy_shared.sh
 source ./flink_shared.sh
 
 # Read HBase and ZooKeeper quorum from args
-while getopts ":q:F:" opt; do
-    case "$opt" in
-        q)
-        HBASE_QUORUM="$OPTARG"
-        ;;
-        F)
-        FLINK_BOOTSTRAP="$OPTARG"
-        ;;
-    esac
+while getopts ":vft:q:F:" opt; do
+  case "$opt" in
+    q)
+      HBASE_QUORUM="$OPTARG"
+    ;;
+    F)
+      FLINK_BOOTSTRAP="$OPTARG"
+    ;;
+  esac
 done
 OPTIND=1
 
@@ -73,13 +73,13 @@ WantedBy=multi-user.target" >$FLINK_SERVICE_FILE
 # Create the services
 echo "Flink: installing Flink cities systemd unit..." 1>&2
 
-while getopts ":t:" opt; do
-    case "$opt" in
-        t)
-            TOPIC_NAME="$OPTARG"
+while getopts ":vft:q:F:" opt; do
+  case "$opt" in
+    t)
+      TOPIC_NAME="$OPTARG"
 
-            # Install the unit file
-            echo "[Unit]
+      # Install the unit file
+      echo "[Unit]
 Description=Flink bridge ($TOPIC_NAME)
 Requires=network.target flink.service hbase.service
 After=network.target flink.service hbase.service

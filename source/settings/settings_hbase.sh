@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Fail if any command fail
-set -eo pipefail
+set -e
 
 # Load the shared provisioning script
 source ./deploy_shared.sh
@@ -10,7 +10,7 @@ source ./deploy_shared.sh
 source ./hbase_shared.sh
 
 # Read HBase quorum from args
-while getopts ":q:" opt; do
+while getopts ":vfq:" opt; do
     case "$opt" in
         q)
         HBASE_QUORUM="$OPTARG"

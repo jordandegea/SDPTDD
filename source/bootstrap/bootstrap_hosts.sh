@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Fail if any command fail
-set -eo pipefail
+set -e
 
 # Load the shared provisioning script
 source ./deploy_shared.sh
 
 # Parse host definitions from the command line
 HOST_DEFS=$(printf "# Cluster hostnames config\n")
-while getopts ":H:" opt; do
+while getopts ":vfH:" opt; do
   case "$opt" in
     H)
       while IFS='@' read -ra ADDR; do
