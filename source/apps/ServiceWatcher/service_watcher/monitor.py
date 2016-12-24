@@ -1,8 +1,6 @@
 import logging
 import signal
 
-from gi.repository import GLib
-
 from service_watcher.systemd import SystemdClient
 from service_watcher.zookeeper import ZooKeeperClient
 
@@ -16,6 +14,11 @@ class Monitor(ZooKeeperClient, SystemdClient):
 
         # Inject the systemd client in services
         self.config.setup_systemd(self)
+
+        # Build a lookup table for services
+        self.services_lut = {}
+        for service in self.config.services:
+            self.services_lut[service.unit_name] = service
 
     def run(self):
         logging.info("starting ServiceWatcher")
@@ -44,12 +47,10 @@ class Monitor(ZooKeeperClient, SystemdClient):
         self.stop_zk()
 
     def _on_job_new(self, job_id, job_object_path, job_unit_name):
-        logging.info("onJobNew %d %s %s" % ( job_id, job_object_path, job_unit_name ))
         try:
-            job_object = self.get_object(job_object_path)
-            logging.info("-> %d %s (%s) %s" % ( job_id, job_object.JobType, job_object.State, job_unit_name ))
-        except GLib.Error:
-            logging.error("failed getting job details for %d, unit is currently %s" % ( job_id, self.get_unit_by_name(job_unit_name).ActiveState ))
+            self.services_lut[job_unit_name].on_job_new(job_id, job_object_path)
+        except KeyError:
+            pass
 
     def _on_sigterm(self, sig, frame):
         logging.warning("caught SIGTERM, trying to exit")

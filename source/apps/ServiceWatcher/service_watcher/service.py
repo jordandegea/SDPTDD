@@ -1,4 +1,5 @@
 import logging
+from gi.repository import GLib
 
 GLOBAL = 0
 SHARED = 1
@@ -39,6 +40,15 @@ class Service(object):
 
     def setup_systemd(self, systemd_client):
         self.systemd_client = systemd_client
+
+    def on_job_new(self, job_id, job_object_path):
+        logging.info("onJobNew %d %s %s" % (job_id, job_object_path, self.unit_name))
+        try:
+            job_object = self.systemd_client.get_object(job_object_path)
+            logging.info("-> %d %s (%s) %s" % (job_id, job_object.JobType, job_object.State, self.unit_name))
+        except GLib.Error:
+            logging.error("failed getting job details for %d, unit is currently %s" % (
+                job_id, self.get_unit().ActiveState))
 
     def initialize(self):
         unit = self.get_unit()
