@@ -2,11 +2,7 @@
 zookeeper:
   quorum: zookeeper_quorum_replace_me
 services:
-  - name: flink_paris
-    count: 1
-  - name: flink_producer_fake
-    count: 1
-  - name: flink_nyc
-    count: 1
-  - name: flink_london
-    count: 1
+  - name: dummy_global
+    type: global
+  - name: dummy_shared
+    count: 2

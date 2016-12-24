@@ -54,5 +54,42 @@ SyslogIdentifier=service_watcher
 WantedBy=multi-user.target" > /etc/systemd/system/service_watcher.service
 rm -f /etc/systemd/system/service-watcher.service
 
+# On Vagrant, create the dummy_service
+if (($ENABLE_VAGRANT)); then
+  # Install socat
+  apt-get -qq install -y socat
+  echo "[Unit]
+Description=ServiceWatcher dummy (global) unit for testing
+Requires=network.target
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=socat -v TCP4-LISTEN:2000,fork EXEC:cat
+Restart=on-failure
+SyslogIdentifier=dummy_global
+
+[Install]
+WantedBy=multi-user.target" > /etc/systemd/system/dummy_global.service
+
+  echo "[Unit]
+Description=ServiceWatcher dummy (shared) unit for testing
+Requires=network.target
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=socat -v TCP4-LISTEN:2001,fork EXEC:cat
+Restart=on-failure
+SyslogIdentifier=dummy_shared
+
+[Install]
+WantedBy=multi-user.target" > /etc/systemd/system/dummy_shared.service
+fi
+
 # Reload unit files
 systemctl daemon-reload
