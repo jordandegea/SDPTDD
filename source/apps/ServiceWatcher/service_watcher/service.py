@@ -44,22 +44,31 @@ class Service(object):
         unit = self.get_unit()
         state = unit.ActiveState
 
-        if state == 'running':
-            logging.info("init: stopping %s" % self.name)
-            unit.Stop()
-        elif state == 'failed':
-            logging.info("init: resetting failed state of %s" % self.name)
-            unit.ResetFailed()
-        elif state != 'inactive':
-            logging.warning("init: unknown initial state for %s: %s" % (self.name, state))
+        if self.type == GLOBAL:
+            # This is a global service, it should be active
+            if state == 'active':
+                logging.info("init: %s already active, ok" % self.name)
+            else:
+                logging.info("init: starting global service %s" % self.name)
+                unit.Start("fail")
+        elif self.type == SHARED:
+            # This is a shared service, it should not be active unless we are the leader
+            if state == 'active':
+                logging.info("init: stopping %s" % self.name)
+                unit.Stop("fail")
+            elif state == 'failed':
+                logging.info("init: resetting failed state of %s" % self.name)
+                unit.ResetFailed()
+            elif state != 'inactive':
+                logging.warning("init: unknown initial state for %s: %s" % (self.name, state))
 
     def terminate(self):
         unit = self.get_unit()
         state = unit.ActiveState
 
-        if state == 'running':
+        if state == 'active':
             logging.info("terminate: stopping %s" % self.name)
-            unit.Stop()
+            unit.Stop("fail")
         elif state == 'failed':
             logging.info("terminate: resetting failed state of %s" % self.name)
             unit.ResetFailed()
