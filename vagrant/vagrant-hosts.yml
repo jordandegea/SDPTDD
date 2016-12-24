@@ -8,7 +8,7 @@ defaults:
   hosts: &host_defaults
     user: vagrant     # Default non-privileged user
     cpus: 1           # Default number of CPUs for vagrant
-    memory: 512       # Default RAM amount (MB)
+    memory: 1024      # Default RAM amount (MB)
 # Known services definitions
 services:
   - zookeeper
@@ -43,11 +43,13 @@ deploy:
     - kafka:
     - flink:
     - hbase:
+    - zeppelin:
   settings:
     - service_watcher: -z $zkquorum
     - kafka: $hostspec
     - flink: -t paris -t london -t nyc -q $quorum -F $flinkbootstrap
     - hbase: -q $quorum
+    - zeppelin:
   code:
     - service_watcher:
     - flink:
@@ -82,7 +84,6 @@ hosts:
     <<: *host_defaults
     key: .vagrant/machines/worker1/virtualbox/private_key
     ip: 10.20.1.100
-    memory: 2048
     services: # List of services to enable/start on worker1
       - zookeeper
       - service_watcher
@@ -91,12 +92,6 @@ hosts:
       - hbase
       - flink_paris
       - flink_producer_fake
-    software:
-      after:
-        - zeppelin:
-    settings:
-      after:
-        - zeppelin:
     configure:
       after:
         - create_topics: "-t paris -t london -t nyc"

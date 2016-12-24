@@ -18,6 +18,11 @@ else
   echo "Zeppelin: user already created." 1>&2
 fi
 
+if ! [ -d $ZEPPELIN_LOG_DIR ]; then
+  mkdir -p $ZEPPELIN_LOG_DIR
+  chown zeppelin:zeppelin -R $ZEPPELIN_LOG_DIR
+fi
+
 # Create the hbase systemd service
 echo "[Unit]
 Description=Apache Zeppelin
@@ -29,7 +34,6 @@ Type=forking
 User=zeppelin
 Group=zeppelin
 Environment=LOG_DIR=$ZEPPELIN_LOG_DIR
-Environment=HBASE_LOG_DIR=$ZEPPELIN_INSTALL_DIR
 ExecStart=$START_SCRIPT
 ExecStop=$STOP_SCRIPT
 Restart=on-failure
@@ -39,6 +43,6 @@ SyslogIdentifier=zeppelin
 WantedBy=multi-user.target" > $SERVICE_FILE
 
 # Reload unit files
-# systemctl daemon-reload #temp removed
+systemctl daemon-reload #temp removed
 
-/usr/local/zeppelin/bin/zeppelin-daemon.sh start # temporary (bypass service)
+# /usr/local/zeppelin/bin/zeppelin-daemon.sh start # temporary (bypass service)
