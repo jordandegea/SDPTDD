@@ -23,6 +23,11 @@ services:
   - flink_producer_fake
 # Deployment specifications
 deploy:
+  variables:
+    hostspec: '<% hosts.each do |host| %>-H <%= host.name %>@<% host.address %><% end %>'
+    quorum: '<%= hosts.map(&:name).join(",") %>'
+    zkquorum: '<%= hosts.map { |h| "#{h.name}:2181" }.join(",") %>'
+    flinkbootstrap: '<%= hosts.map { |h| "#{h.name}:9092" }.join(",") %>'
   # Shared arguments to apply to all provision scripts
   # SPEC: Use '-v' to indicate Vagrant provision
   shared_args: -v
@@ -39,10 +44,10 @@ deploy:
     - flink:
     - hbase:
   settings:
-    - service_watcher:
+    - service_watcher: -z $zkquorum
     - kafka: $hostspec
-    - flink: -t paris -t london -t nyc -q $hoststring
-    - hbase: -q $hoststring
+    - flink: -t paris -t london -t nyc -q $quorum -F $flinkbootstrap
+    - hbase: -q $quorum
   code:
     - service_watcher:
     - flink:

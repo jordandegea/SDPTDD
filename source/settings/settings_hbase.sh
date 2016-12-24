@@ -13,7 +13,7 @@ source ./hbase_shared.sh
 while getopts ":q:" opt; do
     case "$opt" in
         q)
-        HBASE_QUORUM=$(tr ' ' , <<<"$OPTARG")
+        HBASE_QUORUM="$OPTARG"
         ;;
     esac
 done

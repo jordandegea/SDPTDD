@@ -9,6 +9,16 @@ source ./deploy_shared.sh
 # Load ServiceWatcher install parameters
 source ./service_watcher_shared.sh
 
+# Read HBase and ZooKeeper quorum from args
+while getopts ":z:" opt; do
+    case "$opt" in
+        z)
+        ZOOKEEPER_QUORUM="$OPTARG"
+        ;;
+    esac
+done
+OPTIND=1
+
 if ! [[ -d "$SERVICE_WATCHER_INSTALL_DIR" ]]; then
   rm -rf "$SERVICE_WATCHER_INSTALL_DIR"
   mkdir -p "$SERVICE_WATCHER_INSTALL_DIR"
@@ -21,9 +31,6 @@ if (($ENABLE_VAGRANT)); then
 else
   cp files/service_watcher_config.yml $SERVICE_WATCHER_INSTALL_DIR/config.yml
 fi
-
-# TODO: Use ZooKeeper quorum from -H
-ZOOKEEPER_QUORUM='localhost:2181'
 
 # Replace ZooKeeper quorum in config file
 sed -i "s/zookeeper_quorum_replace_me/$ZOOKEEPER_QUORUM/" $SERVICE_WATCHER_INSTALL_DIR/config.yml

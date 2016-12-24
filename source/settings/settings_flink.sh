@@ -9,11 +9,14 @@ source ./deploy_shared.sh
 # Load flink setup parameters
 source ./flink_shared.sh
 
-# Read HBase quorum from args
-while getopts ":q:" opt; do
+# Read HBase and ZooKeeper quorum from args
+while getopts ":q:F:" opt; do
     case "$opt" in
         q)
-        HBASE_QUORUM=$(tr ' ' , <<<"$OPTARG")
+        HBASE_QUORUM="$OPTARG"
+        ;;
+        F)
+        FLINK_BOOTSTRAP="$OPTARG"
         ;;
     esac
 done
@@ -76,7 +79,6 @@ while getopts ":t:" opt; do
             TOPIC_NAME="$OPTARG"
 
             # Install the unit file
-            # TODO: Use -H
             echo "[Unit]
 Description=Flink bridge ($TOPIC_NAME)
 Requires=network.target flink.service hbase.service
@@ -87,7 +89,7 @@ Type=forking
 User=flink
 Group=flink
 Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR/$TOPIC_NAME
-ExecStart=/bin/bash -c 'nohup ${FLINK_INSTALL_DIR}/bin/flink run ${FLINK_INSTALL_DIR}/KafkaConsoleBridge.jar --port 9000 --topic $TOPIC_NAME --bootstrap.servers worker1:9092,worker2:9092,worker3:9092 --zookeeper.connect localhost:2181 --group.id parisconsumer --hbasetable $TOPIC_NAME --hbasequorum $HBASE_QUORUM --hbaseport 2181 &'
+ExecStart=/bin/bash -c 'nohup $FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaConsoleBridge.jar --port 9000 --topic $TOPIC_NAME --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id parisconsumer --hbasetable $TOPIC_NAME --hbasequorum $HBASE_QUORUM --hbaseport 2181 &'
 SyslogIdentifier=flink_$TOPIC_NAME
 
 [Install]
@@ -109,8 +111,8 @@ Type=forking
 User=flink
 Group=flink
 Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR/flink_producer_fake
-WorkingDirectory=${FLINK_INSTALL_DIR}
-ExecStart=/bin/bash -c 'nohup $FLINK_INSTALL_DIR/bin/flink run ${FLINK_INSTALL_DIR}/FakeTwitterProducer.jar 1 worker1:9092,worker2:9092,worker3:9092 &'
+WorkingDirectory=$FLINK_INSTALL_DIR
+ExecStart=/bin/bash -c 'nohup $FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/FakeTwitterProducer.jar 1 $FLINK_BOOTSTRAP &'
 SyslogIdentifier=flink_producer_fake
 
 [Install]

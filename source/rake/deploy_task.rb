@@ -2,6 +2,7 @@ require 'pathname'
 require 'sshkit'
 require 'sshkit/sudo'
 require 'open3'
+require 'erb'
 include SSHKit::DSL
 
 def with_log_level(level)
@@ -103,18 +104,38 @@ def file_transfer_tree(args, source_folders_param, working_directory, deploy_roo
   end
 end
 
-# Performs argument substitution on the input string
-def substitute_args!(provisioning_args)
-  if provisioning_args =~ /\$hostspec/
-    hostspec = $hosts.map do |hostname, host|
-      "-H #{hostname}@#{host.hostname}"
-    end.join(' ')
-
-    provisioning_args.gsub!(/\$hostspec/, hostspec)
+# An environment class for variable template evaluation
+class TemplateNamespace
+  def initialize(hash)
+    hash.each do |k, v|
+      singleton_class.send(:define_method, k) { v }
+    end
   end
 
-  if provisioning_args =~ /\$hoststring/
-    provisioning_args.gsub!(/\$hoststring/, "'#{$hosts.keys.join(' ')}'")
+  def get_binding
+    binding
+  end
+end
+
+# Evaluates the variables for the current deploy environment
+def get_variables(deploy_root)
+  # ERB environment
+  env = TemplateNamespace.new(hosts: $hosts.collect do |host, ssh_host|
+    OpenStruct.new(
+      name: host,
+      address: ssh_host.hostname
+    )
+  end)
+
+  deploy_root['variables'].collect do |name, template|
+    [ name, ERB.new(template).result(env.get_binding) ]
+  end.to_h
+end
+
+# Performs argument substitution on the input string
+def substitute_args!(provisioning_args, variables)
+  variables.each do |varname, value|
+    provisioning_args.gsub!("$#{varname}", value)
   end
 end
 
@@ -160,6 +181,9 @@ def declare_deploy_task(
     mtx = Mutex.new
 
     with_log_level(if opts[:extra_quiet] then Logger::WARN else (if opts[:quiet] then Logger::INFO else Logger::DEBUG end) end) do
+      # Compute variables substitution
+      variables = get_variables(deploy_root)
+
       on hosts(args) do |host|
         mtx.synchronize do
           if opts[:weak_dependencies]
@@ -186,6 +210,7 @@ def declare_deploy_task(
           steps.each do |p|
             # Provisioning script name and args
             provisioning_name, provisioning_args = [p.keys, p.values].flatten
+            provisioning_args ||= ''
 
             # Filter provisioners
             allowed_provisioners = (args[:what] || '').split(';')
@@ -193,7 +218,7 @@ def declare_deploy_task(
               script_name = "./#{param_name}_#{provisioning_name}.sh"
 
               # Specific variables
-              substitute_args!(provisioning_args)
+              substitute_args!(provisioning_args, variables)
 
               # Get the full path to the current working directory
               cwd = capture(:pwd)
@@ -203,7 +228,7 @@ def declare_deploy_task(
 
               begin
                 # Ensure sudo is in the right path and execute the provisioning script
-                sudo "bash -c \"cd #{cwd} && #{script_name} #{shared_args} #{provisioning_args}\""
+                sudo "bash -c \"cd #{cwd} && #{script_name} #{shared_args} #{provisioning_args}\"".strip
               rescue SSHKit::Command::Failed => e
                 error "[#{host.properties.name}] failed task #{param_name}:#{provisioning_name}: #{e.message}"
                 warn "[#{host.properties.name}] aborting provisioning of host due to errors"
