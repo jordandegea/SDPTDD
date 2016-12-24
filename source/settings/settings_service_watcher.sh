@@ -67,7 +67,7 @@ After=network.target
 Type=simple
 User=root
 Group=root
-ExecStart=socat -v TCP4-LISTEN:2000,fork EXEC:cat
+ExecStart=/usr/bin/socat -v TCP4-LISTEN:2000,fork EXEC:cat
 Restart=on-failure
 SyslogIdentifier=dummy_global
 
@@ -83,7 +83,7 @@ After=network.target
 Type=simple
 User=root
 Group=root
-ExecStart=socat -v TCP4-LISTEN:2001,fork EXEC:cat
+ExecStart=/usr/bin/socat -v TCP4-LISTEN:2001,fork EXEC:cat
 Restart=on-failure
 SyslogIdentifier=dummy_shared
 
