@@ -10,16 +10,16 @@ class SystemdClient(object):
         self.main_loop = GLib.MainLoop()
         self.systemd_subscribed = False
 
-    def start_systemd(self, job_new_notification = None):
+    def start_systemd(self, job_notification = None):
         # Get systemd object from the system bus
         self.bus = SystemBus()
         self.systemd = self.bus.get(".systemd1")
 
-        if job_new_notification is not None:
+        if job_notification is not None:
             self.systemd_subscribed = True
 
             # Setup handler for new jobs
-            self.systemd.JobNew.connect(job_new_notification)
+            self.systemd.JobRemoved.connect(job_notification)
 
         # Notify systemd is ready
         logging.info("connected to systemd")
