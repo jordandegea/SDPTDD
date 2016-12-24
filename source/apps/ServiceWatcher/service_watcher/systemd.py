@@ -18,9 +18,6 @@ class SystemdClient(object):
         if job_new_notification is not None:
             self.systemd_subscribed = True
 
-            # Ask for DBus notifications
-            self.systemd.Subscribe()
-
             # Setup handler for new jobs
             self.systemd.JobNew.connect(job_new_notification)
 
@@ -28,6 +25,10 @@ class SystemdClient(object):
         logging.info("connected to systemd")
 
     def run_event_loop(self):
+        if self.systemd_subscribed:
+            # Ask for DBus notifications
+            self.systemd.Subscribe()
+
         try:
             self.main_loop.run()
         except KeyboardInterrupt:
@@ -35,15 +36,16 @@ class SystemdClient(object):
         except SystemExit:
             logging.warning("caught SystemExit, quitting")
 
+        if self.systemd_subscribed:
+            # Stop listening for DBus notifications
+            self.systemd.Unsubscribe()
+
     def stop_event_loop(self):
         self.main_loop.quit()
 
     def stop_systemd(self):
         logging.info("disconnecting from systemd")
-
-        if self.systemd_subscribed:
-            # Stop listening for DBus notifications
-            self.systemd.Unsubscribe()
+        # nothing to do in fact
 
     def get_object(self, path):
         return self.bus.get(".systemd1", path)

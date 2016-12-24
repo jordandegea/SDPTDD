@@ -14,6 +14,9 @@ class Monitor(ZooKeeperClient, SystemdClient):
         # Setup terminate handler
         signal.signal(signal.SIGTERM, self._on_sigterm)
 
+        # Inject the systemd client in services
+        self.config.setup_systemd(self)
+
     def run(self):
         logging.info("starting ServiceWatcher")
 
@@ -25,18 +28,14 @@ class Monitor(ZooKeeperClient, SystemdClient):
 
         # Initially, all units must be stopped, because we are not the leader
         for service in self.config.services:
-            service_name = service['name']
-            unit = self.get_unit_by_name(service_name)
-
-            if unit.ActiveState == 'running':
-                logging.info("%s should not be running yet" % service_name)
-                unit.Stop()
-            elif unit.ActiveState == 'failed':
-                logging.info("resetting failed state of %s" % service_name)
-                unit.ResetFailed()
+            service.initialize()
 
         # Start the main loop
         self.run_event_loop()
+
+        # When exiting, shutdown all services
+        for service in self.config.services:
+            service.terminate()
 
         # Stop listening for events
         self.stop_systemd()
