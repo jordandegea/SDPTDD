@@ -23,6 +23,11 @@ else
 fi
 
 # TODO: Use ZooKeeper quorum from -H
+ZOOKEEPER_QUORUM='localhost:2181'
+
+# Replace ZooKeeper quorum in config file
+sed -i "s/zookeeper_quorum_replace_me/$ZOOKEEPER_QUORUM/" $SERVICE_WATCHER_INSTALL_DIR/config.yml
+
 # Create the ServiceWatcher systemd service
 echo "[Unit]
 Description=Twitter Weather ServiceWatcher
@@ -34,7 +39,7 @@ Type=simple
 User=root
 Group=root
 WorkingDirectory=$SERVICE_WATCHER_INSTALL_DIR
-ExecStart=/usr/bin/python $SERVICE_WATCHER_INSTALL_DIR/service_watcher.py localhost:2181 $SERVICE_WATCHER_INSTALL_DIR/config.yml
+ExecStart=/usr/bin/python $SERVICE_WATCHER_INSTALL_DIR/service_watcher.py monitor --config $SERVICE_WATCHER_INSTALL_DIR/config.yml
 Restart=on-failure
 SyslogIdentifier=service_watcher
 
