@@ -140,7 +140,7 @@ class GlobalControlUnit(ControlUnit):
                     elif state == "failed":
                         if service_started:
                             party.leave()
-                            service_failed = False
+                            service_started = False
                             service_start_initiated = False
 
                         if not service_failed:
