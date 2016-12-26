@@ -46,10 +46,13 @@ else
 fi
 chown hbase:hbase -R ~hbase/.ssh
 
-echo "
+# Remove previous config
+sed -i '/# BEGIN HBASE CONF/,/# END HBASE CONF/d' $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+
+echo "# BEGIN HBASE CONF
 export JAVA_HOME=$JAVA_HOME
 export HADOOP_LOG_DIR=$HBASE_LOG_DIR
-" >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+# END HBASE CONF" >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh
 
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>
@@ -92,11 +95,14 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 </configuration>
 " > $HBASE_HOME/conf/hbase-site.xml
 
-echo "
+# Remove previous config
+sed -i '/# BEGIN HBASE CONF/,/# END HBASE CONF/d' $HBASE_HOME/conf/hbase-env.sh
+
+echo "# BEGIN HBASE CONF
 export HBASE_MANAGES_ZK=false
 export JAVA_HOME=$JAVA_HOME
 export HBASE_LOG_DIR=$HBASE_LOG_DIR
-" >> $HBASE_HOME/conf/hbase-env.sh
+# END HBASE CONF" >> $HBASE_HOME/conf/hbase-env.sh
 
 echo "#!/bin/bash
 $HADOOP_HOME/sbin/start-dfs.sh
