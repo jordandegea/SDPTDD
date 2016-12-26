@@ -48,6 +48,7 @@ chown hbase:hbase -R ~hbase/.ssh
 
 echo "
 export JAVA_HOME=$JAVA_HOME
+export HADOOP_LOG_DIR=$HBASE_LOG_DIR
 " >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh
 
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
@@ -99,7 +100,7 @@ export HBASE_LOG_DIR=$HBASE_LOG_DIR
 
 echo "#!/bin/bash
 $HADOOP_HOME/sbin/start-dfs.sh
-$HBASE_HOME/bin/hbase-daemons.sh {start,stop} zookeeper
+$HBASE_HOME/bin/hbase-daemons.sh start zookeeper
 $HBASE_HOME/bin/start-hbase.sh" > $START_SCRIPT
 chmod +x $START_SCRIPT
 
@@ -120,6 +121,7 @@ User=hbase
 Group=hbase
 Environment=LOG_DIR=$HBASE_LOG_DIR
 Environment=HBASE_LOG_DIR=$HBASE_LOG_DIR
+Environment=HADOOP_LOG_DIR=$HBASE_LOG_DIR
 ExecStart=$START_SCRIPT
 ExecStop=$STOP_SCRIPT
 Restart=on-failure
