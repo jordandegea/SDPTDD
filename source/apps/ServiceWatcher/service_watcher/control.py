@@ -348,6 +348,14 @@ class MultiControlUnit(ControlUnit):
         # List of currently activated services
         activated_services = {}
 
+        # Start with services that are already active
+        for service in self.control_group.service.instances:
+            unit = self.control_group.service.get_unit(service)
+            if unit.ActiveState == "active":
+                logging.info("%s: unit %s was already running" % (self.name, service))
+                activated_services[service] = ShallowParty(zk, "/service_watcher/active/%s@%s" % (self.name, service), gethostname())
+                activated_services[service].join()
+
         # Loop forever
         while not exit_event.is_set():
             # Create the partitioner
