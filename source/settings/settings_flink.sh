@@ -49,6 +49,10 @@ parallelism.default: 4
 jobmanager.web.port: 8081
 " > ${FLINK_CONF_FILE}
 
+# Delete all previous flink units
+set +e
+rm -rf /etc/systemd/system/flink*.service
+set -e
 
 echo "[Unit]
 Description=Apache Flink
@@ -71,16 +75,11 @@ WantedBy=multi-user.target" >$FLINK_SERVICE_FILE
 # Create systemd unit for flink service
 
 # Create the services
-echo "Flink: installing Flink cities systemd unit..." 1>&2
+echo "Flink: installing Flink city systemd template unit..." 1>&2
 
-while getopts ":vft:q:F:" opt; do
-  case "$opt" in
-    t)
-      TOPIC_NAME="$OPTARG"
-
-      # Install the unit file
-      echo "[Unit]
-Description=Flink bridge ($TOPIC_NAME)
+# Install the unit file
+echo "[Unit]
+Description=Flink bridge (%i)
 Requires=network.target flink.service hbase.service
 After=network.target flink.service hbase.service
 
@@ -88,15 +87,12 @@ After=network.target flink.service hbase.service
 Type=forking
 User=flink
 Group=flink
-Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR/$TOPIC_NAME
-ExecStart=/bin/bash -c 'nohup $FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaConsoleBridge.jar --port 9000 --topic $TOPIC_NAME --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id parisconsumer --hbasetable $TOPIC_NAME --hbasequorum $HBASE_QUORUM --hbaseport 2181 &'
-SyslogIdentifier=flink_$TOPIC_NAME
+Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR/%i
+ExecStart=/bin/bash -c 'nohup $FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaConsoleBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i --hbasequorum $HBASE_QUORUM --hbaseport 2181 &'
+SyslogIdentifier=flink_city@%i
 
 [Install]
-WantedBy=multi-user.target" >/etc/systemd/system/flink_$TOPIC_NAME.service
-      ;;
-  esac
-done
+WantedBy=multi-user.target" >/etc/systemd/system/flink_city@.service
 
 # Create the services
 echo "Flink: installing Flink fake producer systemd unit..." 1>&2
