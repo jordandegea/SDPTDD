@@ -56,8 +56,8 @@ class Service(object):
         self.systemd_client = systemd_client
 
     def default_job_event_handler(self, job_id, job_object_path, status):
-        logging.info("on_job_event %d %s %s %s" % (job_id, job_object_path, self.unit_name, status))
-        logging.info(" -> unit is currently %s" % self.get_unit().ActiveState)
+        logging.debug("on_job_event %d %s %s %s" % (job_id, job_object_path, self.unit_name, status))
+        logging.debug(" -> unit is currently %s" % self.get_unit().ActiveState)
 
     def on_job_event(self, job_id, job_object_path, status):
         for handler in self.job_event_handlers:
