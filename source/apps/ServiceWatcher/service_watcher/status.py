@@ -29,25 +29,28 @@ class Status(ZooKeeperClient, SystemdClient):
                 print("  type: global")
             elif service.type == svc.SHARED:
                 print("  type: shared")
+            elif service.type == svc.MULTI:
+                print("  type: multi (unsupported)")
 
-            print("  global status:")
-            print("    running on:")
-            instances = 0
-            total_instances = 0
-            for member in party:
-                print("     %s %s" % ('*' if hostname == member else '-', member))
-                instances = instances + 1
-                total_instances = total_instances + 1
+            if service.type != svc.MULTI:
+                print("  global status:")
+                print("    running on:")
+                instances = 0
+                total_instances = 0
+                for member in party:
+                    print("     %s %s" % ('*' if hostname == member else '-', member))
+                    instances = instances + 1
+                    total_instances = total_instances + 1
 
-            print("    failed on:")
-            for member in failed_party:
-                print("     %s %s" % ('*' if hostname == member else '-', member))
-                total_instances = total_instances + 1
+                print("    failed on:")
+                for member in failed_party:
+                    print("     %s %s" % ('*' if hostname == member else '-', member))
+                    total_instances = total_instances + 1
 
-            if service.type == svc.SHARED:
-                total_instances = service.count
-            print("  summary:")
-            print("    %d out of %d instances ok" % (instances, total_instances))
+                if service.type == svc.SHARED:
+                    total_instances = service.count
+                print("  summary:")
+                print("    %d out of %d instances ok" % (instances, total_instances))
             print("")
 
 

@@ -89,6 +89,22 @@ SyslogIdentifier=dummy_shared
 
 [Install]
 WantedBy=multi-user.target" > /etc/systemd/system/dummy_shared.service
+
+  echo "[Unit]
+Description=ServiceWatcher dummy (instance %i) unit for testing
+Requires=network.target
+After=network.target
+
+[Service]
+Type=forking
+User=root
+Group=root
+ExecStart=/bin/bash -c 'nohup /usr/bin/socat -v TCP4-LISTEN:\$((2001 + %i * 100 + (RANDOM % 100))),fork EXEC:cat &'
+Restart=on-failure
+SyslogIdentifier=dummy_multi@%i
+
+[Install]
+WantedBy=multi-user.target" > /etc/systemd/system/dummy_multi@.service
 fi
 
 # Reload unit files

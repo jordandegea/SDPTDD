@@ -1,5 +1,6 @@
 import logging
 import signal
+import os
 from gi.repository import GLib
 
 from service_watcher.systemd import SystemdClient
@@ -50,7 +51,7 @@ class Monitor(ZooKeeperClient, SystemdClient):
         # Build a lookup table for services
         self.services_lut = {}
         for service in self.config.services:
-            self.services_lut[service.unit_name] = service
+            self.services_lut[service.name] = service
 
     def run(self):
         logging.info("starting ServiceWatcher")
@@ -82,7 +83,9 @@ class Monitor(ZooKeeperClient, SystemdClient):
 
     def on_job_event(self, job_id, job_object_path, job_unit_name, status):
         try:
-            self.services_lut[job_unit_name].on_job_event(job_id, job_object_path, status)
+            filename, ext = os.path.splitext(job_unit_name)
+            unit_name, parsed_param = filename.split("@", maxsplit=2)
+            self.services_lut[unit_name].on_job_event(job_id, job_object_path, filename, status)
         except KeyError:
             pass
 

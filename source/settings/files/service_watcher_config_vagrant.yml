@@ -6,3 +6,8 @@ services:
     type: global
   - name: dummy_shared
     count: 2
+  - name: dummy_multi
+    instances:
+      '1': 1
+      '2': 2
+      '3': 3

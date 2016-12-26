@@ -15,7 +15,7 @@ class ControlRoot(object):
         # The exit event to signal all control units should exit
         self.exit_event = threading.Event()
         # Create control groups for all shared services
-        self.control_groups = [self.control_group(service) for service in services]
+        self.control_groups = [self.control_group(service) for service in services if service.type != svc.MULTI]
 
     def control_group(self, service):
         if service.type == svc.GLOBAL:
@@ -79,7 +79,7 @@ class GlobalControlGroup(ControlGroup):
         super(GlobalControlGroup, self).__init__(control_root, service)
         # Only valid on global services
         if self.service.type != svc.GLOBAL:
-            raise ValueError("cannot setup a global control group on a shared service")
+            raise ValueError("a global control group can only manage global services (at %s)" % service.name)
         # Create the control unit
         self.unit = GlobalControlUnit(self)
 
@@ -182,7 +182,7 @@ class SharedControlGroup(ControlGroup):
         super(SharedControlGroup, self).__init__(control_root, service)
         # Only valid on shared services
         if self.service.type != svc.SHARED:
-            raise ValueError("cannot setup a shared control group on a global service")
+            raise ValueError("a shared control group can only manage shared services (at %s)" % service.name)
         # The semaphore that only allows one control unit
         self.semaphore = threading.BoundedSemaphore()
         # Create the instances
