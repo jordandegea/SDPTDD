@@ -24,7 +24,7 @@ services:
 # Deployment specifications
 deploy:
   variables:
-    hostspec: '<% hosts.each do |host| %>-H <%= host.name %>@<% host.address %><% end %>'
+    hostspec: '<%= hosts.map { |h| "-H #{h.name}@#{h.address}" }.join(" ") %>'
     quorum: '<%= hosts.map(&:name).join(",") %>'
     zkquorum: '<%= hosts.map { |h| "#{h.name}:2181" }.join(",") %>'
     flinkbootstrap: '<%= hosts.map { |h| "#{h.name}:9092" }.join(",") %>'
