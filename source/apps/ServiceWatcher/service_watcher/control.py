@@ -144,16 +144,14 @@ class GlobalControlUnit(ControlUnit):
                             service_start_initiated = False
 
                         if not service_failed:
-                            logging.warning("%s: global service failed" % self.name)
+                            logging.warning("%s: global service failed, not starting until reset" % self.name)
                             failed_party.join()
                             service_failed = True
                             service_start_initiated = False
 
                     if not service_started:
                         # service not started yet
-                        if service_failed:
-                            logging.warning("%s: not starting global service until reset" % self.name)
-                        elif not service_start_initiated:
+                        if not service_failed and not service_start_initiated:
                             # try starting the service
                             service_start_initiated = True
                             logging.info("%s: trying to start global service" % self.name)
