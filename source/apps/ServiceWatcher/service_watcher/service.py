@@ -44,6 +44,7 @@ class Service(object):
             else:
                 self.type = GLOBAL
 
+        # Setup handlers
         if self.type != MULTI:
             self.unit_name = self.name + '.service'
             self.job_event_handlers = [self.default_job_event_handler]
@@ -71,8 +72,7 @@ class Service(object):
             except ValueError:
                 raise ValueError("invalid instances specification for %s" % self.name)
 
-        # Setup handlers
-        self.job_event_handlers = [self.default_job_event_handler]
+        logging.info("discovered type %d service %s" % (self.type, self.name))
 
     def get_unit(self, parameter = None):
         if self.type == MULTI:
@@ -91,11 +91,11 @@ class Service(object):
 
     def default_job_event_handler_param(self, job_id, job_object_path, status, parameter):
         logging.debug("on_job_event %d %s %s %s, unit is currently %s" %
-                      (job_id, job_object_path, self.unit_name, status, self.get_unit(parameter).ActiveState))
+                      (job_id, job_object_path, "%s@%s" % (self.name, parameter), status, self.get_unit(parameter).ActiveState))
 
     def on_job_event(self, job_id, job_object_path, job_unit_fn_without_ext, status):
-        if self.type == GLOBAL:
-            base_name, param = job_unit_fn_without_ext.split("@", maxsplit=2)
+        if self.type == MULTI:
+            base_name, param = job_unit_fn_without_ext.split("@", 2)
 
             # Invoke default handlers
             if '' in self.job_event_handlers:
@@ -110,6 +110,7 @@ class Service(object):
                     handler(job_id, job_object_path, status)
         else:
             for handler in self.job_event_handlers:
+                # noinspection PyCallingNonCallable
                 handler(job_id, job_object_path, status)
 
     def add_job_event_handler(self, handler, parameter = None):

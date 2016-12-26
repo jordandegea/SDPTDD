@@ -1,10 +1,12 @@
 import logging
 import threading
+import json
 from gi.repository import GLib
 from socket import gethostname
 from service_watcher import service as svc
 from kazoo.recipe.election import Election
 from kazoo.recipe.party import ShallowParty
+from kazoo.recipe.partitioner import SetPartitioner
 
 
 class ControlRoot(object):
@@ -15,13 +17,15 @@ class ControlRoot(object):
         # The exit event to signal all control units should exit
         self.exit_event = threading.Event()
         # Create control groups for all shared services
-        self.control_groups = [self.control_group(service) for service in services if service.type != svc.MULTI]
+        self.control_groups = [self.control_group(service) for service in services]
 
     def control_group(self, service):
         if service.type == svc.GLOBAL:
             return GlobalControlGroup(self, service)
         elif service.type == svc.SHARED:
             return SharedControlGroup(self, service)
+        elif service.type == svc.MULTI:
+            return MultiControlGroup(self, service)
 
     def __enter__(self):
         for control_group in self.control_groups:
@@ -74,20 +78,30 @@ class ControlUnit(threading.Thread):
         self.release_loop()
 
 
-class GlobalControlGroup(ControlGroup):
+class SimpleControlGroup(ControlGroup):
     def __init__(self, control_root, service):
-        super(GlobalControlGroup, self).__init__(control_root, service)
-        # Only valid on global services
-        if self.service.type != svc.GLOBAL:
-            raise ValueError("a global control group can only manage global services (at %s)" % service.name)
-        # Create the control unit
-        self.unit = GlobalControlUnit(self)
+        super(SimpleControlGroup, self).__init__(control_root, service)
+        # this attribute is to be set by child instances
+        # but we cannot pass it to the constructor as this induces a circular dependency
+        self.unit = None
 
     def start(self):
         self.unit.start()
 
     def stop(self):
         self.unit.stop()
+
+
+class GlobalControlGroup(SimpleControlGroup):
+    def __init__(self, control_root, service):
+        super(GlobalControlGroup, self).__init__(control_root, service)
+        # Only valid on global services
+        if self.service.type != svc.GLOBAL:
+            raise ValueError("a global control group can only manage global services (at %s)" % service.name)
+        # Store the reference to the managed unit instance
+        self.unit = GlobalControlUnit(self)
+        # Log the initialization event
+        logging.info("%s: global control group initialized" % service.name)
 
 
 class GlobalControlUnit(ControlUnit):
@@ -187,6 +201,8 @@ class SharedControlGroup(ControlGroup):
         self.semaphore = threading.BoundedSemaphore()
         # Create the instances
         self.units = [SharedControlUnit(self, i + 1) for i in range(service.count)]
+        # Log the initialization event
+        logging.info("%s: shared control group initialized" % service.name)
 
     def start(self):
         # Start all threads
@@ -287,3 +303,116 @@ class SharedControlUnit(ControlUnit):
                 party.leave()
             # Release the semaphore
             self.control_group.semaphore.release()
+
+
+class MultiControlGroup(SimpleControlGroup):
+    def __init__(self, control_root, service):
+        super(MultiControlGroup, self).__init__(control_root, service)
+        # Only valid on MULTI services
+        if service.type != svc.MULTI:
+            raise ValueError("a multi control group can only manage multi services (at %s)" % service.name)
+        # Create the control unit for this group
+        self.unit = MultiControlUnit(self)
+        # Log the initialization event
+        logging.info("%s: multi control group initialized" % service.name)
+
+
+class MultiControlUnit(ControlUnit):
+    def __init__(self, control_group):
+        super(MultiControlUnit, self).__init__(control_group, control_group.service.name)
+
+    def run(self):
+        # Event to signal the thread should exit
+        exit_event = self.control_group.control_root.exit_event
+
+        # ZooKeeper instance
+        zk = self.control_group.control_root.zk
+
+        # List of currently activated services
+        activated_services = {}
+
+        # Loop forever
+        while not exit_event.is_set():
+            # Create the partitioner
+            partitioner_path = "/service_watcher/partition/%s" % self.control_group.service.name
+            # Note that we use a set of tuples for the partitioner, but as we use a custom partition_func, this is ok
+            partitioner = SetPartitioner(zk, partitioner_path, self.control_group.service.instances.items(),
+                                         self.partition_func, gethostname(), 5) # 5s time boundary
+            logging.info("%s: created partitioner at %s" % (self.name, partitioner_path))
+
+            try:
+                acquired = False
+
+                while not exit_event.is_set() and not partitioner.failed:
+                    if partitioner.release:
+                        # immediately release set, we will perform a diff-update on the next acquire
+                        logging.info("%s: releasing partitioner set" % self.name)
+                        partitioner.release_set()
+                    elif partitioner.acquired:
+                        # we have a new set of services to run
+                        new_p = [item.split("@")[0] for item in partitioner]
+
+                        if not acquired:
+                            logging.info("%s: acquired partition set" % self.name)
+                            acquired = True
+
+                        # first activate all services that need to be activated
+                        for service in new_p:
+                            if not service in activated_services:
+                                # this is a new service that needs to be activated
+                                logging.info("%s: starting instance %s" % (self.name, service))
+                                self.control_group.service.get_unit(service).Start("fail")
+                                activated_services[service] = ShallowParty(zk, "/service_watcher/active/%s@%s" % (self.name, service), gethostname())
+                                activated_services[service].join()
+
+                        # then stop all outdated services
+                        removed_services = []
+                        for service in activated_services:
+                            if not service in new_p:
+                                # this is a service that we should no longer run
+                                logging.info("%s: stopping instance %s" % (self.name, service))
+                                activated_services[service].leave()
+                                removed_services.append(service)
+                                self.control_group.service.get_unit(service).Stop("fail")
+
+                        # clean up dictionary after iteration
+                        for service in removed_services:
+                            del activated_services[service]
+
+                        # wait for wake-up, but not too long so we are still responsive to
+                        # partitioner events
+                        self.loop_tick(1)
+                    elif partitioner.allocating:
+                        acquired = False
+                        logging.info("%s: acquiring partition" % self.name)
+                        partitioner.wait_for_acquire()
+            finally:
+                # Release the partitioner when leaving
+                partitioner.finish()
+
+        # When exiting, stop all services
+        for service in activated_services:
+            try:
+                activated_services[service].leave()
+                self.control_group.service.get_unit(service).Stop("fail")
+            except:
+                logging.error("%s: error while stopping instance %s" % (self.name, service))
+
+    def partition_func(self, identifier, members, set):
+        # Sort members so we have a consistent order over all allocators
+        sorted_members = sorted(members)
+        allocation_state = {}
+
+        for member in sorted_members:
+            allocation_state[member] = []
+
+        for param, count in set:
+            # For the current param, allocate as much instances as possible
+            # No worker should have to run the same service twice though
+            for i in range(min(count, len(members))):
+                allocation_state[sorted_members[i]].append("%s@%d" % (param, i))
+
+        logging.info("%s: computed partition %s" % (self.name, json.dumps(allocation_state)))
+
+        # The resulting "partition" is the set of services for the current instance
+        return allocation_state[identifier]

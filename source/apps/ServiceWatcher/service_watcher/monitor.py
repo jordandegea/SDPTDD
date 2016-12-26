@@ -84,7 +84,7 @@ class Monitor(ZooKeeperClient, SystemdClient):
     def on_job_event(self, job_id, job_object_path, job_unit_name, status):
         try:
             filename, ext = os.path.splitext(job_unit_name)
-            unit_name, parsed_param = filename.split("@", maxsplit=2)
+            unit_name = filename.split("@", 2)[0]
             self.services_lut[unit_name].on_job_event(job_id, job_object_path, filename, status)
         except KeyError:
             pass
