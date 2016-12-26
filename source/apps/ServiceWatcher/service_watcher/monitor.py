@@ -4,6 +4,7 @@ from gi.repository import GLib
 
 from service_watcher.systemd import SystemdClient
 from service_watcher.zookeeper import ZooKeeperClient
+from service_watcher.control import ControlRoot
 
 
 # https://stackoverflow.com/questions/26388088/python-gtk-signal-handler-not-working
@@ -64,8 +65,10 @@ class Monitor(ZooKeeperClient, SystemdClient):
         for service in self.config.services:
             service.initialize()
 
-        # Start the main loop
-        self.run_event_loop()
+        # Start the control root for all services
+        with ControlRoot(self.zk, self.config.services):
+            # Start the main loop
+            self.run_event_loop()
 
         # When exiting, shutdown all services
         for service in self.config.services:

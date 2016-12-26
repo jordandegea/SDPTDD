@@ -1,5 +1,6 @@
 import logging
 from kazoo.client import KazooClient
+from kazoo.handlers.threading import SequentialThreadingHandler
 
 from service_watcher.roles import Configurable
 
@@ -8,7 +9,7 @@ class ZooKeeperClient(Configurable):
         super(ZooKeeperClient, self).__init__(*args, **kwargs)
 
         # Initialize the ZK client
-        self.zk = KazooClient(self.config.zk_quorum)
+        self.zk = KazooClient(self.config.zk_quorum, handler=SequentialThreadingHandler())
 
     def start_zk(self):
         self.zk.start()
