@@ -241,17 +241,33 @@ class SharedControlUnit(ControlUnit):
         # Group membership for this object (service-wise)
         party = ShallowParty(zk, "/service_watcher/active/%s" % self.control_group.service.name, gethostname())
 
+        self.acquired_semaphore = False
+
         # Main loop for this unit
         while not exit_event.is_set():
-            logging.info("%s: running for election" % self.name)
-            # Run for election, see callback for the rest
-            election.run(self.on_election, party)
+            if len(election.contenders()) == 0:
+                # There are less servers than the desired count, try not to loop being elected leader while we're
+                # already running an instance, so try to acquire the semaphore before running for leader
+                if self.acquired_semaphore or self.control_group.semaphore.acquire(False):
+                    self.acquired_semaphore = True
+                    # Run for election, see callback for the rest
+                    logging.info("%s: running for election (semaphore acquired)" % self.name)
+                    election.run(self.on_election, party)
+                else:
+                    # We couldn't lock the instance semaphore, so throttle the loop
+                    self.loop_tick(1)
+            else:
+                # See above
+                logging.info("%s: running for election" % self.name)
+                election.run(self.on_election, party)
 
     def on_election(self, party):
         logging.info("%s: elected as the leader" % self.name)
 
         # We are now the leader for the monitored instance
-        if self.control_group.semaphore.acquire(False):
+        if self.acquired_semaphore or self.control_group.semaphore.acquire(False):
+            self.acquired_semaphore = True
+
             # We acquired the group semaphore, which means this is the only instance running for this service
             logging.info("%s: chosen as main instance for service" % self.name)
 
@@ -302,6 +318,7 @@ class SharedControlUnit(ControlUnit):
                 # Leave the party for this service
                 party.leave()
             # Release the semaphore
+            self.acquired_semaphore = False
             self.control_group.semaphore.release()
 
 
