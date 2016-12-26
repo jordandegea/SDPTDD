@@ -46,6 +46,7 @@ class Status(ZooKeeperClient, SystemdClient):
 
             if service.type == svc.SHARED:
                 total_instances = service.count
+            print("  summary:")
             print("    %d out of %d instances ok" % (instances, total_instances))
             print("")
 
