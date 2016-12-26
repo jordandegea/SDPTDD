@@ -66,7 +66,7 @@ echo "Kafka: installing Zookeeper systemd unit..." 1>&2
 # Yes, KAFKA_HEAP_OPTS for ZOOKEEPER
 MORE_ENV=''
 if (($ENABLE_VAGRANT)); then
-  MORE_ENV="Environment=KAFKA_HEAP_OPTS=-Xmx126M -Xms126M"
+  MORE_ENV="Environment='KAFKA_HEAP_OPTS=-Xmx126M -Xms126M'"
 fi
 
 # Install the unit file
