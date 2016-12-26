@@ -200,41 +200,23 @@ class GlobalControlUnit(ControlUnit):
                         logging.warning("%s: an error occurred while stopping service on exit" % self.name)
 
 
-class SharedControlGroup(ControlGroup):
+class SharedControlGroup(SimpleControlGroup):
     def __init__(self, control_root, service):
         super(SharedControlGroup, self).__init__(control_root, service)
         # Only valid on shared services
         if self.service.type != svc.SHARED:
             raise ValueError("a shared control group can only manage shared services (at %s)" % service.name)
-        # The semaphore that only allows one control unit
-        self.semaphore = threading.BoundedSemaphore()
-        # Create the instances
-        self.units = [SharedControlUnit(self, i + 1) for i in range(service.count)]
+        # Create the control unit for this group
+        self.unit = SharedControlUnit(self)
         # Log the initialization event
         logging.info("%s: shared control group initialized" % service.name)
 
-    def start(self):
-        # Start all threads
-        for unit in self.units:
-            unit.start()
-
-    def stop(self):
-        # Join all threads
-        for unit in self.units:
-            unit.stop()
-
 
 class SharedControlUnit(ControlUnit):
-    def __init__(self, control_group, instance_id=1):
+    def __init__(self, control_group):
         # Initialize underlying thread
         # Note that the thread name is unique also in the ZooKeeper znode space
-        super(SharedControlUnit, self).__init__(control_group, "%s_%d" % (control_group.service.name, instance_id))
-
-    def stop(self):
-        # Unblock the loop
-        if self.election is not None:
-            self.election.cancel()
-        super(SharedControlUnit, self).stop()
+        super(SharedControlUnit, self).__init__(control_group, control_group.service.name)
 
     def run(self):
         # Event to signal the thread should exit
@@ -243,92 +225,96 @@ class SharedControlUnit(ControlUnit):
         # ZooKeeper instance
         zk = self.control_group.control_root.zk
 
-        # The leader election object
-        election = Election(zk, "/service_watcher/election/%s" % self.name, gethostname())
-        self.election = election
-
-        # Group membership for this object (service-wise)
+        # List of currently activated services
+        activated_service = False
         party = ShallowParty(zk, "/service_watcher/active/%s" % self.control_group.service.name, gethostname())
+        failed_party = ShallowParty(zk, "/service_watcher/failed/%s" % self.control_group.service.name, gethostname())
 
-        self.acquired_semaphore = False
+        # Detect if the unit is already active
+        if self.control_group.service.get_unit().ActiveState == "active":
+            logging.info("%s: unit was already running" % self.name)
+            party.join()
+            activated_service = True
 
-        # Main loop for this unit
+        # Loop forever
         while not exit_event.is_set():
-            if len(election.contenders()) == 0:
-                # There are less servers than the desired count, try not to loop being elected leader while we're
-                # already running an instance, so try to acquire the semaphore before running for leader
-                if self.acquired_semaphore or self.control_group.semaphore.acquire(False):
-                    self.acquired_semaphore = True
-                    # Run for election, see callback for the rest
-                    logging.info("%s: running for election (semaphore acquired)" % self.name)
-                    election.run(self.on_election, party)
-                else:
-                    # We couldn't lock the instance semaphore, so throttle the loop
-                    self.loop_tick(1)
-            else:
-                # See above
-                logging.info("%s: running for election" % self.name)
-                election.run(self.on_election, party)
-
-    def on_election(self, party):
-        logging.info("%s: elected as the leader" % self.name)
-
-        # We are now the leader for the monitored instance
-        if self.acquired_semaphore or self.control_group.semaphore.acquire(False):
-            self.acquired_semaphore = True
-
-            # We acquired the group semaphore, which means this is the only instance running for this service
-            logging.info("%s: chosen as main instance for service" % self.name)
-
-            service_started = False
+            # Create the partitioner
+            partitioner_path = "/service_watcher/partition/%s" % self.control_group.service.name
+            # Note that we use the service as a set for the partitioner, but as we use a custom partition_func, this is ok
+            partitioner = SetPartitioner(zk, partitioner_path, self.control_group.service,
+                                         self.partition_func, gethostname(), 5) # 5s time boundary
+            logging.info("%s: created partitioner at %s" % (self.name, partitioner_path))
 
             try:
-                # Start the service
-                self.get_unit().Start("fail")
-                service_failed = False
+                acquired = False
 
-                with self.control_group.service.handler(self.job_event_handler):
-                    # Now run an infinite loop
-                    while not self.control_group.control_root.exit_event.is_set() and not service_failed:
-                        unit_status = self.get_unit().ActiveState
-                        logging.info("%s: currently %s" % (self.name, unit_status))
+                while not exit_event.is_set() and not partitioner.failed:
+                    if partitioner.release:
+                        # immediately release set, we will perform a diff-update on the next acquire
+                        logging.info("%s: releasing partitioner set" % self.name)
+                        partitioner.release_set()
+                    elif partitioner.acquired:
+                        # we have a new partition
+                        new_p = list(partitioner)
 
-                        # Check for initial service start
-                        if not service_started and unit_status == "active":
-                            service_started = True
-                            # Join the party for this service
-                            party.join()
-                            # Note it in the logs
-                            logging.info("%s: systemd service started" % self.name)
+                        if not acquired:
+                            logging.info("%s: acquired partition set" % self.name)
+                            acquired = True
 
-                        # Check for failed status
-                        if unit_status == "failed":
-                            service_failed = True
-                            logging.warning("%s: systemd service failed, abandoning leadership" % self.name)
+                        # is the partition non-empty?
+                        if len(new_p) > 0:
+                            if not activated_service:
+                                logging.info("%s: starting service" % self.name)
+                                self.control_group.service.get_unit().Start("fail")
+                                activated_service = True
+                                party.join()
+                        else:
+                            if activated_service:
+                                logging.info("%s: stopping service" % self.name)
+                                self.control_group.service.get_unit().Stop("fail")
+                                activated_service = False
+                                party.leave()
 
-                        # Check for inactive: manually killed for scheduling?
-                        if service_started and unit_status == "inactive":
-                            service_failed = True
-                            logging.warning("%s: systemd service inactive, abandoning leadership" % self.name)
+                        # wait for wake-up, but not too long so we are still responsive to
+                        # partitioner events
+                        self.loop_tick(1)
+                    elif partitioner.allocating:
+                        acquired = False
+                        logging.info("%s: acquiring partition" % self.name)
+                        partitioner.wait_for_acquire()
+            finally:
+                # Release the partitioner when leaving
+                partitioner.finish()
 
-                        # Throttle infinite loop, unless we are about to exit
-                        if not service_failed:
-                            self.loop_tick()
+        # When exiting, stop all services
+        if activated_service:
+            if self.control_group.control_root.reload_exit:
+                logging.info("%s: keeping service running for reload" % self.name)
+            else:
+                try:
+                    party.leave()
+                    self.control_group.service.get_unit().Stop("fail")
+                except:
+                    logging.error("%s: error while stopping service" % self.name)
 
-                logging.info("%s: about to leave leadership for service" % self.name)
+    def partition_func(self, identifier, members, service):
+        # Sort members so we have a consistent order over all allocators
+        sorted_members = sorted(members)
+        allocation_state = {}
 
-                # Stop service when exiting
-                if service_started and not service_failed:
-                    self.get_unit().Stop("fail")
-            except GLib.Error:
-                logging.error("%s: generic systemd error, abandoning leadership" % self.name)
+        for member in sorted_members:
+            allocation_state[member] = []
 
-            if service_started:
-                # Leave the party for this service
-                party.leave()
-            # Release the semaphore
-            self.acquired_semaphore = False
-            self.control_group.semaphore.release()
+        # For the current param, allocate as much instances as possible
+        # No worker should have to run the same service twice though
+        for i in range(min(service.count, len(members))):
+            allocation_state[sorted_members[i]].append("%d" % i)
+
+        logging.info("%s: computed partition %s" % (self.name, json.dumps(allocation_state)))
+
+        # The resulting "partition" is the set of services for the current instance
+        return allocation_state[identifier]
+
 
 
 class MultiControlGroup(SimpleControlGroup):
