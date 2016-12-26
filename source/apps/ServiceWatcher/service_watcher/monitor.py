@@ -6,6 +6,7 @@ from gi.repository import GLib
 from service_watcher.systemd import SystemdClient
 from service_watcher.zookeeper import ZooKeeperClient
 from service_watcher.control import ControlRoot
+from service_watcher.roles import Configurable
 
 
 # https://stackoverflow.com/questions/26388088/python-gtk-signal-handler-not-working
@@ -38,48 +39,61 @@ def InitSignal(signals, callback):
         GLib.idle_add(install_glib_handler, sig, priority=GLib.PRIORITY_HIGH)
 
 
-class Monitor(ZooKeeperClient, SystemdClient):
+class Monitor(Configurable, ZooKeeperClient, SystemdClient):
     def __init__(self, config_file):
         super(Monitor, self).__init__(config_file=config_file)
 
         # Setup terminate handler
         InitSignal("SIGTERM", self.exit)
 
-        # Inject the systemd client in services
-        self.config.setup_systemd(self)
-
-        # Build a lookup table for services
-        self.services_lut = {}
-        for service in self.config.services:
-            self.services_lut[service.name] = service
+        # Setup reload handler
+        InitSignal("SIGHUP", self.reload_exit)
 
     def run(self):
         logging.info("starting ServiceWatcher")
 
-        # Connect to zookeeper
-        self.start_zk()
+        while True:
+            self.config.load()
 
-        # Connect to systemd
-        self.start_systemd(self.on_job_event)
+            # Inject the systemd client in services
+            self.config.setup_systemd(self)
 
-        # Initially, all units must be stopped, because we are not the leader
-        for service in self.config.services:
-            service.initialize()
+            # Build a lookup table for services
+            self.services_lut = {}
+            for service in self.config.services:
+                self.services_lut[service.name] = service
 
-        # Start the control root for all services
-        with ControlRoot(self.zk, self.config.services):
-            # Start the main loop
-            self.run_event_loop()
+            # Connect to zookeeper
+            self.start_zk(self.config.zk_quorum)
 
-        # When exiting, shutdown all services
-        for service in self.config.services:
-            service.terminate()
+            # Connect to systemd
+            self.start_systemd(self.on_job_event)
 
-        # Stop listening for events
-        self.stop_systemd()
+            # Initially, all units must be stopped, because we are not the leader
+            for service in self.config.services:
+                service.initialize()
 
-        # Leave ZooKeeper
-        self.stop_zk()
+            # Start the control root for all services
+            with ControlRoot(self.zk, self.config.services) as cr:
+                # Start the main loop
+                self.run_event_loop()
+
+                if self.reload_signaled:
+                    cr.set_reload_mode()
+                    self.reload_signaled = False
+                else:
+                    break
+
+            # When exiting, shutdown all services
+            for service in self.config.services:
+                service.terminate()
+
+            # Stop listening for events
+            self.stop_systemd()
+
+            # Leave ZooKeeper
+            self.stop_zk()
+
 
     def on_job_event(self, job_id, job_object_path, job_unit_name, status):
         try:
@@ -91,4 +105,9 @@ class Monitor(ZooKeeperClient, SystemdClient):
 
     def exit(self):
         logging.warning("caught SIGTERM, trying to exit")
+        self.stop_event_loop()
+
+    def reload_exit(self):
+        logging.warning("caught SIGHUP, exiting for reload")
+        self.reload_signaled = True
         self.stop_event_loop()

@@ -4,14 +4,17 @@ from kazoo.recipe.party import ShallowParty
 
 from service_watcher import service as svc
 from service_watcher.zookeeper import ZooKeeperClient
+from service_watcher.roles import Configurable
 
 
-class Status(ZooKeeperClient):
+class Status(Configurable, ZooKeeperClient):
     def __init__(self, config_file):
         super(Status, self).__init__(config_file=config_file)
 
     def run(self):
-        self.start_zk()
+        self.config.load()
+
+        self.start_zk(self.config.zk_quorum)
 
         hostname = gethostname()
         for service in self.config.services:

@@ -47,6 +47,7 @@ User=root
 Group=root
 WorkingDirectory=$SERVICE_WATCHER_INSTALL_DIR
 ExecStart=/usr/bin/python $SERVICE_WATCHER_INSTALL_DIR/service_watcher.py monitor --config $SERVICE_WATCHER_CONFIG
+ExecReload=/bin/kill -HUP \$MAINPID
 Restart=on-failure
 SyslogIdentifier=service_watcher
 

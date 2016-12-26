@@ -1,13 +1,13 @@
 import logging
-from pydbus import SystemBus
+
 from gi.repository import GLib
+from pydbus import SystemBus
+
 
 class SystemdClient(object):
     def __init__(self, *args, **kwargs):
         super(SystemdClient, self).__init__()
 
-        # Initialize the main loop
-        self.main_loop = GLib.MainLoop()
         self.systemd_subscribed = False
 
     def start_systemd(self, job_notification = None):
@@ -30,18 +30,23 @@ class SystemdClient(object):
             self.systemd.Subscribe()
 
         try:
+            # Initialize the main loop
+            self.main_loop = GLib.MainLoop()
             self.main_loop.run()
         except KeyboardInterrupt:
             logging.warning("caught KeyboardInterrupt, quitting")
         except SystemExit:
             logging.warning("caught SystemExit, quitting")
+        finally:
+            self.main_loop = None
 
         if self.systemd_subscribed:
             # Stop listening for DBus notifications
             self.systemd.Unsubscribe()
 
     def stop_event_loop(self):
-        self.main_loop.quit()
+        if self.main_loop is not None:
+            self.main_loop.quit()
 
     def stop_systemd(self):
         logging.info("disconnecting from systemd")

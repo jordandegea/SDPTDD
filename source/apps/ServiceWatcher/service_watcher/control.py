@@ -18,6 +18,8 @@ class ControlRoot(object):
         self.exit_event = threading.Event()
         # Create control groups for all shared services
         self.control_groups = [self.control_group(service) for service in services]
+        # Default to stop services on exit
+        self.reload_exit = False
 
     def control_group(self, service):
         if service.type == svc.GLOBAL:
@@ -27,9 +29,13 @@ class ControlRoot(object):
         elif service.type == svc.MULTI:
             return MultiControlGroup(self, service)
 
+    def set_reload_mode(self):
+        self.reload_exit = True
+
     def __enter__(self):
         for control_group in self.control_groups:
             control_group.start()
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # We are actively exiting
@@ -184,11 +190,14 @@ class GlobalControlUnit(ControlUnit):
                     logging.warning("%s: an error occurred while operating systemd" % self.name)
 
             if service_started or service_start_initiated:
-                try:
-                    logging.info("%s: stopping global service on exit" % self.name)
-                    self.get_unit().Stop("fail")
-                except GLib.Error:
-                    logging.warning("%s: an error occurred while stopping service on exit" % self.name)
+                if self.control_group.control_root.reload_exit:
+                    logging.info("%s: keeping the service running for reload" % self.name)
+                else:
+                    try:
+                        logging.info("%s: stopping global service on exit" % self.name)
+                        self.get_unit().Stop("fail")
+                    except GLib.Error:
+                        logging.warning("%s: an error occurred while stopping service on exit" % self.name)
 
 
 class SharedControlGroup(ControlGroup):
@@ -417,11 +426,14 @@ class MultiControlUnit(ControlUnit):
 
         # When exiting, stop all services
         for service in activated_services:
-            try:
-                activated_services[service].leave()
-                self.control_group.service.get_unit(service).Stop("fail")
-            except:
-                logging.error("%s: error while stopping instance %s" % (self.name, service))
+            if self.control_group.control_root.reload_exit:
+                logging.info("%s: keeping %s service running for reload" % (self.name, service))
+            else:
+                try:
+                    activated_services[service].leave()
+                    self.control_group.service.get_unit(service).Stop("fail")
+                except:
+                    logging.error("%s: error while stopping instance %s" % (self.name, service))
 
     def partition_func(self, identifier, members, set):
         # Sort members so we have a consistent order over all allocators
