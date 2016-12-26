@@ -3,9 +3,6 @@
 # Load the shared provisioning script
 source ./deploy_shared.sh
 
-if ! hash pip 2>&1 >/dev/null; then
-    # Install pip
-    apt-get install -y python-pip
-else
-    echo "Python: python-pip already installed."
-fi
+# Install pip and python-dev
+echo "Python: installing required tools..." 2>&1
+apt-get -qq install -y python-pip python-dev
