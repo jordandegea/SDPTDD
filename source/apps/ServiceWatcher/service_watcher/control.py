@@ -61,11 +61,11 @@ class ControlUnit(threading.Thread):
     def release_loop(self):
         self.loop_event.set()
 
-    def loop_tick(self):
-        # Wait forever for the loop event to be set
-        self.loop_event.wait()
-        # Reset the event
-        self.loop_event.clear()
+    def loop_tick(self, timeout=None):
+        # Wait for the loop event to be set
+        if self.loop_event.wait(timeout):
+            # Reset the event
+            self.loop_event.clear()
 
     def get_unit(self):
         return self.control_group.service.get_unit()
@@ -159,8 +159,15 @@ class GlobalControlUnit(ControlUnit):
                             logging.info("%s: trying to start global service" % self.name)
                             self.get_unit().Start("fail")
 
-                    # wait for a new event
-                    self.loop_tick()
+                    if service_failed:
+                        # There is no way to detect a service unit has been reset using systemctl
+                        # So we must resort to polling here. But as this is an inexpensive local operation,
+                        # and a particularly edgy case (global services should not be failed), we can do this
+                        # anyways.
+                        self.loop_tick(5.0)
+                    else:
+                        # wait for a new event
+                        self.loop_tick()
                 except GLib.Error:
                     logging.warning("%s: an error occurred while operating systemd" % self.name)
 
