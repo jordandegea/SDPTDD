@@ -55,6 +55,15 @@ class ControlGroup(object):
         self.control_root = control_root
         # The service definition for this control group
         self.service = service
+        # this attribute is to be set by child instances
+        # but we cannot pass it to the constructor as this induces a circular dependency
+        self.unit = None
+
+    def start(self):
+        self.unit.start()
+
+    def stop(self):
+        self.unit.stop()
 
 
 class ControlUnit(threading.Thread):
@@ -87,21 +96,7 @@ class ControlUnit(threading.Thread):
         self.release_loop()
 
 
-class SimpleControlGroup(ControlGroup):
-    def __init__(self, control_root, service):
-        super(SimpleControlGroup, self).__init__(control_root, service)
-        # this attribute is to be set by child instances
-        # but we cannot pass it to the constructor as this induces a circular dependency
-        self.unit = None
-
-    def start(self):
-        self.unit.start()
-
-    def stop(self):
-        self.unit.stop()
-
-
-class GlobalControlGroup(SimpleControlGroup):
+class GlobalControlGroup(ControlGroup):
     def __init__(self, control_root, service):
         super(GlobalControlGroup, self).__init__(control_root, service)
         # Only valid on global services
@@ -238,18 +233,18 @@ class GlobalControlUnit(ControlUnit):
         zk = self.control_group.control_root.zk
 
         # Encapsulated logic for the managed global service
-        svc = ServiceLogic(zk, self.control_group.service.name, self.control_group.service, self.get_unit())
+        sl = ServiceLogic(zk, self.control_group.service.name, self.control_group.service, self.get_unit())
 
         # A global service should always run
-        svc.should_run = True
+        sl.should_run = True
 
         # Main loop for this unit
         with self.control_group.service.handler(self.job_event_handler):
             while not exit_event.is_set():
                 # Update the service object
-                svc.tick()
+                sl.tick()
 
-                if svc.service_failed:
+                if sl.service_failed:
                     # There is no way to detect a service unit has been reset using systemctl
                     # So we must resort to polling here. But as this is an inexpensive local operation,
                     # and a particularly edgy case (global services should not be failed), we can do this
@@ -259,10 +254,10 @@ class GlobalControlUnit(ControlUnit):
                     # wait for a new event
                     self.loop_tick()
 
-        svc.terminate(self.control_group.control_root.reload_exit)
+        sl.terminate(self.control_group.control_root.reload_exit)
 
 
-class SharedControlGroup(SimpleControlGroup):
+class SharedControlGroup(ControlGroup):
     def __init__(self, control_root, service):
         super(SharedControlGroup, self).__init__(control_root, service)
         # Only valid on shared services
@@ -288,16 +283,16 @@ class SharedControlUnit(ControlUnit):
         zk = self.control_group.control_root.zk
 
         # Encapsulated logic for the managed shared service
-        svc = ServiceLogic(zk, self.control_group.service.name, self.control_group.service, self.get_unit())
+        sl = ServiceLogic(zk, self.control_group.service.name, self.control_group.service, self.get_unit())
 
         with self.control_group.service.handler(self.job_event_handler):
             # Loop forever
             while not exit_event.is_set():
                 # The shared service for this unit is currently failed, so stay out of the partition waiting for the
                 # unit to be reset
-                svc.tick()
+                sl.tick()
 
-                if svc.service_failed:
+                if sl.service_failed:
                     self.loop_tick(self.control_group.control_root.timings['failed_loop_tick'])
                 else:
                     # Create the partitioner
@@ -313,15 +308,15 @@ class SharedControlUnit(ControlUnit):
                     try:
                         acquired = False
 
-                        while not exit_event.is_set() and not partitioner.failed and not svc.service_failed:
+                        while not exit_event.is_set() and not partitioner.failed and not sl.service_failed:
                             # update service status from systemd
-                            svc.tick()
+                            sl.tick()
 
                             if partitioner.release:
                                 # immediately release set, we will perform a diff-update on the next acquire
                                 logging.info("%s: releasing partitioner set" % self.name)
                                 # note that we should now leave the service as-is, while waiting for what to do
-                                svc.should_run = None
+                                sl.should_run = None
                                 # actually release the partition
                                 partitioner.release_set()
                             elif partitioner.acquired:
@@ -333,10 +328,10 @@ class SharedControlUnit(ControlUnit):
                                     acquired = True
 
                                 # the service should run if the partition is non-empty
-                                svc.should_run = len(new_p) > 0
+                                sl.should_run = len(new_p) > 0
 
                                 # force taking actions
-                                svc.actions()
+                                sl.actions()
 
                                 # wait for wake-up, but not too long so we are still responsive to
                                 # partitioner events
@@ -349,10 +344,10 @@ class SharedControlUnit(ControlUnit):
                         # Release the partitioner when leaving
                         partitioner.finish()
                         # No action should be taken
-                        svc.should_run = None
+                        sl.should_run = None
 
         # When exiting, stop all services
-        svc.terminate(self.control_group.control_root.reload_exit)
+        sl.terminate(self.control_group.control_root.reload_exit)
 
     def partition_func(self, identifier, members, service):
         # Sort members so we have a consistent order over all allocators
@@ -373,7 +368,7 @@ class SharedControlUnit(ControlUnit):
         return allocation_state[identifier]
 
 
-class MultiControlGroup(SimpleControlGroup):
+class MultiControlGroup(ControlGroup):
     def __init__(self, control_root, service):
         super(MultiControlGroup, self).__init__(control_root, service)
         # Only valid on MULTI services
@@ -409,7 +404,6 @@ class MultiControlUnit(ControlUnit):
 
         # List of services that are known to fail, and are included in the partitioning identifier
         known_failed_services = [service.name.split("@")[1] for service in services if service.service_failed]
-        identifier_needs_update = False
 
         with self.control_group.service.handler(self.param_job_handler):
             # Loop forever
@@ -436,7 +430,7 @@ class MultiControlUnit(ControlUnit):
                             service.tick()
 
                             param = service.name.split("@")[1]
-                            if service.service_failed and not param in known_failed_services:
+                            if service.service_failed and param not in known_failed_services:
                                 known_failed_services.append(param)
                                 identifier_needs_update = True
                             elif not service.service_failed and param in known_failed_services:
@@ -482,7 +476,7 @@ class MultiControlUnit(ControlUnit):
         for service in services:
             service.terminate(self.control_group.control_root.reload_exit)
 
-    def partition_func(self, identifier, members, set):
+    def partition_func(self, identifier, members, partitions):
         # Sort members so we have a consistent order over all allocators
         sorted_members = sorted(members)
         allocation_state = {}
@@ -490,7 +484,7 @@ class MultiControlUnit(ControlUnit):
         for member in sorted_members:
             allocation_state[member] = []
 
-        for param, count in set:
+        for param, count in partitions:
             # Number of instances left to allocate
             cnt = count
 
@@ -502,9 +496,9 @@ class MultiControlUnit(ControlUnit):
                 member_failed = member_splitted[1:]
 
                 if cnt > 0:
-                    if not param in member_failed:
+                    if param not in member_failed:
                         allocation_state[member_spec].append("%s@%d" % (param, count - cnt + 1))
-                        cnt = cnt - 1
+                        cnt -= 1
 
         logging.info("%s: computed partition %s" % (self.name, json.dumps(allocation_state)))
 
