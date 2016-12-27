@@ -103,6 +103,7 @@ $QUORUM_SPEC
 tickTime=2000
 initLimit=10
 syncLimit=5
+standaloneEnabled=false
 # END ZOOKEEPER QUORUM CONFIG" >> "$ZOOKEEPER_CONFIG_FILE"
 
 # Each member of the Zookeeper Quorum is deployed on one exclusive node of the
@@ -129,7 +130,7 @@ echo "Kafka: installing Kafka systemd unit..." 1>&2
 
 MORE_ENV=''
 if (($ENABLE_VAGRANT)); then
-  MORE_ENV="Environment=KAFKA_HEAP_OPTS=-Xmx256M -Xms256M"
+  MORE_ENV="Environment='KAFKA_HEAP_OPTS=-Xmx256M -Xms256M'"
 fi
 
 # Install the unit file
