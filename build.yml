@@ -14,7 +14,7 @@ build_outputs:
     build_script: |
       #!/bin/bash
       cd source/apps
-      tar --exclude=.idea -cJvf ../code/files/service_watcher.tar.xz ServiceWatcher
+      tar --exclude=.idea --exclude='*.pyc' -cJvf ../code/files/service_watcher.tar.xz ServiceWatcher
     groups: [ python, service_watcher ]
   source/code/files/KafkaConsoleBridge.jar:
     dependencies:
