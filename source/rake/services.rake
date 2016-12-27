@@ -17,7 +17,7 @@ end
 
 namespace :services do
   desc "Reloads the systemd daemon"
-  task :reload, :server do |task, args|
+  task :daemon_reload, :server do |task, args|
     on hosts(args) do |host|
       sudo "systemctl", "daemon-reload"
     end
@@ -48,6 +48,19 @@ namespace :services do
       # Enable all services that should be enabled
       enabled_services(hostname).each do |service|
         sudo "systemctl", "enable", "#{service}.service"
+      end
+    end
+  end
+
+  desc "Reloads services according to service assignments in the host config file"
+  task :reload, [:server, :services] do |task, args|
+    on hosts(args) do |host|
+      # Get the hostname as defined in the config file
+      hostname = host.properties.name
+
+      # Start all enabled services
+      enabled_services(hostname, args).each do |service|
+        sudo "systemctl", "reload", "#{service}.service"
       end
     end
   end
