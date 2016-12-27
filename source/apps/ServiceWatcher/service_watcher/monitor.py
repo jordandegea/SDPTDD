@@ -12,7 +12,7 @@ from service_watcher.roles import Configurable
 # https://stackoverflow.com/questions/26388088/python-gtk-signal-handler-not-working
 def InitSignal(signals, callback):
     def signal_action(signal):
-        callback()
+        callback(signal)
 
     def idle_handler(*args):
         GLib.idle_add(signal_action, priority=GLib.PRIORITY_HIGH)
@@ -43,18 +43,15 @@ class Monitor(Configurable, ZooKeeperClient, SystemdClient):
     def __init__(self, config_file):
         super(Monitor, self).__init__(config_file=config_file)
 
-        # Setup terminate handler
-        InitSignal("SIGTERM", self.exit)
-
-        # Setup reload handler
-        InitSignal("SIGHUP", self.reload_exit)
-
+        # Setup terminate and reload handler
+        InitSignal("SIGTERM SIGHUP", self.signal_callback)
         self.reload_signaled = False
 
     def run(self):
         logging.info("starting ServiceWatcher")
 
-        while True:
+        run_loop = True
+        while run_loop:
             self.config.load()
 
             # Inject the systemd client in services
@@ -80,7 +77,7 @@ class Monitor(Configurable, ZooKeeperClient, SystemdClient):
                     cr.set_reload_mode()
                     self.reload_signaled = False
                 else:
-                    break
+                    run_loop = False
 
             # Stop listening for events
             self.stop_systemd()
@@ -97,11 +94,17 @@ class Monitor(Configurable, ZooKeeperClient, SystemdClient):
         except KeyError:
             pass
 
+    def signal_callback(self, sgn):
+        if sgn == 15: # SIGTERM
+            self.exit()
+        elif sgn == 1: # SIGHUP
+            self.reload()
+
     def exit(self):
         logging.warning("caught SIGTERM, trying to exit")
         self.stop_event_loop()
 
-    def reload_exit(self):
+    def reload(self):
         logging.warning("caught SIGHUP, exiting for reload")
         self.reload_signaled = True
         self.stop_event_loop()
