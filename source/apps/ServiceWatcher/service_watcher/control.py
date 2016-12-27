@@ -291,52 +291,62 @@ class SharedControlUnit(ControlUnit):
         with self.control_group.service.handler(self.job_event_handler):
             # Loop forever
             while not exit_event.is_set():
-                # Create the partitioner
-                partitioner_path = "/service_watcher/partition/%s" % self.control_group.service.name
-                # Note that we use the service as a set for the partitioner, but as we use a custom partition_func, so
-                # this is ok
-                partitioner = SetPartitioner(zk, partitioner_path, self.control_group.service,
-                                             self.partition_func, gethostname(), 5)  # 5s time boundary
-                logging.info("%s: created partitioner at %s" % (self.name, partitioner_path))
+                if svc.service_failed:
+                    # The shared service for this unit is currently failed, so stay out of the partition waiting for the
+                    # unit to be reset
+                    svc.tick()
 
-                try:
-                    acquired = False
+                    if svc.service_failed:
+                        self.loop_tick(5.0)
+                else:
+                    # Create the partitioner
+                    partitioner_path = "/service_watcher/partition/%s" % self.control_group.service.name
+                    # Note that we use the service as a set for the partitioner, but as we use a custom partition_func, so
+                    # this is ok
+                    partitioner = SetPartitioner(zk, partitioner_path, self.control_group.service,
+                                                 self.partition_func, gethostname(), 5)  # 5s time boundary
+                    logging.info("%s: created partitioner at %s" % (self.name, partitioner_path))
 
-                    while not exit_event.is_set() and not partitioner.failed:
-                        # update service status from systemd
-                        svc.tick()
+                    try:
+                        acquired = False
 
-                        if partitioner.release:
-                            # immediately release set, we will perform a diff-update on the next acquire
-                            logging.info("%s: releasing partitioner set" % self.name)
-                            # note that we should now leave the service as-is, while waiting for what to do
-                            svc.should_run = None
-                            # actually release the partition
-                            partitioner.release_set()
-                        elif partitioner.acquired:
-                            # we have a new partition
-                            new_p = list(partitioner)
+                        while not exit_event.is_set() and not partitioner.failed and not svc.service_failed:
+                            # update service status from systemd
+                            svc.tick()
 
-                            if not acquired:
-                                logging.info("%s: acquired partition set" % self.name)
-                                acquired = True
+                            if partitioner.release:
+                                # immediately release set, we will perform a diff-update on the next acquire
+                                logging.info("%s: releasing partitioner set" % self.name)
+                                # note that we should now leave the service as-is, while waiting for what to do
+                                svc.should_run = None
+                                # actually release the partition
+                                partitioner.release_set()
+                            elif partitioner.acquired:
+                                # we have a new partition
+                                new_p = list(partitioner)
 
-                            # the service should run if the partition is non-empty
-                            svc.should_run = len(new_p) > 0
+                                if not acquired:
+                                    logging.info("%s: acquired partition set" % self.name)
+                                    acquired = True
 
-                            # force taking actions
-                            svc.actions()
+                                # the service should run if the partition is non-empty
+                                svc.should_run = len(new_p) > 0
 
-                            # wait for wake-up, but not too long so we are still responsive to
-                            # partitioner events
-                            self.loop_tick(1.0)
-                        elif partitioner.allocating:
-                            acquired = False
-                            logging.info("%s: acquiring partition" % self.name)
-                            partitioner.wait_for_acquire()
-                finally:
-                    # Release the partitioner when leaving
-                    partitioner.finish()
+                                # force taking actions
+                                svc.actions()
+
+                                # wait for wake-up, but not too long so we are still responsive to
+                                # partitioner events
+                                self.loop_tick(1.0)
+                            elif partitioner.allocating:
+                                acquired = False
+                                logging.info("%s: acquiring partition" % self.name)
+                                partitioner.wait_for_acquire()
+                    finally:
+                        # Release the partitioner when leaving
+                        partitioner.finish()
+                        # No action should be taken
+                        svc.should_run = None
 
         # When exiting, stop all services
         svc.terminate(self.control_group.control_root.reload_exit)
