@@ -376,6 +376,9 @@ class MultiControlUnit(ControlUnit):
     def __init__(self, control_group):
         super(MultiControlUnit, self).__init__(control_group, control_group.service.name)
 
+    def param_job_handler(self, job_id, job_object_path, status, param):
+        super(MultiControlUnit, self).job_event_handler(job_id, job_object_path, status)
+
     def run(self):
         # Event to signal the thread should exit
         exit_event = self.control_group.control_root.exit_event
@@ -387,7 +390,7 @@ class MultiControlUnit(ControlUnit):
         services = [ServiceLogic(zk, "%s@%s" % (self.name, s), self.control_group.service, self.get_unit(s)) for s in
                     self.control_group.service.instances]
 
-        with self.control_group.service.handler(self.job_event_handler):
+        with self.control_group.service.handler(self.param_job_handler):
             # Loop forever
             while not exit_event.is_set():
                 # Create the partitioner
