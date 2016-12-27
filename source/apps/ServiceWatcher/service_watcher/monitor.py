@@ -49,6 +49,8 @@ class Monitor(Configurable, ZooKeeperClient, SystemdClient):
         # Setup reload handler
         InitSignal("SIGHUP", self.reload_exit)
 
+        self.reload_signaled = False
+
     def run(self):
         logging.info("starting ServiceWatcher")
 

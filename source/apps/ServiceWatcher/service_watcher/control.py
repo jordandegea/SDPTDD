@@ -399,15 +399,26 @@ class MultiControlUnit(ControlUnit):
         services = [ServiceLogic(zk, "%s@%s" % (self.name, s), self.control_group.service, self.get_unit(s)) for s in
                     self.control_group.service.instances]
 
+        # Tick all services once
+        for service in services:
+            service.tick()
+
+        # List of services that are known to fail, and are included in the partitioning identifier
+        known_failed_services = [service.name.split("@")[1] for service in services if service.service_failed]
+        identifier_needs_update = False
+
         with self.control_group.service.handler(self.param_job_handler):
             # Loop forever
             while not exit_event.is_set():
                 # Create the partitioner
                 partitioner_path = "/service_watcher/partition/%s" % self.control_group.service.name
+                # Create the identifier
+                identifier = "%s@%s" % (gethostname(), "@".join(known_failed_services))
+                identifier_needs_update = False
                 # Note that we use a set of tuples for the partitioner, but as we use a custom partition_func, so
                 # this is ok
                 partitioner = SetPartitioner(zk, partitioner_path, self.control_group.service.instances.items(),
-                                             self.partition_func, gethostname(), 5)  # 5s time boundary
+                                             self.partition_func, identifier, 5)  # 5s time boundary
                 logging.info("%s: created partitioner at %s" % (self.name, partitioner_path))
 
                 try:
@@ -417,6 +428,17 @@ class MultiControlUnit(ControlUnit):
                         # update services
                         for service in services:
                             service.tick()
+
+                            param = service.name.split("@")[1]
+                            if service.service_failed and not param in known_failed_services:
+                                known_failed_services.append(param)
+                                identifier_needs_update = True
+                            elif not service.service_failed and param in known_failed_services:
+                                known_failed_services.remove(param)
+                                identifier_needs_update = True
+
+                        if identifier_needs_update:
+                            break
 
                         if partitioner.release:
                             # immediately release set, we will perform a diff-update on the next acquire
@@ -463,10 +485,20 @@ class MultiControlUnit(ControlUnit):
             allocation_state[member] = []
 
         for param, count in set:
+            # Number of instances left to allocate
+            cnt = count
+
             # For the current param, allocate as much instances as possible
             # No worker should have to run the same service twice though
-            for i in range(min(count, len(members))):
-                allocation_state[sorted_members[i]].append("%s@%d" % (param, i))
+            # Also, do not assign failed services to workers
+            for member_spec in sorted_members:
+                member_splitted = member_spec.split("@")
+                member_failed = member_splitted[1:]
+
+                if cnt > 0:
+                    if not param in member_failed:
+                        allocation_state[member_spec].append("%s@%d" % (param, count - cnt + 1))
+                        cnt = cnt - 1
 
         logging.info("%s: computed partition %s" % (self.name, json.dumps(allocation_state)))
 
