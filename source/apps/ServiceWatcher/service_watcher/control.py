@@ -291,18 +291,17 @@ class SharedControlUnit(ControlUnit):
         with self.control_group.service.handler(self.job_event_handler):
             # Loop forever
             while not exit_event.is_set():
-                if svc.service_failed:
-                    # The shared service for this unit is currently failed, so stay out of the partition waiting for the
-                    # unit to be reset
-                    svc.tick()
+                # The shared service for this unit is currently failed, so stay out of the partition waiting for the
+                # unit to be reset
+                svc.tick()
 
-                    if svc.service_failed:
-                        self.loop_tick(5.0)
+                if svc.service_failed:
+                    self.loop_tick(5.0)
                 else:
                     # Create the partitioner
                     partitioner_path = "/service_watcher/partition/%s" % self.control_group.service.name
-                    # Note that we use the service as a set for the partitioner, but as we use a custom partition_func, so
-                    # this is ok
+                    # Note that we use the service as a set for the partitioner, but as we use a custom partition_func,
+                    # so this is ok
                     partitioner = SetPartitioner(zk, partitioner_path, self.control_group.service,
                                                  self.partition_func, gethostname(), 5)  # 5s time boundary
                     logging.info("%s: created partitioner at %s" % (self.name, partitioner_path))
