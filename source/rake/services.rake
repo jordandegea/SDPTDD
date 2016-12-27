@@ -8,11 +8,11 @@ def enabled_services(hostname, args = nil)
 
   $conf['services'].select { |service|
     $conf['hosts'][hostname]['services'].include? service and filter.include? service
-  }
+  }.collect { |s| "#{s}.service" }
 end
 
 def disabled_services(hostname)
-  $conf['services'] - $conf['hosts'][hostname]['services']
+  ($conf['services'] - $conf['hosts'][hostname]['services']).collect { |s| "#{s}.service" }
 end
 
 namespace :services do
@@ -24,31 +24,29 @@ namespace :services do
   end
 
   desc "Enables (or disables) services as defined in the host config file"
-  task :enable, :server do |task, args|
+  task :enable, [:server, :services] do |task, args|
     on hosts(args) do |host|
       # Get the hostname as defined in the config file
       hostname = host.properties.name
 
       # Disable all services that should not be enabled
-      disabled_services(hostname).each do |service|
-        # Make sure the service is stopped
-        begin
-          sudo "systemctl", "stop", "#{service}.service"
-        rescue => e
-          # ignore exceptions, services may be already stopped
-        end
 
-        begin
-          sudo "systemctl", "disable", "#{service}.service"
-        rescue => e
-          # ignore exceptions, services may be already disabled
-        end
+      # First sure the services have been stopped
+      begin
+        sudo "systemctl", "stop", *disabled_services(hostname)
+      rescue => e
+        # ignore exceptions, services may be already stopped
+      end
+
+      # Then disable them
+      begin
+        sudo "systemctl", "disable", *disabled_services(hostname)
+      rescue => e
+        # ignore exceptions, services may be already disabled
       end
 
       # Enable all services that should be enabled
-      enabled_services(hostname).each do |service|
-        sudo "systemctl", "enable", "#{service}.service"
-      end
+      sudo "systemctl", "enable", *enabled_services(hostname, args)
     end
   end
 
@@ -58,10 +56,8 @@ namespace :services do
       # Get the hostname as defined in the config file
       hostname = host.properties.name
 
-      # Start all enabled services
-      enabled_services(hostname, args).each do |service|
-        sudo "systemctl", "reload", "#{service}.service"
-      end
+      # Reload all enabled services
+      sudo "systemctl", "reload", *enabled_services(hostname, args)
     end
   end
 
@@ -72,9 +68,18 @@ namespace :services do
       hostname = host.properties.name
 
       # Start all enabled services
-      enabled_services(hostname, args).each do |service|
-        sudo "systemctl", "start", "#{service}.service"
-      end
+      sudo "systemctl", "start", *enabled_services(hostname, args)
+    end
+  end
+
+  desc "Restarts services according to service assignments in the host config file"
+  task :restart, [:server, :services] do |task, args|
+    on hosts(args) do |host|
+      # Get the hostname as defined in the config file
+      hostname = host.properties.name
+
+      # Restart all enabled services
+      sudo "systemctl", "restart", *enabled_services(hostname, args)
     end
   end
 
@@ -85,12 +90,10 @@ namespace :services do
       hostname = host.properties.name
 
       # Stop all enabled services
-      enabled_services(hostname, args).reverse.each do |service|
-        begin
-          sudo "systemctl", "stop", "#{service}.service"
-        rescue => e
-          warn e
-        end
+      begin
+        sudo "systemctl", "stop", *enabled_services(hostname, args)
+      rescue => e
+        warn e
       end
     end
   end
@@ -101,13 +104,11 @@ namespace :services do
       # Get the hostname as defined in the config file
       hostname = host.properties.name
 
-      # Stop all enabled services
-      enabled_services(hostname, args).reverse.each do |service|
-        begin
-          sudo "systemctl", "kill", "#{service}.service"
-        rescue => e
-          warn e
-        end
+      # Kill all enabled services
+      begin
+        sudo "systemctl", "kill", *enabled_services(hostname, args)
+      rescue => e
+        warn e
       end
     end
   end
@@ -118,10 +119,8 @@ namespace :services do
       # Get the hostname as defined in the config file
       hostname = host.properties.name
 
-      # Stop all enabled services
-      enabled_services(hostname, args).each do |service|
-        info capture("systemctl", "status", "#{service}.service")
-      end
+      # Status all enabled services
+      info capture("systemctl", "status", *enabled_services(hostname, args))
     end
   end
 end

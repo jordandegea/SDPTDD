@@ -39,30 +39,33 @@ def host_transfer(host, source_folders_param, working_directory, deploy_root)
   source_folders.concat(host_conf[source_folders_param]) if host_conf[source_folders_param]
 
   # Push source folders to the working directory
-  source_folders.each do |source_folder|
-    folder = File.expand_path(File.join('..', source_folder), $config_source)
+  begin
+    Open3.popen2e("sftp", "-o", "StrictHostKeyChecking=no", "-i", host.ssh_options[:keys][0], "#{host.user}@#{host.hostname}") do |stdin, stdout, wait_thr|
+      source_folders.each do |source_folder|
+        folder = File.expand_path(File.join('..', source_folder), $config_source)
 
-    begin
-      Open3.popen2e("sftp", "-o", "StrictHostKeyChecking=no", "-i", host.ssh_options[:keys][0], "#{host.user}@#{host.hostname}") do |stdin, stdout, wait_thr|
         info "[#{host.properties.name}] uploading #{folder}"
 
         stdin.puts "lcd '#{folder}'"
         stdin.puts "cd #{working_directory}"
         stdin.puts "put -r ."
-        stdin.close
-
-        stdout.each do |line|
-          debug "[#{host.properties.name}] #{line}"
-        end
-
-        unless wait_thr.value.success?
-          fail "aborting because an error occurred transferring files"
-        end
       end
-    rescue => e
-      warn "[#{host.properties.name}] failed to transfer using SFTP, trying using Net::SCP, this will be slower"
+      stdin.close
 
-      folder = Pathname.new(folder)
+      stdout.each do |line|
+        debug "[#{host.properties.name}] #{line}"
+      end
+
+      unless wait_thr.value.success?
+        fail "aborting because an error occurred transferring files"
+      end
+    end
+  rescue => e
+    warn "[#{host.properties.name}] failed to transfer using SFTP, trying using Net::SCP, this will be slower"
+
+    source_folders.each do |source_folder|
+      folder = Pathname.new(File.expand_path(File.join('..', source_folder), $config_source))
+
       Dir.glob(File.join(folder, '**', '*')).each do |file|
         next if Dir.exist? file
 
