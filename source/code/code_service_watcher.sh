@@ -27,6 +27,12 @@ fi
 # Extract code archive
 tar --strip-components=1 -C "$SERVICE_WATCHER_INSTALL_DIR" -xf "files/service_watcher.tar.xz"
 
+# Fix permissions
+chown root:root -R "$SERVICE_WATCHER_INSTALL_DIR"
+find "$SERVICE_WATCHER_INSTALL_DIR" -type f -print0 | xargs -0 chmod 0644
+find "$SERVICE_WATCHER_INSTALL_DIR" -type d -print0 | xargs -0 chmod 0755
+chmod 0755 "$SERVICE_WATCHER_INSTALL_DIR/service_watcher.py"
+
 # Install requirements
 apt-get -qq install -y libyaml-dev python-gi
 pip install --quiet -r "$SERVICE_WATCHER_INSTALL_DIR/requirements.txt"
