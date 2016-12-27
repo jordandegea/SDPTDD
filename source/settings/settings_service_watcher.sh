@@ -50,8 +50,8 @@ sed -i "s/zookeeper_quorum_replace_me/$ZOOKEEPER_QUORUM/" $SERVICE_WATCHER_CONFI
 # Create the ServiceWatcher systemd service
 echo "[Unit]
 Description=Twitter Weather ServiceWatcher
-Requires=network.target zookeeper.service
-After=network.target zookeeper.service
+Requires=network.target
+After=network.target
 
 [Service]
 Type=simple
@@ -71,6 +71,26 @@ rm -f /etc/systemd/system/service-watcher.service
 if (($ENABLE_VAGRANT)); then
   # Install socat
   apt-get -qq install -y socat
+  # Create the socat wrapper script
+  WRAPPER=/usr/local/bin/dummy_service
+  echo "#!/bin/bash
+if [[ \$1 == 'multi' ]]; then
+  /usr/bin/socat -v TCP4-LISTEN:\$((2001 + \$2 * 100 + (RANDOM % 100))),fork EXEC:cat
+elif [[ \$1 == 'shared' ]]; then
+  /usr/bin/socat -v TCP4-LISTEN:2001,fork EXEC:cat
+elif [[ \$1 == 'global' ]]; then
+  /usr/bin/socat -v TCP4-LISTEN:2000,fork EXEC:cat
+fi
+
+EXIT_CODE=\$?
+if [[ \$EXIT_CODE -eq 143 ]]; then
+  exit 0
+else
+  exit \$EXIT_CODE
+fi
+"> $WRAPPER
+  chmod +x $WRAPPER
+
   echo "[Unit]
 Description=ServiceWatcher dummy (global) unit for testing
 Requires=network.target
@@ -80,7 +100,7 @@ After=network.target
 Type=simple
 User=root
 Group=root
-ExecStart=/usr/bin/socat -v TCP4-LISTEN:2000,fork EXEC:cat
+ExecStart=$WRAPPER global
 Restart=on-failure
 SyslogIdentifier=dummy_global
 
@@ -96,7 +116,7 @@ After=network.target
 Type=simple
 User=root
 Group=root
-ExecStart=/usr/bin/socat -v TCP4-LISTEN:2001,fork EXEC:cat
+ExecStart=$WRAPPER shared
 Restart=on-failure
 SyslogIdentifier=dummy_shared
 
@@ -109,10 +129,10 @@ Requires=network.target
 After=network.target
 
 [Service]
-Type=forking
+Type=simple
 User=root
 Group=root
-ExecStart=/bin/bash -c 'nohup /usr/bin/socat -v TCP4-LISTEN:\$((2001 + %i * 100 + (RANDOM % 100))),fork EXEC:cat &'
+ExecStart=$WRAPPER multi %i
 Restart=on-failure
 SyslogIdentifier=dummy_multi@%i
 
