@@ -55,5 +55,7 @@ class Status(Configurable, ZooKeeperClient):
             total_instances = total_instances + 1
         if service.type == svc.SHARED:
             total_instances = service.count
+        elif service.type == svc.MULTI:
+            total_instances = service.instances[instance_name.split("@")[1]]
         print("  summary:")
         print("    %d out of %d instances ok" % (instances, total_instances))
