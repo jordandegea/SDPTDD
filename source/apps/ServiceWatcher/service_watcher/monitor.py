@@ -16,9 +16,11 @@ def InitSignal(signals, callback):
 
     def idle_handler(*args):
         GLib.idle_add(signal_action, priority=GLib.PRIORITY_HIGH)
+        return True
 
     def handler(*args):
         signal_action(args[0])
+        return True
 
     def install_glib_handler(sig):
         unix_signal_add = None
@@ -33,10 +35,9 @@ def InitSignal(signals, callback):
         else:
             logging.error("Can't install GLib signal handler, too old gi.")
 
-    SIGS = [getattr(signal, s, None) for s in signals.split()]
-    for sig in filter(None, SIGS):
+    for sig in signals:
         signal.signal(sig, idle_handler)
-        GLib.idle_add(install_glib_handler, sig, priority=GLib.PRIORITY_HIGH)
+        install_glib_handler(sig)
 
 
 class Monitor(Configurable, ZooKeeperClient, SystemdClient):
@@ -44,7 +45,7 @@ class Monitor(Configurable, ZooKeeperClient, SystemdClient):
         super(Monitor, self).__init__(config_file=config_file)
 
         # Setup terminate and reload handler
-        InitSignal("SIGTERM SIGHUP", self.signal_callback)
+        InitSignal([15, 1], self.signal_callback) # SIGTERM, SIGHUP
         self.reload_signaled = False
 
     def run(self):
