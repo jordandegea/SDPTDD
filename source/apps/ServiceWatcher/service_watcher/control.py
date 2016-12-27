@@ -1,12 +1,13 @@
+import json
 import logging
 import threading
-import json
-from gi.repository import GLib
 from socket import gethostname
-from service_watcher import service as svc
-from kazoo.recipe.election import Election
-from kazoo.recipe.party import ShallowParty
+
+from gi.repository import GLib
 from kazoo.recipe.partitioner import SetPartitioner
+from kazoo.recipe.party import ShallowParty
+
+from service_watcher import service as svc
 
 
 class ControlRoot(object):
@@ -77,8 +78,8 @@ class ControlUnit(threading.Thread):
             # Reset the event
             self.loop_event.clear()
 
-    def get_unit(self):
-        return self.control_group.service.get_unit()
+    def get_unit(self, param=None):
+        return self.control_group.service.get_unit(param)
 
     def job_event_handler(self, job_id, job_object_path, status):
         self.release_loop()
@@ -110,6 +111,119 @@ class GlobalControlGroup(SimpleControlGroup):
         logging.info("%s: global control group initialized" % service.name)
 
 
+class ServiceLogic(object):
+    def __init__(self, zk, name, service, unit):
+        super(ServiceLogic, self).__init__()
+        self.name = name
+        self.service = service
+        self.unit = unit
+
+        # Group membership for this service object
+        self.party = ShallowParty(zk, "/service_watcher/active/%s" % self.name, gethostname())
+        self.failed_party = ShallowParty(zk, "/service_watcher/failed/%s" % self.name, gethostname())
+
+        self.service_started = False
+        self.service_start_initiated = False
+        self.service_failed = False
+        self.service_stop_initiated = False
+
+        self.should_run = None
+
+    def tick(self):
+        state = None
+
+        try:
+            state = self.unit.ActiveState
+        except GLib.Error:
+            logging.error("%s: failed getting state from systemd" % self.name)
+
+        # First step, update current state
+        if state == "active":
+            if not self.service_started:
+                logging.info("%s: service started" % self.name)
+
+                self.party.join()
+                self.service_started = True
+                self.service_start_initiated = False
+
+            if self.service_failed:
+                self.failed_party.leave()
+                self.service_failed = False
+        elif state == "inactive":
+            if self.service_started:
+                logging.info("%s: service stopped" % self.name)
+
+                self.party.leave()
+                self.service_started = False
+                self.service_start_initiated = False
+                self.service_stop_initiated = False
+
+            if self.service_failed:
+                self.failed_party.leave()
+                self.service_failed = False
+                self.service_start_initiated = False
+                self.service_stop_initiated = False
+        elif state == "failed":
+            if self.service_started:
+                self.party.leave()
+                self.service_started = False
+                self.service_start_initiated = False
+                self.service_stop_initiated = False
+
+            if not self.service_failed:
+                logging.warning("%s: service failed, holding off" % self.name)
+
+                self.failed_party.join()
+                self.service_failed = True
+                self.service_start_initiated = False
+                self.service_stop_initiated = False
+
+        # Only take a decision if we know the current state of the service and what we should do
+        try:
+            if state is not None:
+                self.actions()
+        except GLib.Error:
+            logging.error("%s: failed controlling the service" % self.name)
+
+    def actions(self):
+        if self.should_run is not None:
+            if self.should_run:
+                # try having the service running
+                if not self.service_started:
+                    self.start_service()
+            else:
+                # try having the service stopped
+                if self.service_started:
+                    self.stop_service()
+
+    def terminate(self, reload_mode):
+        if self.service_start_initiated or self.service_started:
+            # the service is currently running
+            if reload_mode:
+                logging.info("%s: keeping service running for reload" % self.name)
+            else:
+                self.stop_service()
+        elif self.service_failed:
+            # the service has failed
+            if reload_mode:
+                logging.warning("%s: resetting failed status for reload" % self.name)
+                self.unit.ResetFailed()
+            else:
+                logging.warning("%s: exiting with failed status" % self.name)
+
+    def start_service(self):
+        if not self.service_start_initiated:
+            logging.info("%s: starting service" % self.name)
+            self.unit.Start("fail")
+            self.service_start_initiated = True
+
+    def stop_service(self):
+        if not self.service_stop_initiated:
+            logging.info("%s: stopping service" % self.name)
+            self.unit.Stop("fail")
+            self.service_stop_initiated = True
+
+
 class GlobalControlUnit(ControlUnit):
     def __init__(self, control_group):
         super(GlobalControlUnit, self).__init__(control_group, control_group.service.name)
@@ -121,83 +235,29 @@ class GlobalControlUnit(ControlUnit):
         # ZooKeeper instance
         zk = self.control_group.control_root.zk
 
-        # Group membership for this object (service-wise)
-        party = ShallowParty(zk, "/service_watcher/active/%s" % self.control_group.service.name, gethostname())
-        failed_party = ShallowParty(zk, "/service_watcher/failed/%s" % self.control_group.service.name, gethostname())
+        # Encapsulated logic for the managed global service
+        svc = ServiceLogic(zk, self.control_group.service.name, self.control_group.service, self.get_unit())
+
+        # A global service should always run
+        svc.should_run = True
 
         # Main loop for this unit
         with self.control_group.service.handler(self.job_event_handler):
-            service_started = False
-            service_start_initiated = False
-            service_failed = False
-
             while not exit_event.is_set():
-                try:
-                    state = self.get_unit().ActiveState
+                # Update the service object
+                svc.tick()
 
-                    if state == "active":
-                        if not service_started:
-                            logging.info("%s: global service started" % self.name)
-                            party.join()
-                            service_started = True
-                            service_start_initiated = False
-
-                        if service_failed:
-                            service_failed = False
-                            service_start_initiated = False
-                            failed_party.leave()
-                    elif state == "inactive":
-                        if service_started:
-                            logging.info("%s: global service stopped" % self.name)
-                            party.leave()
-                            service_started = False
-                            service_start_initiated = False
-
-                        if service_failed:
-                            service_failed = False
-                            service_start_initiated = False
-                            failed_party.leave()
-                    elif state == "failed":
-                        if service_started:
-                            party.leave()
-                            service_started = False
-                            service_start_initiated = False
-
-                        if not service_failed:
-                            logging.warning("%s: global service failed, not starting until reset" % self.name)
-                            failed_party.join()
-                            service_failed = True
-                            service_start_initiated = False
-
-                    if not service_started:
-                        # service not started yet
-                        if not service_failed and not service_start_initiated:
-                            # try starting the service
-                            service_start_initiated = True
-                            logging.info("%s: trying to start global service" % self.name)
-                            self.get_unit().Start("fail")
-
-                    if service_failed:
-                        # There is no way to detect a service unit has been reset using systemctl
-                        # So we must resort to polling here. But as this is an inexpensive local operation,
-                        # and a particularly edgy case (global services should not be failed), we can do this
-                        # anyways.
-                        self.loop_tick(5.0)
-                    else:
-                        # wait for a new event
-                        self.loop_tick()
-                except GLib.Error:
-                    logging.warning("%s: an error occurred while operating systemd" % self.name)
-
-            if service_started or service_start_initiated:
-                if self.control_group.control_root.reload_exit:
-                    logging.info("%s: keeping the service running for reload" % self.name)
+                if svc.service_failed:
+                    # There is no way to detect a service unit has been reset using systemctl
+                    # So we must resort to polling here. But as this is an inexpensive local operation,
+                    # and a particularly edgy case (global services should not be failed), we can do this
+                    # anyways.
+                    self.loop_tick(5.0)
                 else:
-                    try:
-                        logging.info("%s: stopping global service on exit" % self.name)
-                        self.get_unit().Stop("fail")
-                    except GLib.Error:
-                        logging.warning("%s: an error occurred while stopping service on exit" % self.name)
+                    # wait for a new event
+                    self.loop_tick()
+
+        svc.terminate(self.control_group.control_root.reload_exit)
 
 
 class SharedControlGroup(SimpleControlGroup):
@@ -225,77 +285,61 @@ class SharedControlUnit(ControlUnit):
         # ZooKeeper instance
         zk = self.control_group.control_root.zk
 
-        # List of currently activated services
-        activated_service = False
-        party = ShallowParty(zk, "/service_watcher/active/%s" % self.control_group.service.name, gethostname())
-        failed_party = ShallowParty(zk, "/service_watcher/failed/%s" % self.control_group.service.name, gethostname())
+        # Encapsulated logic for the managed shared service
+        svc = ServiceLogic(zk, self.control_group.service.name, self.control_group.service, self.get_unit())
 
-        # Detect if the unit is already active
-        if self.control_group.service.get_unit().ActiveState == "active":
-            logging.info("%s: unit was already running" % self.name)
-            party.join()
-            activated_service = True
+        with self.control_group.service.handler(self.job_event_handler):
+            # Loop forever
+            while not exit_event.is_set():
+                # Create the partitioner
+                partitioner_path = "/service_watcher/partition/%s" % self.control_group.service.name
+                # Note that we use the service as a set for the partitioner, but as we use a custom partition_func, so
+                # this is ok
+                partitioner = SetPartitioner(zk, partitioner_path, self.control_group.service,
+                                             self.partition_func, gethostname(), 5)  # 5s time boundary
+                logging.info("%s: created partitioner at %s" % (self.name, partitioner_path))
 
-        # Loop forever
-        while not exit_event.is_set():
-            # Create the partitioner
-            partitioner_path = "/service_watcher/partition/%s" % self.control_group.service.name
-            # Note that we use the service as a set for the partitioner, but as we use a custom partition_func, this is ok
-            partitioner = SetPartitioner(zk, partitioner_path, self.control_group.service,
-                                         self.partition_func, gethostname(), 5) # 5s time boundary
-            logging.info("%s: created partitioner at %s" % (self.name, partitioner_path))
+                try:
+                    acquired = False
 
-            try:
-                acquired = False
+                    while not exit_event.is_set() and not partitioner.failed:
+                        # update service status from systemd
+                        svc.tick()
 
-                while not exit_event.is_set() and not partitioner.failed:
-                    if partitioner.release:
-                        # immediately release set, we will perform a diff-update on the next acquire
-                        logging.info("%s: releasing partitioner set" % self.name)
-                        partitioner.release_set()
-                    elif partitioner.acquired:
-                        # we have a new partition
-                        new_p = list(partitioner)
+                        if partitioner.release:
+                            # immediately release set, we will perform a diff-update on the next acquire
+                            logging.info("%s: releasing partitioner set" % self.name)
+                            # note that we should now leave the service as-is, while waiting for what to do
+                            svc.should_run = None
+                            # actually release the partition
+                            partitioner.release_set()
+                        elif partitioner.acquired:
+                            # we have a new partition
+                            new_p = list(partitioner)
 
-                        if not acquired:
-                            logging.info("%s: acquired partition set" % self.name)
-                            acquired = True
+                            if not acquired:
+                                logging.info("%s: acquired partition set" % self.name)
+                                acquired = True
 
-                        # is the partition non-empty?
-                        if len(new_p) > 0:
-                            if not activated_service:
-                                logging.info("%s: starting service" % self.name)
-                                self.control_group.service.get_unit().Start("fail")
-                                activated_service = True
-                                party.join()
-                        else:
-                            if activated_service:
-                                logging.info("%s: stopping service" % self.name)
-                                self.control_group.service.get_unit().Stop("fail")
-                                activated_service = False
-                                party.leave()
+                            # the service should run if the partition is non-empty
+                            svc.should_run = len(new_p) > 0
 
-                        # wait for wake-up, but not too long so we are still responsive to
-                        # partitioner events
-                        self.loop_tick(1)
-                    elif partitioner.allocating:
-                        acquired = False
-                        logging.info("%s: acquiring partition" % self.name)
-                        partitioner.wait_for_acquire()
-            finally:
-                # Release the partitioner when leaving
-                partitioner.finish()
+                            # force taking actions
+                            svc.actions()
+
+                            # wait for wake-up, but not too long so we are still responsive to
+                            # partitioner events
+                            self.loop_tick(1.0)
+                        elif partitioner.allocating:
+                            acquired = False
+                            logging.info("%s: acquiring partition" % self.name)
+                            partitioner.wait_for_acquire()
+                finally:
+                    # Release the partitioner when leaving
+                    partitioner.finish()
 
         # When exiting, stop all services
-        if activated_service:
-            if self.control_group.control_root.reload_exit:
-                logging.info("%s: keeping service running for reload" % self.name)
-            else:
-                try:
-                    party.leave()
-                    self.control_group.service.get_unit().Stop("fail")
-                except:
-                    logging.error("%s: error while stopping service" % self.name)
+        svc.terminate(self.control_group.control_root.reload_exit)
 
     def partition_func(self, identifier, members, service):
         # Sort members so we have a consistent order over all allocators
@@ -314,7 +358,6 @@ class SharedControlUnit(ControlUnit):
 
         # The resulting "partition" is the set of services for the current instance
         return allocation_state[identifier]
-
 
 
 class MultiControlGroup(SimpleControlGroup):
@@ -340,86 +383,64 @@ class MultiControlUnit(ControlUnit):
         # ZooKeeper instance
         zk = self.control_group.control_root.zk
 
-        # List of currently activated services
-        activated_services = {}
+        # List of service logics
+        services = [ServiceLogic(zk, "%s@%s" % (self.name, s), self.control_group.service, self.get_unit(s)) for s in
+                    self.control_group.service.instances]
 
-        # Start with services that are already active
-        for service in self.control_group.service.instances:
-            unit = self.control_group.service.get_unit(service)
-            if unit.ActiveState == "active":
-                logging.info("%s: unit %s was already running" % (self.name, service))
-                activated_services[service] = ShallowParty(zk, "/service_watcher/active/%s@%s" % (self.name, service), gethostname())
-                activated_services[service].join()
+        with self.control_group.service.handler(self.job_event_handler):
+            # Loop forever
+            while not exit_event.is_set():
+                # Create the partitioner
+                partitioner_path = "/service_watcher/partition/%s" % self.control_group.service.name
+                # Note that we use a set of tuples for the partitioner, but as we use a custom partition_func, so
+                # this is ok
+                partitioner = SetPartitioner(zk, partitioner_path, self.control_group.service.instances.items(),
+                                             self.partition_func, gethostname(), 5)  # 5s time boundary
+                logging.info("%s: created partitioner at %s" % (self.name, partitioner_path))
 
-        # Loop forever
-        while not exit_event.is_set():
-            # Create the partitioner
-            partitioner_path = "/service_watcher/partition/%s" % self.control_group.service.name
-            # Note that we use a set of tuples for the partitioner, but as we use a custom partition_func, this is ok
-            partitioner = SetPartitioner(zk, partitioner_path, self.control_group.service.instances.items(),
-                                         self.partition_func, gethostname(), 5) # 5s time boundary
-            logging.info("%s: created partitioner at %s" % (self.name, partitioner_path))
+                try:
+                    acquired = False
 
-            try:
-                acquired = False
+                    while not exit_event.is_set() and not partitioner.failed:
+                        # update services
+                        for service in services:
+                            service.tick()
 
-                while not exit_event.is_set() and not partitioner.failed:
-                    if partitioner.release:
-                        # immediately release set, we will perform a diff-update on the next acquire
-                        logging.info("%s: releasing partitioner set" % self.name)
-                        partitioner.release_set()
-                    elif partitioner.acquired:
-                        # we have a new set of services to run
-                        new_p = [item.split("@")[0] for item in partitioner]
+                        if partitioner.release:
+                            # immediately release set, we will perform a diff-update on the next acquire
+                            logging.info("%s: releasing partitioner set" % self.name)
+                            # service logics should take no action
+                            for service in services:
+                                service.should_run = None
+                            # actually release the partition
+                            partitioner.release_set()
+                        elif partitioner.acquired:
+                            # we have a new set of services to run
+                            new_p = [item.split("@")[0] for item in partitioner]
 
-                        if not acquired:
-                            logging.info("%s: acquired partition set" % self.name)
-                            acquired = True
+                            if not acquired:
+                                logging.info("%s: acquired partition set" % self.name)
+                                acquired = True
 
-                        # first activate all services that need to be activated
-                        for service in new_p:
-                            if not service in activated_services:
-                                # this is a new service that needs to be activated
-                                logging.info("%s: starting instance %s" % (self.name, service))
-                                self.control_group.service.get_unit(service).Start("fail")
-                                activated_services[service] = ShallowParty(zk, "/service_watcher/active/%s@%s" % (self.name, service), gethostname())
-                                activated_services[service].join()
+                            # update activation status
+                            for service in services:
+                                service.should_run = service.name.split("@")[1] in new_p
+                                service.actions()
 
-                        # then stop all outdated services
-                        removed_services = []
-                        for service in activated_services:
-                            if not service in new_p:
-                                # this is a service that we should no longer run
-                                logging.info("%s: stopping instance %s" % (self.name, service))
-                                activated_services[service].leave()
-                                removed_services.append(service)
-                                self.control_group.service.get_unit(service).Stop("fail")
-
-                        # clean up dictionary after iteration
-                        for service in removed_services:
-                            del activated_services[service]
-
-                        # wait for wake-up, but not too long so we are still responsive to
-                        # partitioner events
-                        self.loop_tick(1)
-                    elif partitioner.allocating:
-                        acquired = False
-                        logging.info("%s: acquiring partition" % self.name)
-                        partitioner.wait_for_acquire()
-            finally:
-                # Release the partitioner when leaving
-                partitioner.finish()
+                            # wait for wake-up, but not too long so we are still responsive to
+                            # partitioner events
+                            self.loop_tick(1.0)
+                        elif partitioner.allocating:
+                            acquired = False
+                            logging.info("%s: acquiring partition" % self.name)
+                            partitioner.wait_for_acquire()
+                finally:
+                    # Release the partitioner when leaving
+                    partitioner.finish()
 
         # When exiting, stop all services
-        for service in activated_services:
-            if self.control_group.control_root.reload_exit:
-                logging.info("%s: keeping %s service running for reload" % (self.name, service))
-            else:
-                try:
-                    activated_services[service].leave()
-                    self.control_group.service.get_unit(service).Stop("fail")
-                except:
-                    logging.error("%s: error while stopping instance %s" % (self.name, service))
+        for service in services:
+            service.terminate(self.control_group.control_root.reload_exit)
 
     def partition_func(self, identifier, members, set):
         # Sort members so we have a consistent order over all allocators

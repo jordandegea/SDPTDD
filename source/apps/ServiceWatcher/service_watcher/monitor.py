@@ -69,10 +69,6 @@ class Monitor(Configurable, ZooKeeperClient, SystemdClient):
             # Connect to systemd
             self.start_systemd(self.on_job_event)
 
-            # Initially, all units must be stopped, because we are not the leader
-            for service in self.config.services:
-                service.initialize()
-
             # Start the control root for all services
             with ControlRoot(self.zk, self.config.services) as cr:
                 # Start the main loop
@@ -83,10 +79,6 @@ class Monitor(Configurable, ZooKeeperClient, SystemdClient):
                     self.reload_signaled = False
                 else:
                     break
-
-            # When exiting, shutdown all services
-            for service in self.config.services:
-                service.terminate()
 
             # Stop listening for events
             self.stop_systemd()

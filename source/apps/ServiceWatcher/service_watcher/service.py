@@ -133,33 +133,3 @@ class Service(object):
 
     def handler(self, handler, parameter = None):
         return JobEventHandle(self, handler, parameter)
-
-    def initialize(self):
-        if self.type == MULTI:
-            for k in self.instances:
-                self.initialize_unit(self.get_unit(k), "%s@%s" % (self.name, k))
-        else:
-            self.initialize_unit(self.get_unit(), self.name)
-
-    def initialize_unit(self, unit, name):
-        state = unit.ActiveState
-        if state == 'failed':
-            logging.info("init: resetting failed state of %s" % name)
-            unit.ResetFailed()
-        elif state != 'inactive':
-            logging.warning("init: unexpected initial state for %s: %s" % (name, state))
-
-    def terminate(self):
-        if self.type == MULTI:
-            for k in self.instances:
-                self.terminate_unit(self.get_unit(k), "%s@%s" % (self.name, k))
-        else:
-            self.terminate_unit(self.get_unit(), self.name)
-
-    def terminate_unit(self, unit, name):
-        state = unit.ActiveState
-        if state == 'active':
-            logging.info("terminate: stopping %s" % name)
-            unit.Stop("fail")
-        elif state != 'inactive':
-            logging.warning("terminate: unexpected final state for %s: %s" % (name, state))
