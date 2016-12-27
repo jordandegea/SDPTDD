@@ -23,6 +23,9 @@ if (($FORCE_INSTALL)) || ! [ -d $KAFKA_INSTALL_DIR ]; then
   echo "Kafka: installing..." 1>&2
   tar xf $KAFKA_FILENAME
 
+  # Fix ownership
+  chown root:root -R $KAFKA_NAME
+
   # Remove the windows scripts from bin
   rm -rf $KAFKA_NAME/bin/windows
 

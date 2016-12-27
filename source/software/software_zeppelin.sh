@@ -21,6 +21,7 @@ if (($FORCE_INSTALL)) || ! [ -d $ZEPPELIN_INSTALL_DIR ]; then
   mv $ZEPPELIN_FILENAME /usr/local
   cd /usr/local/
   tar xf $ZEPPELIN_FILENAME
+  chown root:root -R $ZEPPELIN_NAME-bin-all
   rm $ZEPPELIN_FILENAME
   rm -rf $ZEPPELIN_INSTALL_DIR
   mv $ZEPPELIN_NAME-bin-all $ZEPPELIN_INSTALL_DIR
