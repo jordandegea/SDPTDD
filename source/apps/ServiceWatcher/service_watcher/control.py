@@ -11,10 +11,12 @@ from service_watcher import service as svc
 
 
 class ControlRoot(object):
-    def __init__(self, zk, services):
+    def __init__(self, zk, services, timings):
         super(ControlRoot, self).__init__()
         # ZooKeeper instance
         self.zk = zk
+        # Timing properties
+        self.timings = timings
         # The exit event to signal all control units should exit
         self.exit_event = threading.Event()
         # Create control groups for all shared services
@@ -252,7 +254,7 @@ class GlobalControlUnit(ControlUnit):
                     # So we must resort to polling here. But as this is an inexpensive local operation,
                     # and a particularly edgy case (global services should not be failed), we can do this
                     # anyways.
-                    self.loop_tick(5.0)
+                    self.loop_tick(self.control_group.control_root.timings['failed_loop_tick'])
                 else:
                     # wait for a new event
                     self.loop_tick()
@@ -296,14 +298,16 @@ class SharedControlUnit(ControlUnit):
                 svc.tick()
 
                 if svc.service_failed:
-                    self.loop_tick(5.0)
+                    self.loop_tick(self.control_group.control_root.timings['failed_loop_tick'])
                 else:
                     # Create the partitioner
                     partitioner_path = "/service_watcher/partition/%s" % self.control_group.service.name
                     # Note that we use the service as a set for the partitioner, but as we use a custom partition_func,
                     # so this is ok
                     partitioner = SetPartitioner(zk, partitioner_path, self.control_group.service,
-                                                 self.partition_func, gethostname(), 5)  # 5s time boundary
+                                                 self.partition_func, gethostname(),
+                                                 self.control_group.control_root.timings['partitioner_boundary'],
+                                                 self.control_group.control_root.timings['partitioner_reaction'])
                     logging.info("%s: created partitioner at %s" % (self.name, partitioner_path))
 
                     try:
@@ -336,7 +340,7 @@ class SharedControlUnit(ControlUnit):
 
                                 # wait for wake-up, but not too long so we are still responsive to
                                 # partitioner events
-                                self.loop_tick(1.0)
+                                self.loop_tick(self.control_group.control_root.timings['loop_tick'])
                             elif partitioner.allocating:
                                 acquired = False
                                 logging.info("%s: acquiring partition" % self.name)
@@ -418,7 +422,9 @@ class MultiControlUnit(ControlUnit):
                 # Note that we use a set of tuples for the partitioner, but as we use a custom partition_func, so
                 # this is ok
                 partitioner = SetPartitioner(zk, partitioner_path, self.control_group.service.instances.items(),
-                                             self.partition_func, identifier, 5)  # 5s time boundary
+                                             self.partition_func, identifier,
+                                             self.control_group.control_root.timings['partitioner_boundary'],
+                                             self.control_group.control_root.timings['partitioner_reaction'])
                 logging.info("%s: created partitioner at %s" % (self.name, partitioner_path))
 
                 try:
@@ -463,7 +469,7 @@ class MultiControlUnit(ControlUnit):
 
                             # wait for wake-up, but not too long so we are still responsive to
                             # partitioner events
-                            self.loop_tick(1.0)
+                            self.loop_tick(self.control_group.control_root.timings['loop_tick'])
                         elif partitioner.allocating:
                             acquired = False
                             logging.info("%s: acquiring partition" % self.name)

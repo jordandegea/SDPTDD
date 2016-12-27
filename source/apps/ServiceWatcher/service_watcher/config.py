@@ -18,6 +18,21 @@ class Config(object):
         self.services = [Service(service) for service in self.config['services']]
         self.zk_quorum = self.config['zookeeper']['quorum']
 
+        if 'timings' in self.config['zookeeper']:
+            self.timings = self.config['zookeeper']['timings']
+        else:
+            self.timings = {}
+
+        # Fix timing defaults
+        if not 'loop_tick' in self.timings:
+            self.timings['loop_tick'] = 1.0
+        if not 'failed_loop_tick' in self.timings:
+            self.timings['failed_loop_tick'] = 5.0
+        if not 'partitioner_boundary' in self.timings:
+            self.timings['partitioner_boundary'] = 5.0
+        if not 'partitioner_reaction' in self.timings:
+            self.timings['partitioner_reaction'] = 1.0
+
     def setup_systemd(self, systemd_client):
         for service in self.services:
             service.setup_systemd(systemd_client)

@@ -69,7 +69,7 @@ class Monitor(Configurable, ZooKeeperClient, SystemdClient):
             self.start_systemd(self.on_job_event)
 
             # Start the control root for all services
-            with ControlRoot(self.zk, self.config.services) as cr:
+            with ControlRoot(self.zk, self.config.services, self.config.timings) as cr:
                 # Start the main loop
                 self.run_event_loop()
 

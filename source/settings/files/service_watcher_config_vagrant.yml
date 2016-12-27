@@ -1,6 +1,11 @@
 ---
 zookeeper:
   quorum: zookeeper_quorum_replace_me
+  timings:
+    loop_tick: 0.5
+    failed_loop_tick: 1.0
+    partitioner_boundary: 1.0
+    partitioner_reaction: 0.2
 services:
   - name: dummy_global
     type: global
