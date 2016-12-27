@@ -32,6 +32,18 @@ else
   cp files/service_watcher_config.yml $SERVICE_WATCHER_CONFIG
 fi
 
+# Create the service watcher binary
+echo "#!/bin/bash
+
+if [[ \$EUID -ne 0 ]]; then
+  echo \"This script must be run as root\" >&2
+  exit 1
+fi
+
+python '$SERVICE_WATCHER_INSTALL_DIR/service_watcher.py' --config '$SERVICE_WATCHER_CONFIG' \"\$@\"
+" >/usr/local/bin/service_watcher
+chmod +x /usr/local/bin/service_watcher
+
 # Replace ZooKeeper quorum in config file
 sed -i "s/zookeeper_quorum_replace_me/$ZOOKEEPER_QUORUM/" $SERVICE_WATCHER_CONFIG
 
