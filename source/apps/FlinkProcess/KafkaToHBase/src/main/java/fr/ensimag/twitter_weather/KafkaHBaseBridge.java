@@ -21,10 +21,13 @@ package fr.ensimag.twitter_weather;
  */
 
 
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.sink.OutputFormatSinkFunction;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer08;
 
 import java.io.IOException;
@@ -79,9 +82,8 @@ public class KafkaHBaseBridge {
 						new SimpleStringSchema(),
 						parameterTool.getProperties()));
 
-		// write kafka stream to standard out.
-		messageStream.writeUsingOutputFormat(
-		        new HBaseOutputFormat(
+        messageStream.writeUsingOutputFormat(
+                new HBaseOutputFormat(
                         parameterTool.getRequired("hbasetable"),
                         parameterTool.getRequired("hbasequorum"),
                         Integer.parseInt(parameterTool.getRequired("hbaseport"))
@@ -90,7 +92,11 @@ public class KafkaHBaseBridge {
 		env.execute();
 	}
 
-
+	public static class StreamObject{
+        public String name;
+        public String content;
+        public Number feeling;
+    }
 
 	/**
 	 * This class implements an OutputFormat for HBase
@@ -100,8 +106,6 @@ public class KafkaHBaseBridge {
 		private org.apache.hadoop.conf.Configuration conf = null;
 		private Table table = null;
 		private Connection connection = null;
-		private String taskNumber = null;
-		private int rowNumber = 0;
 
 		private static final long serialVersionUID = 1L;
 
@@ -136,15 +140,16 @@ public class KafkaHBaseBridge {
 		@Override
 		public void open(int taskNumber, int numTasks) throws IOException {
 			table = connection.getTable(TableName.valueOf(tablename));
-			this.taskNumber = String.valueOf(taskNumber);
 		}
 
 		@Override
 		public void writeRecord(String record) throws IOException {
-			Put put = new Put(Bytes.toBytes(taskNumber + UUID.randomUUID()));
-			put.add(Bytes.toBytes("colTest"), Bytes.toBytes("colTest"),
-					Bytes.toBytes(record));
-			rowNumber++;
+            StreamObject obj = this.parse(record);
+            //Put put = new Put(Bytes.toBytes(taskNumber + UUID.randomUUID()));
+            Put put = new Put(Bytes.toBytes(System.currentTimeMillis() + "_" + obj.name));
+            put.addColumn(Bytes.toBytes("place"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(obj.name));
+            put.addColumn(Bytes.toBytes("datas"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(obj.content));
+            put.addColumn(Bytes.toBytes("feeling"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(obj.feeling.toString()));
 			table.put(put);
 		}
 
@@ -154,6 +159,13 @@ public class KafkaHBaseBridge {
 			connection.close();
 		}
 
-	}
+        public StreamObject parse(String in) {
+            StreamObject obj = new StreamObject();
+            obj.name = "something";
+            obj.content = in;
+            obj.feeling = 50.00;
+            return obj;
+        }
+    }
 }
 
