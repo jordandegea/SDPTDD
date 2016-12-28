@@ -18,3 +18,5 @@ flink-bin/*
 
 Gemfile.lock
 .idea/
+
+*.sublime-workspace
