@@ -9,9 +9,10 @@ source ./deploy_shared.sh
 # Load flink setup parameters
 source ./flink_shared.sh
 
-# Deploy jar
-cp files/KafkaHbaseBridge.jar ${FLINK_INSTALL_DIR}
-cp files/FakeTwitterProducer.jar ${FLINK_INSTALL_DIR}
-cp files/KafkaConsoleBridge.jar ${FLINK_INSTALL_DIR}
-cp files/fake_tweet.json ${FLINK_INSTALL_DIR}
+# Deploy files
+chown root:root -R files/*
+mv files/KafkaHbaseBridge.jar $FLINK_INSTALL_DIR
+mv files/FakeTwitterProducer.jar $FLINK_INSTALL_DIR
+mv files/KafkaConsoleBridge.jar $FLINK_INSTALL_DIR
+mv files/fake_tweet.json $FLINK_INSTALL_DIR
 

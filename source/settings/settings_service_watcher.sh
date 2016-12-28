@@ -27,10 +27,11 @@ fi
 echo "ServiceWatcher: configuring..." 2>&1
 
 if (($ENABLE_VAGRANT)); then
-  cp files/service_watcher_config_vagrant.yml $SERVICE_WATCHER_CONFIG
+  mv files/service_watcher_config_vagrant.yml $SERVICE_WATCHER_CONFIG
 else
-  cp files/service_watcher_config.yml $SERVICE_WATCHER_CONFIG
+  mv files/service_watcher_config.yml $SERVICE_WATCHER_CONFIG
 fi
+chown root:root $SERVICE_WATCHER_CONFIG
 
 # Create the service watcher binary
 echo "#!/bin/bash
