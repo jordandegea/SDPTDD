@@ -193,6 +193,9 @@ def declare_deploy_task(
       # Compute variables substitution
       variables = get_variables(deploy_root)
 
+      # List of hosts on which the deployment failed
+      failed_hosts = []
+
       on hosts(args) do |host|
         mtx.synchronize do
           if opts[:weak_dependencies]
@@ -241,6 +244,11 @@ def declare_deploy_task(
               rescue SSHKit::Command::Failed => e
                 error "[#{host.properties.name}] failed task #{param_name}:#{provisioning_name}: #{e.message}"
                 warn "[#{host.properties.name}] aborting provisioning of host due to errors"
+                # Add the current host to the list of failed hosts
+                mtx.synchronize do
+                  failed_hosts << host.properties.name
+                end
+                # Stop deployment of this step
                 break
               end
             end
@@ -249,6 +257,10 @@ def declare_deploy_task(
 
         # Remove the working directory (using sudo)
         sudo :rm, '-rf', working_directory_name
+      end
+
+      if failed_hosts.length > 0
+        fail "[#{task_name}] deployment failed on hosts #{failed_hosts.join(', ')}"
       end
     end
   end
