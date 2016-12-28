@@ -27,6 +27,12 @@ end
 # An utility methods that tranfers the files from the source folders to a single host, in the working directory for the
 # current deploy task.
 def host_transfer(host, source_folders_param, working_directory, deploy_root)
+  # Remove the directory first
+  begin
+    sudo :rm, '-rf', working_directory
+  rescue => e
+    # ignore errors removing directory
+  end
   execute :mkdir, '-p', working_directory
 
   # Host config node
@@ -241,8 +247,8 @@ def declare_deploy_task(
           end
         end
 
-        # Remove the working directory
-        execute :rm, '-rf', working_directory_name
+        # Remove the working directory (using sudo)
+        sudo :rm, '-rf', working_directory_name
       end
     end
   end
