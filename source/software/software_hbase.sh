@@ -24,7 +24,7 @@ if (($FORCE_INSTALL)) || ! [ -d $HBASE_HOME ]; then
   echo "HBase: Installing..."
   get_file $HBASE_URL $HBASE_TGZ
   tar xf $HBASE_TGZ
-  chown root:root -R hadoop-1.0.3
+  chown root:root -R hbase-1.0.3
   rm -rf $HBASE_HOME
   mv hbase-1.0.3 $HBASE_HOME
 fi
