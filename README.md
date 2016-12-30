@@ -82,7 +82,7 @@ bundle
 # Utilisation de l'environnement de développement
 export RAKE_ENV=development
 # Ne pas oublier de démarrer les machines virtuelles pour l'environnement de développement
-(cd source/vagrant && vagrant up)
+(cd vagrant && vagrant up)
 
 # Utilisation de l'environnement de production
 export RAKE_ENV=production
@@ -143,7 +143,7 @@ rake run:<commande>[<server1>,<server2>]
 
 # Environnement de test Vagrant
 
-Le dossier source/vagrant contient :
+Le dossier vagrant contient :
 
 * `Vagrantfile` : définition de machines virtuelles de test
 * `vagrant-hosts.yml` : configuration des différentes machines de test
