@@ -11,15 +11,15 @@ $build_source = 'build.yml'
 $build_conf = YAML.load_file($build_source)
 
 # Fetch the environment name
-environment = ENV['RAKE_ENV'] || 'development'
+$environment = ENV['RAKE_ENV'] || 'development'
 
 # Compute the config name from this value
-$config_source = if environment == 'production'
+$config_source = if $environment == 'production'
   'hosts.yml'
-elsif environment == 'development'
+elsif $environment == 'development'
   'vagrant/vagrant-hosts.yml'
 else
-  warn_fail("Unknown RAKE_ENV '#{environment}'. Must be 'development' (vagrant) or 'production'.")
+  warn_fail("Unknown RAKE_ENV '#{$environment}'. Must be 'development' (vagrant) or 'production'.")
 end
 
 # Load hostfile from config_source
