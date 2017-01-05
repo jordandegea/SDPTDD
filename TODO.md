@@ -17,12 +17,16 @@ William & Joseph :
 Selim : 
     Maintenant qu’on a HBase en pseudo distribué, tu peux vérifier que Zeppelin fonctionne
 
+Guillaume & Pierre : 
+    Installation et configuration de HAProxy sur les serveurs. Chaque serveur ferait tourner une instance de HAProxy qui fait du load-balancing entre tous les autres serveurs. Je m'explique : si on fait tourner Zeppelin sur le port 8080 (très original :slightly_smiling_face: ) HAProxy tournerait sur le port 80 et transmettrait les requêtes à n'importe quel membre du cluster qui fait tourner Zeppelin. Là où il y a de la valeur ajoutée, c'est que Quéma pourrait effectivement buter n'importe quel serveur, mais il suffirait pour nous de prendre n'importe quel autre et on aurait toujours accès à l'interface de l'appli.
+
+    HAProxy détecte tout seul les serveurs "alive" en testant s'il peut établir la connexion sur le port de destination (celui de Zeppelin en l'occurrence), donc y a vraiment rien à faire. A part lire la doc pendant environ 12 minutes et 27 secondes.
 
 Mathieu : 
     La vrai tache de Flink (j’ai fait des schema et tout, on se voit sur slack pour qu’on soit OK)
 
 
-Guillaume : 
+Selim : 
     Il faudrait s’intéresser au Benchmarking, c’est a dire créer un script ou quelque chose qui fasse des tests avec des faux tweets par exemple et voir comment réagit les serveurs et services.
 
 
