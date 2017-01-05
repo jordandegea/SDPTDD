@@ -1,5 +1,0 @@
-#/bin/sh
-
-cd vagrant/
-vagrant destroy -f
-vagrant up

@@ -1,4 +1,5 @@
 #!/bin/bash
+# Pour chaque argument -t, crée le topic nommé par ce même argument dans Kafka
 
 source ./deploy_shared.sh
 

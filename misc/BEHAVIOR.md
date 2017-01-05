@@ -5,7 +5,7 @@
      ____) |   | |__| |     | |     | |__| |
     |_____/    |______/     |_|     |_____/ 
 
-Système distribué pour traitement de données.
+Système distribué pour le traitement de données.
 
 [Précédent](../README.md)
 # Comportement
@@ -16,14 +16,15 @@ Nous considérons 3 serveurs. Nous souhaitons garantir le fonctionnement du serv
 - Lorsque 2 machines sont en vie, alors le service fonctionne correctement et cherche à remettre en place la machine en faute.
 - Lorsque 1 machine est en vie, alors le service fonctionne correctement et à remettre en place les machines en faute. 
 
-Nous executons le projet sur 3 villes : Paris, London, NYC
+Nous éxécutons le projet sur 3 villes : Paris, London, NYC
+
 ## Configuration
 
 ### Kafka
 
 - Installé sur toutes les machines. 
 - Un détecteur de faute se chargera de détecter les machines fautives.
-- Un correcteur de faute cherchera à redémarrer la ou les machines fautives
+- Un correcteur de faute cherchera à redémarrer la ou les machines fautives.
 
 ### Flink
 

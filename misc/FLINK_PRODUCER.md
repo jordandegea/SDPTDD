@@ -5,7 +5,7 @@
      ____) |   | |__| |     | |     | |__| |
     |_____/    |______/     |_|     |_____/ 
 
-Système distribué pour traitement de données.
+Système distribué pour le traitement de données.
 
 [Précédent](../README.md)
 
@@ -18,7 +18,7 @@ Système distribué pour traitement de données.
 
 Les sources des tâches sont dans le dossier `source/apps/FlinkProducer`. 
 
-- FakeTwitter : Envoi periodiquement un tweet à kafka, dans une table défini aléatoirement. 
+- FakeTwitter : Envoi periodiquement un tweet à kafka, dans une table définie aléatoirement. 
 
 
 ## Objectifs
@@ -39,4 +39,4 @@ bin/flink run FakeTwitter.jar 10 worker1:9092,worker2:9092,worker3:9092
 ## Autres
 
 Lorsque des données sont perdues, nous ne cherchons pas à les récupérer. Si les calculs échouent de même. N'oublions pas l'esprit du Streaming. 
-Si Kafka n'est pas accessible à un moment, on ne cherche pas a reenvoyer les tweets, on les oublie. 
+Si Kafka n'est pas accessible à un moment, on ne cherche pas a envoyer de nouveau les tweets, on les oublie. 

@@ -1,26 +1,5 @@
 package fr.ensimag.twitter_weather;
 
-/**
- * Created by willol on 07/12/16.
- */
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-
 import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.java.utils.ParameterTool;
@@ -32,7 +11,6 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer08;
 
 import java.io.IOException;
 import java.util.UUID;
-
 
 import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.configuration.Configuration;
@@ -47,17 +25,14 @@ import org.apache.hadoop.hbase.util.Bytes;
 
 
 /**
- * Read Strings from Kafka and print them to standard out.
- * Note: On a cluster, DataStream.print() will print to the TaskManager's .out file!
- * <p>
- * Please pass the following arguments to run the example:
- * --topic test --bootstrap.servers localhost:9092 --zookeeper.connect localhost:2181 --group.id myconsumer
+ * Read Strings from Kafka representing Tweets; Process the values and store in HBase.
  */
 public class KafkaHBaseBridge {
 	public static void main(String[] args) throws Exception {
-		// parse input arguments
+		
 		final ParameterTool parameterTool = ParameterTool.fromArgs(args);
 
+		/* Display the usage if the arguments are wrong */
 		if(parameterTool.getNumberOfParameters() < 7) {
 			System.out.println("Missing parameters!\n" +
                     "Usage: Kafka --topic <topic> " +
@@ -70,18 +45,24 @@ public class KafkaHBaseBridge {
 			return;
 		}
 
+		/* Configure the environnement with 
+		 * - create a checkpoint every 5 seconds
+		 * - make parameters available in the web interface
+		 */
 		StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 		env.getConfig().disableSysoutLogging();
 		env.getConfig().setRestartStrategy(RestartStrategies.fixedDelayRestart(4, 10000));
-		env.enableCheckpointing(5000); // create a checkpoint every 5 seconds
-		env.getConfig().setGlobalJobParameters(parameterTool); // make parameters available in the web interface
+		env.enableCheckpointing(5000); 
+		env.getConfig().setGlobalJobParameters(parameterTool);
 
+		/* Connecte Kafka en entrée sur le topic spécifié */
 		DataStream<String> messageStream = env
 				.addSource(new FlinkKafkaConsumer08(
 						parameterTool.getRequired("topic"),
 						new SimpleStringSchema(),
 						parameterTool.getProperties()));
 
+		/* Passe chaque ligne dans la class HBaseOutputFormat */
         messageStream.writeUsingOutputFormat(
                 new HBaseOutputFormat(
                         parameterTool.getRequired("hbasetable"),
@@ -99,7 +80,7 @@ public class KafkaHBaseBridge {
     }
 
 	/**
-	 * This class implements an OutputFormat for HBase
+	 * Process each line and write in HBase
 	 */
 	private static class HBaseOutputFormat implements OutputFormat<String> {
 
@@ -142,6 +123,9 @@ public class KafkaHBaseBridge {
 			table = connection.getTable(TableName.valueOf(tablename));
 		}
 
+		/**
+		 * Pour chaque ligne, parse le contenu de la ligne et ecrit le resultat dans HBase
+		 */
 		@Override
 		public void writeRecord(String record) throws IOException {
             StreamObject obj = this.parse(record);
@@ -159,6 +143,7 @@ public class KafkaHBaseBridge {
 			connection.close();
 		}
 
+		/* Parse la ligne de kafka pour un sortir un objet pour HBase */
         public StreamObject parse(String in) {
             StreamObject obj = new StreamObject();
             obj.name = "something";

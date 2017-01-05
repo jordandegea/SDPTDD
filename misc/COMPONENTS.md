@@ -5,7 +5,7 @@
      ____) |   | |__| |     | |     | |__| |
     |_____/    |______/     |_|     |_____/ 
 
-Système distribué pour traitement de données.
+Système distribué pour le traitement de données.
 
 [Précédent](../README.md)
 # Composants
@@ -14,9 +14,9 @@ Système distribué pour traitement de données.
 
 >**Kafka** est un système de messagerie distribué. Il joue le rôle de *broker* pour des flux de données : des **producteurs** envoient des flux de données à Kafka, qui va les stocker et permettre à des **consommateurs** de traiter ces flux.
 
->Chaque flux peut être partitionné, permettant à plusieurs consommateurs de travailler sur le même flux en parallèle. Une partition est une suite de messages ordonnée et immutable, chaque message ayant un identifiant qui lui est affecté.
+>Chaque flux peut être partitionné, permettant à plusieurs consommateurs de travailler sur le même flux en parallèle. Une partition est une suite de messages ordonnés et immutables, chaque message ayant un identifiant qui lui est affecté.
 
->**Kafka** fonctionne en cluster, permettant de répliquer les partitions pour être tolérant aux fautes, d'automatiquement balancer les consommateurs en cas de faute et d'être très facilement horizontalement scalable.
+>**Kafka** fonctionne en cluster, permettant de répliquer les partitions pour être tolérant aux fautes, d'automatiquement redistribuer les consommateurs en cas de faute et d'être très facilement horizontalement scalable.
 
 >Dans notre cas, Kafka sera utilisé pour s'abonner aux flux Twitter et météo, et partitionner ces flux par région.
 
@@ -37,7 +37,7 @@ Système distribué pour traitement de données.
 
 >HBase est une base de données distribuée non-relationnelle. Cette technologie permet de stocker de larges quantités de données, et est très efficace pour les applications ayant un haut débit de données.
 
->Hbase gère la réplication au sein du cluster, le sharding et le balancement de la charge. Le requêtage est extrêmement rapide et des des filtres peuvent être appliqués.
+>Hbase gère la réplication au sein du cluster, le sharding et le équilibrage de charge. Le requêtage est extrêmement rapide et des filtres peuvent être appliqués.
 
 >**Utilisé par :** Adobe, Airbnb, Facebook Messenger, Netflix...
 
@@ -48,6 +48,6 @@ HBase gère de manière automatique la réplication au sein du cluster ainsi que
 
 >**Zeppelin** fournit une interface web de visualisation de données. Son principal intérêt est d'être capable d'analyser et mettre en forme de grandes quantités de données, et de s'intégrer très bien aux autres technologies (faisant partie de l'écosystème Apache).
 
->Cet outil fournit de nombreuses graphes pour la visualisation de données, permettant de rapidement et facilement travailler sur de gros volumes.
+>Cet outil fournit de nombreux graphes pour la visualisation de données, permettant de rapidement et facilement travailler sur de gros volumes.
 
->Zeppelin, en tant que simple outil de visualisation, ne garantit rien en termes de tolérance aux fautes. Cependant, Zeppelin intervient en bout de chaîne et son plantage n'a aucune incidence sur le fonctionnement du reste des composants du système. 
+>Zeppelin, en tant que simple outil de visualisation, ne garantit en rien la tolérance aux fautes. Cependant, Zeppelin intervient en bout de chaîne et son interruption n'a aucune incidence sur le fonctionnement du reste des composants du système. 

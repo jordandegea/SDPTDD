@@ -19,13 +19,7 @@ build_groups = Hash.new { |hash, k| hash[k] = Array.new }
       tmpfile.chmod(0755)
 
       # Execute it
-      if RUBY_PLATFORM =~ /mswin|mingw|bccwin|wince|emx/
-        # On Windows, delegate to mingw bash
-        sh 'bash', tmpfile.path
-      else
-        # Note that Cygwin is a linux
-        sh tmpfile.path
-      end
+      sh 'bash', tmpfile.path
     end
   end
 

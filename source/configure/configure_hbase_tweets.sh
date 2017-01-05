@@ -1,4 +1,5 @@
 #!/bin/bash
+# Pour chaque argument -t, crée la table nommé par ce même argument dans HBase
 
 source ./deploy_shared.sh
 

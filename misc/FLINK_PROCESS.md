@@ -5,7 +5,7 @@
      ____) |   | |__| |     | |     | |__| |
     |_____/    |______/     |_|     |_____/ 
 
-Système distribué pour traitement de données.
+Système distribué pour le traitement de données.
 
 [Précédent](../README.md)
 
@@ -18,19 +18,15 @@ Système distribué pour traitement de données.
 
 Les sources des tâches sont dans le dossier `source/apps/FlinkProcess`. 
 
-- KafkaToConsole : Recupere les tweets de Kafka et les écrits dans la console
+- KafkaToConsole : Récupère les tweets de Kafka et les écrits dans la console
 - KafkaToHBase : Récupère les tweets de Kafka et les envoi à HBase
 
 
 ## Objectifs
 
-Toutes les ***S*** secondes, nous écrivons l'humeur estimée sur les ***M*** dernières minutes dans la base de données. 
-Pour cela, toute les ***X*** minutes, nous récupérons la météo et l'enregistrons localement. 
-
-Nous prenons ***S*** = 10, et ***M*** = 10, ***X*** = 10
+A chaque tweet, nous estimons son humeur et ecrivons le resultat dans la base de données. 
 
 Les tweets sont continuellement récupérés de Kafka, estimés et enregistrés dans HBase. 
-
 
 ## Paramètres
 
