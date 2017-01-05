@@ -8,7 +8,7 @@ defaults:
   hosts: &host_defaults
     user: vagrant     # Default non-privileged user
     cpus: 1           # Default number of CPUs for vagrant
-    memory: 4096      # Default RAM amount (MB)
+    memory: 2048      # Default RAM amount (MB)
 # Known services definitions
 services:
   - zookeeper
