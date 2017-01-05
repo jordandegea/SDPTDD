@@ -9,9 +9,9 @@ Système distribué pour traitement de données.
 
 # [TODO](TODO.md)
 
-# Sujet - "Twitter & Meteo"
+# Sujet - "Twitter & Humeur"
 
-L'objectif de ce projet est d'estimer l'**humeur** des gens dans différentes régions suivant la **météo**. Nous récupérons des flux twitters sur différentes régions. Sur chaque tweet, nous attribuons une appréciation. Puis nous stockons chaque tweet traité et son appreciation dans la base. A intervalle régulier, nous enregistrons l'appréciation générale sur une période donnée dans dans la base. 
+L'objectif de ce projet est d'estimer l'**humeur** des gens dans différentes régions. Nous récupérons des flux twitters sur différentes régions. Sur chaque tweet, nous attribuons une appréciation. Puis nous stockons chaque tweet traité et son appreciation dans la base. 
 
 # Equipe
 
