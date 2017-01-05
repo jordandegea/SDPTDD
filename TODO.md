@@ -10,32 +10,19 @@ Système distribué pour traitement de données.
 # TODO
 
 
-Vincent : 
-    Il faudrait passer tout ce qui est HardCoding en dynamique
-
-
-William : 
-    Creer le Vrai producer Twitter. Le producer doit fonctionner avec des paramètres en entrée
-
-
-Joseph :
-    William a réussi a faire un pseudo distribué. Essaye de passer le pseudo HBase en HBase distribué. Si tu ne peux pas, voie avec William.
+William & Joseph : 
+  HBASE en distribué
 
 
 Selim : 
     Maintenant qu’on a HBase en pseudo distribué, tu peux vérifier que Zeppelin fonctionne
 
 
-Jordan : 
-    Je vais m’occuper de la structure de la base de données Hbase
-
-
 Mathieu : 
-    La vrai tache de HBase (j’ai fait des schema et tout, on se voit sur slack pour qu’on soit OK)
+    La vrai tache de Flink (j’ai fait des schema et tout, on se voit sur slack pour qu’on soit OK)
 
 
 Guillaume : 
-    On a besoin d’un service de monitoring qui fasse de la scalabilité horizontale et de la récupération de faute.(On voit ça ensemble sur Slack)
     Il faudrait s’intéresser au Benchmarking, c’est a dire créer un script ou quelque chose qui fasse des tests avec des faux tweets par exemple et voir comment réagit les serveurs et services.
 
 
@@ -48,7 +35,7 @@ Selim, Pierre & Guillaume :
 
 
 Imane : 
-    Je préfère ne pas t’attribuer de tache pour le moment. Apprend git et essaye de rattraper le retard sur le code. Tu peux poser des questions sur slack si tu ne comprends pas tout.
+    Creer le Vrai producer Twitter. Le producer doit fonctionner avec des paramètres en entrée
 
 
 Tout le monde: 
