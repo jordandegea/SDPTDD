@@ -27,8 +27,10 @@ if (($FORCE_INSTALL)) || ! [ -d $ZEPPELIN_INSTALL_DIR ]; then
   mv $ZEPPELIN_NAME-bin-all $ZEPPELIN_INSTALL_DIR
 
   echo "export HBASE_HOME=/usr/local/hbase
-  export HBASE_RUBY_SOURCES=\$HBASE_HOME/lib/ruby/
-  " >> zeppelin/conf/zeppelin-env.sh
+export HBASE_RUBY_SOURCES=\$HBASE_HOME/lib/ruby/
+export ZEPPELIN_LOG_DIR=$ZEPPELIN_LOG_DIR
+export ZEPPELIN_PID_DIR=$ZEPPELIN_PID_DIR
+" >> zeppelin/conf/zeppelin-env.sh
 
   echo "Zeppelin: successfully installed!" 1>&2
 else

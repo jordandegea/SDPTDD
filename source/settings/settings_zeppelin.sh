@@ -23,7 +23,9 @@ if ! [ -d $ZEPPELIN_LOG_DIR ]; then
   chown zeppelin:zeppelin -R $ZEPPELIN_LOG_DIR
 fi
 
-# Create the hbase systemd service
+chown zeppelin:zeppelin -R $ZEPPELIN_INSTALL_DIR
+
+# Create the zeppelin systemd service
 echo "[Unit]
 Description=Apache Zeppelin
 Requires=network.target
@@ -33,7 +35,6 @@ After=network.target
 Type=forking
 User=zeppelin
 Group=zeppelin
-Environment=LOG_DIR=$ZEPPELIN_LOG_DIR
 ExecStart=$START_SCRIPT
 ExecStop=$STOP_SCRIPT
 Restart=on-failure
@@ -43,6 +44,4 @@ SyslogIdentifier=zeppelin
 WantedBy=multi-user.target" > $SERVICE_FILE
 
 # Reload unit files
-systemctl daemon-reload #temp removed
-
-# /usr/local/zeppelin/bin/zeppelin-daemon.sh start # temporary (bypass service)
+systemctl daemon-reload 
