@@ -5,7 +5,7 @@
      ____) |   | |__| |     | |     | |__| |
     |_____/    |______/     |_|     |_____/ 
 
-Système distribué pour traitement de données.
+Système distribué pour le traitement de données.
 
 [Précédent](../README.md)
 # Architecture
