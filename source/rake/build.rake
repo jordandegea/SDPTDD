@@ -11,7 +11,7 @@ build_groups = Hash.new { |hash, k| hash[k] = Array.new }
 
   # Declare the build task
   file output_file => dependencies do
-    Tempfile.open do |tmpfile|
+    Tempfile.open('stdtbuild') do |tmpfile|
       # Write the build script contents
       File.write(tmpfile.path, spec['build_script'])
 
