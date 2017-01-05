@@ -22,6 +22,7 @@ import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.sling.commons.json.JSONObject;
 
 
 /**
@@ -145,10 +146,18 @@ public class KafkaHBaseBridge {
 
 		/* Parse la ligne de kafka pour un sortir un objet pour HBase */
         public StreamObject parse(String in) {
-            StreamObject obj = new StreamObject();
-            obj.name = "something";
-            obj.content = in;
-            obj.feeling = 50.00;
+            StreamObject obj = null;
+            try {
+                JSONObject json = JSONObject(in);
+                String text = (String) json.get("text");
+                if ( text.contains("\ud") ){
+                    obj = new StreamObject();
+                    obj.name = tablename;
+                    obj.content = in;
+                    String substr = text.substring(text.indexOf("\ud") + 3 , text.indexOf("\ud") + 5);
+                    obj.feeling = Math.abs(Character.digit(substr[0], 10)) * 10 + Math.abs(Character.digit(substr[1], 10));
+                }
+            }
             return obj;
         }
     }
