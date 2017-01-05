@@ -11,5 +11,5 @@ HBASE_URL="http://apache.mediamirrors.org/hbase/hbase-1.0.3/hbase-1.0.3-bin.tar.
 HBASE_HOME="/usr/local/hbase"
 
 SERVICE_FILE="/etc/systemd/system/hbase.service"
-START_SCRIPT="$HBASE_HOME/bin/start-hbase.sh"
-STOP_SCRIPT="$HBASE_HOME/bin/stop-hbase.sh"
+START_SCRIPT="$HBASE_HOME/bin/our-start-hbase.sh"
+STOP_SCRIPT="$HBASE_HOME/bin/our-stop-hbase.sh"
