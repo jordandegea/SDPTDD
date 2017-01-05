@@ -9,6 +9,9 @@ Système distribué pour traitement de données.
 
 # TODO
 
+Pour qui ?
+  Mettre en place la scalabilité horizontal afin d'ajouter des machines à Zookeeper. 
+
 
 William & Joseph : 
   HBASE en distribué
