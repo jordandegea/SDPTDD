@@ -92,6 +92,7 @@ hosts:
       - hbase
       - flink_city@paris
       - flink_producer_fake
+      - zeppelin
     configure:
       after:
         - create_topics: "-t paris -t london -t nyc"
