@@ -1,17 +1,19 @@
-require "open3"
-
 When(/^I run the rake task "([^"]*)"$/) do |task_name|
-  @rake_status ||= {}
+  rake_run(task_name)
+end
 
-  # Store the status and output of the rake task
-  output, status = Open3.capture2e("rake", task_name)
-  @rake_status[task_name] = {
-    output: output,
-    status: status
-  }
+When(/^I run the rake task "([^"]*)" on the (\d+)(?:st|nd|rd|th) host$/) do |task_name, host_n|
+  host_name = nth_host(host_n)
 
-  # Store the name of the last task executed, for the "the task should *"
-  @rake_status[:last_task] = task_name
+  if task_name =~ /[a-z]\[/
+    # the task name contains an argument already
+    task_name.gsub! /([a-z]\[)/, "\\1#{host_name}"
+  else
+    # the task name does not contain an argument
+    task_name += "[#{host_name}]"
+  end
+
+  rake_run(task_name)
 end
 
 Then(/^the task should succeed$/) do
