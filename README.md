@@ -106,6 +106,11 @@ rake deploy[server-2;server-3]
 
 ## Services
 
+En l'absence de services spécifiés pour ces commandes, l'ensemble de services
+concerné est celui défini dans la section *services* du fichier de configuration
+courant. Ces commandes (à l'exception de `services:watcher`) correspondent
+à l'appel de `systemctl` sur les machines cibles.
+
 ```bash
 # Démarrage des services
 rake services:start
