@@ -1,4 +1,8 @@
 require "open3"
+require 'sshkit'
+require 'sshkit/sudo'
+include SSHKit::DSL
+SSHKit.config.output_verbosity = Logger::WARN
 
 require_relative '../../source/rake/config.rb'
 
@@ -27,4 +31,20 @@ end
 def nth_host(n)
   n = n.to_i unless n.is_a? Integer
   $hosts.keys.sort[n]
+end
+
+def hosts(name = nil)
+  if name.nil?
+    $hosts.values
+  else
+    $hosts.select { |k, v| k == name }.collect { |k, v| v }
+  end
+end
+
+def try_sudo(*args)
+  begin
+    sudo *args
+  rescue => e
+    # ignore
+  end
 end
