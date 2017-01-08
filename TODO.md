@@ -17,8 +17,8 @@ William & Joseph :
   HBASE en distribué
 
 
-Selim : 
-    Maintenant qu’on a HBase en pseudo distribué, tu peux vérifier que Zeppelin fonctionne
+~~Selim : 
+    Maintenant qu’on a HBase en pseudo distribué, tu peux vérifier que Zeppelin fonctionne~~ Zeppelin (as a Service) fonctionne et peut contacter HBase sans problème.
 
 Guillaume & Pierre : 
     Installation et configuration de HAProxy sur les serveurs. Chaque serveur ferait tourner une instance de HAProxy qui fait du load-balancing entre tous les autres serveurs. Je m'explique : si on fait tourner Zeppelin sur le port 8080 (très original :slightly_smiling_face: ) HAProxy tournerait sur le port 80 et transmettrait les requêtes à n'importe quel membre du cluster qui fait tourner Zeppelin. Là où il y a de la valeur ajoutée, c'est que Quéma pourrait effectivement buter n'importe quel serveur, mais il suffirait pour nous de prendre n'importe quel autre et on aurait toujours accès à l'interface de l'appli.
