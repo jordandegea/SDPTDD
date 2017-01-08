@@ -7,20 +7,11 @@ defaults:
   # Default options for hosts
   hosts: &host_defaults
     user: vagrant     # Default non-privileged user
-    cpus: 1           # Default number of CPUs for vagrant
     memory: 2048      # Default RAM amount (MB)
-# Known services definitions
+# List of enabled services
 services:
   - zookeeper
   - service_watcher
-  - kafka
-  - flink
-  - hbase
-  - zeppelin
-  - flink_city@paris
-  - flink_city@london
-  - flink_city@nyc
-  - flink_producer_fake
 # Deployment specifications
 deploy:
   variables:
@@ -29,8 +20,7 @@ deploy:
     zkquorum: '<%= hosts.map { |h| "#{h.name}:2181" }.join(",") %>'
     flinkbootstrap: '<%= hosts.map { |h| "#{h.name}:9092" }.join(",") %>'
   # Shared arguments to apply to all provision scripts
-  # SPEC: Use '-v' to indicate Vagrant provision
-  shared_args: -v
+  shared_args: -v # Using '-v' to indicate Vagrant provisioning
   # List of provisioning steps.
   bootstrap:
     - hosts: $hostspec
