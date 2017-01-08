@@ -45,8 +45,8 @@ Vagrant.configure("2") do |config|
 
       # Configure CPU and RAM
       worker.vm.provider :virtualbox do |vb|
-          vb.customize ["modifyvm", :id, "--memory", params['memory']]
-          vb.customize ["modifyvm", :id, "--cpus", params['cpus']]
+        vb.customize ["modifyvm", :id, "--memory", params['memory']] if params['memory']
+        vb.customize ["modifyvm", :id, "--cpus", params['cpus']] if params['cpus']
       end
 
       # Configure hostname

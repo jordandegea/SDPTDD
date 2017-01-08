@@ -47,24 +47,24 @@ deploy:
   # Note that the *contents* of mentioned directories are copied in the deploy
   # directory
   bootstrap_folders:
-    - ../source/shared
-    - ../source/bootstrap
-    - .vagrant
+    - source/shared
+    - source/bootstrap
+    - vagrant/.vagrant
   system_folders:
-    - ../source/shared
-    - ../source/system
+    - source/shared
+    - source/system
   software_folders:
-    - ../source/shared
-    - ../source/software
+    - source/shared
+    - source/software
   settings_folders:
-    - ../source/shared
-    - ../source/settings
+    - source/shared
+    - source/settings
   code_folders:
-    - ../source/shared
-    - ../source/code
+    - source/shared
+    - source/code
   configure_folders:
-    - ../source/shared
-    - ../source/configure
+    - source/shared
+    - source/configure
 # One-shot run command specifications
 run:
   format_hdfs: /usr/local/hadoop/bin/hdfs namenode -format
@@ -72,16 +72,16 @@ run:
 hosts:
   worker1:
     <<: *host_defaults
-    key: .vagrant/machines/worker1/virtualbox/private_key
+    key: vagrant/.vagrant/machines/worker1/virtualbox/private_key
     ip: 10.20.1.100
     configure:
       after:
         - create_topics: "-t paris -t london -t nyc"
   worker2:
     <<: *host_defaults
-    key: .vagrant/machines/worker2/virtualbox/private_key
+    key: vagrant/.vagrant/machines/worker2/virtualbox/private_key
     ip: 10.20.1.101
   worker3:
     <<: *host_defaults
-    key: .vagrant/machines/worker3/virtualbox/private_key
+    key: vagrant/.vagrant/machines/worker3/virtualbox/private_key
     ip: 10.20.1.102

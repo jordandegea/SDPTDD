@@ -1,4 +1,4 @@
-if $environment == 'development'
+if $env == :development
   def vagrant(*args)
     Dir.chdir "vagrant" do
       sh "vagrant", *args

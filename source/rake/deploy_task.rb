@@ -48,7 +48,7 @@ def host_transfer(host, source_folders_param, working_directory, deploy_root)
   begin
     Open3.popen2e("sftp", "-o", "StrictHostKeyChecking=no", "-i", host.ssh_options[:keys][0], "#{host.user}@#{host.hostname}") do |stdin, stdout, wait_thr|
       source_folders.each do |source_folder|
-        folder = File.expand_path(File.join('..', source_folder), $config_source)
+        folder = File.expand_path(source_folder, $ref_path)
 
         info "[#{host.properties.name}] uploading #{folder}"
 
@@ -70,7 +70,7 @@ def host_transfer(host, source_folders_param, working_directory, deploy_root)
     warn "[#{host.properties.name}] failed to transfer using SFTP, trying using Net::SCP, this will be slower"
 
     source_folders.each do |source_folder|
-      folder = Pathname.new(File.expand_path(File.join('..', source_folder), $config_source))
+      folder = Pathname.new(File.expand_path(source_folder, $ref_path))
 
       Dir.glob(File.join(folder, '**', '*')).each do |file|
         next if Dir.exist? file
