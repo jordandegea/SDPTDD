@@ -8,8 +8,8 @@ $build_conf = YAML.load_file($build_source)
 Config.load_config(File.expand_path('..', __FILE__))
 
 # Helper method to obtains the list of hosts for the current run
-def hosts(args)
-  if args[:server]
+def hosts(args = nil)
+  if args and args[:server]
     args[:server].split(';').collect { |server| $hosts[server] ||
                                        Config.warn_fail("#{server} is not a known host") }
   else

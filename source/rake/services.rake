@@ -54,4 +54,16 @@ namespace :services do
       info capture("systemctl", "status", *enabled_services(hostname, args))
     end
   end
+
+  desc "Prints the status according to service_watcher"
+  task :watcher do
+    on hosts.sample(1) do |host|
+      # Get the hostname as defined in the config file
+      hostname = host.properties.name
+
+      # Status all enabled services
+      info "sudo service_watcher status output: \n" +
+        capture("sudo", "service_watcher", "status")
+    end
+  end
 end
