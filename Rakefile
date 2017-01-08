@@ -1,3 +1,6 @@
+require 'cucumber'
+require 'cucumber/rake/task'
+
 require_relative 'source/rake/config.rb'
 
 # Load build config
@@ -19,3 +22,8 @@ end
 
 # Load custom tasks from `source/rake`
 Dir.glob("source/rake/*.rake").each { |r| import r }
+
+# Create cucumber tasks
+Cucumber::Rake::Task.new(:features) do |task|
+  task.cucumber_opts = "features --format pretty"
+end
