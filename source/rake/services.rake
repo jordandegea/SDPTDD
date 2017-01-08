@@ -3,15 +3,9 @@ require 'sshkit/sudo'
 include SSHKit::DSL
 
 def enabled_services(hostname, args = nil)
-  filter = (args[:services] || '').split(';')
-
-  if filter.length == 0
-    $conf['services'].collect { |s| "#{s}.service" }
-  else
-    $conf['services'].select { |service|
-      filter.include? service 
-    }.collect { |s| "#{s}.service" }
-  end
+  from_args = (args[:services] || '').split(';')
+  from_args = $conf['services'] if from_args.length == 0
+  from_args.collect { |s| "#{s}.service" }
 end
 
 namespace :services do
