@@ -40,11 +40,3 @@ def hosts(name = nil)
     $hosts.select { |k, v| k == name }.collect { |k, v| v }
   end
 end
-
-def try_sudo(*args)
-  begin
-    sudo *args
-  rescue => e
-    # ignore
-  end
-end

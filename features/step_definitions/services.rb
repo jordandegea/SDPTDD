@@ -1,6 +1,16 @@
+Given(/^the "([^"]*)" service is running$/) do |service|
+  on hosts do
+    unless capture("sudo", "systemctl", "status", "#{service}.service") =~ /active \(running\)/
+      sudo "systemctl", "start", "#{service}.service"
+    end
+  end
+end
+
 Given(/^the "([^"]*)" service is not running$/) do |service|
   on hosts do
-    try_sudo "systemctl", "stop", "#{service}.service"
+    if capture("sudo", "systemctl", "status", "#{service}.service") =~ /active \(running\)/
+      sudo "systemctl", "stop", "#{service}.service"
+    end
   end
 end
 
