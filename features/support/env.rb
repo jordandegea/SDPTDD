@@ -1,24 +1,66 @@
-require "open3"
+require 'open3'
 require 'sshkit'
 require 'sshkit/sudo'
+require 'rspec/expectations'
+
+# Loading rake to execute without reloading ruby env each time
+require 'rake'
+old_argv = ARGV
+self.class.send(:remove_const, 'ARGV')
+self.class.const_set('ARGV', [])
+Rake.application.init
+Rake.application.load_rakefile
+self.class.send(:remove_const, 'ARGV')
+self.class.const_set('ARGV', old_argv)
+
+# SSHKit is used within steps
 include SSHKit::DSL
 SSHKit.config.output_verbosity = Logger::WARN
 
+# Enable the use of RSpec expectations while in SSHKit
+class SSHKit::Backend::Abstract
+  include RSpec::Matchers
+end
+
+# Load config
 require_relative '../../source/rake/config.rb'
 
 # Load host config
 Config.load_config(File.expand_path('../../..', __FILE__))
 
 # Some helper methods
-def rake_capture(task_name)
-  Open3.capture2e("rake", task_name)
+def capture_stdout
+  s = StringIO.new
+  oldstdout = $stdout
+  $stdout = s
+  yield
+  s.string
+ensure
+  $stdout = oldstdout
 end
 
 def rake_run(task_name)
   @rake_status ||= {}
 
   # Store the status and output of the rake task
-  output, status = rake_capture(task_name)
+  output = nil
+  status = false
+
+  begin
+    # Parse task name
+    name, args = Rake.application.parse_task_string(task_name)
+
+    # Execute the task, capturing its output
+    output = capture_stdout do
+      Rake.application[name].reenable
+      Rake.application[name].invoke(*args)
+    end
+
+    status = true
+  rescue => e
+    warn e
+  end
+
   @rake_status[task_name] = {
     output: output,
     status: status
@@ -33,7 +75,7 @@ def nth_host(n)
   $hosts.keys.sort[n]
 end
 
-def hosts(name = nil)
+def chosts(name = nil)
   if name.nil?
     $hosts.values
   else

@@ -18,5 +18,5 @@ end
 
 Then(/^the task should succeed$/) do
   expect(@rake_status[:last_task]).not_to be_nil
-  expect(@rake_status[@rake_status[:last_task]][:status].success?).to be true
+  expect(@rake_status[@rake_status[:last_task]][:status]).to be true
 end
