@@ -11,3 +11,7 @@ Scenario: service_watcher starts dummy_global
 @development
 Scenario: service_watcher starts 2 instances of dummy_shared
     Then there should be 2 instances of the "dummy_shared" service running
+
+@production
+Scenario: service_watcher starts kafka
+    Then the "kafka" service should be running

@@ -72,7 +72,7 @@ export RAKE_ENV=production
 # Installation de Bundler (once)
 gem install bundler
 
-# Installation de Rake + SSHKit (once)
+# Installation des dépendances
 # En cas d'incompatibilité avec Gemfile.lock sur le dépôt : bundle update
 bundle
 ```
@@ -88,12 +88,17 @@ export RAKE_ENV=development
 # Utilisation de l'environnement de production
 export RAKE_ENV=production
 ```
-## Deploiement
+
+## Affichage de l'aide
 
 ```bash
 # Listing des tâches Rake avec leur description
 rake -T
+```
 
+## Deploiement
+
+```bash
 # Connexion SSH
 rake ssh server-1
 
@@ -145,6 +150,25 @@ rake run:<commande>[<server1>,<server2>]
 ```
 
 
+## Tests automatisés
+
+Le fonctionnement de l'infrastructure actuelle (selon `$RAKE_ENV`) peut être
+validé par l'exécution de tests automatisés, tels que définis dans le dossier
+`features/`.
+
+```bash
+# Exécution de tous les tests
+rake features
+
+# Exécution des tests de déploiement
+rake features:deployment
+
+# Exécution des tests du composant service_watcher
+rake features:service_watcher
+
+# Exécution des tests de contrôle des services systemd
+rake features:services
+```
 
 
 # Environnement de test Vagrant
