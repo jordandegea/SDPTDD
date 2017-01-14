@@ -164,7 +164,7 @@ WantedBy=multi-user.target" >$HADOOP_SERVICE_FILE
 
 # Create the hbase systemd service
 echo "[Unit]
-Description=Apache HBase
+Description=Apache HBase %i
 Requires=network.target
 After=network.target
 
@@ -175,8 +175,8 @@ Group=hbase
 Environment=LOG_DIR=$HBASE_LOG_DIR
 Environment=HBASE_LOG_DIR=$HBASE_LOG_DIR
 Environment=HADOOP_LOG_DIR=$HBASE_LOG_DIR
-ExecStart=$START_SCRIPT
-ExecStop=$STOP_SCRIPT
+ExecStart=$HBASE_HOME/bin/hbase-daemon.sh start %i
+ExecStop=$HBASE_HOME/bin/hbase-daemon.sh stop %i
 Restart=on-failure
 SyslogIdentifier=hbase
 

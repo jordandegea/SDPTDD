@@ -66,6 +66,13 @@ class Service(object):
         # Read MULTI service properties
         if self.type == MULTI:
             try:
+                self.exclusive = bool(service_spec['exclusive'])
+            except ValueError:
+                raise ValueError("invalid value for %s.exclusive, must be a boolean" % self.name)
+            except KeyError:
+                self.exclusive = False
+
+            try:
                 self.instances = {}
                 for k, v in service_spec['instances'].iteritems():
                     self.instances[str(k)] = int(v)

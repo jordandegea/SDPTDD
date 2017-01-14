@@ -25,3 +25,10 @@ services:
       namenode: 1
       secondarynamenode: 2
       datanode: 3
+  - name: hbase
+    exclusive: true
+    instances:
+      master: 1
+      regionserver: 2
+  - name: zeppelin
+    count: 2

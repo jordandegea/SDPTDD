@@ -480,9 +480,11 @@ class MultiControlUnit(ControlUnit):
         # Sort members so we have a consistent order over all allocators
         sorted_members = sorted(members)
         allocation_state = {}
+        allocated = {}
 
         for member in sorted_members:
             allocation_state[member] = []
+            allocated[member] = False
 
         for param, count in partitions:
             # Number of instances left to allocate
@@ -497,8 +499,13 @@ class MultiControlUnit(ControlUnit):
 
                 if cnt > 0:
                     if param not in member_failed:
-                        allocation_state[member_spec].append("%s@%d" % (param, count - cnt + 1))
-                        cnt -= 1
+                        # If running in exclusive mode for this service, do not allocate
+                        # a service to a worker that already has another service from
+                        # this pool allocated
+                        if not self.control_group.service.exclusive or not allocated[member_spec]:
+                            allocated[member_spec] = True
+                            allocation_state[member_spec].append("%s@%d" % (param, count - cnt + 1))
+                            cnt -= 1
 
         logging.info("%s: computed partition %s" % (self.name, json.dumps(allocation_state)))
 
