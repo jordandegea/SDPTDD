@@ -132,16 +132,6 @@ echo "worker2" > $HBASE_HOME/conf/backup-masters
 echo "worker2
 worker3" > $HBASE_HOME/conf/regionservers
 
-echo "#!/bin/bash
-$HADOOP_HOME/sbin/start-dfs.sh
-$HBASE_HOME/bin/start-hbase.sh" > $START_SCRIPT
-chmod +x $START_SCRIPT
-
-echo "#!/bin/bash
-$HADOOP_HOME/sbin/stop-dfs.sh
-$HBASE_HOME/bin/stop-hbase.sh" > $STOP_SCRIPT
-chmod +x $STOP_SCRIPT
-
 # Create the hadoop systemd service
 echo "[Unit]
 Description=Apache Hadoop %i
