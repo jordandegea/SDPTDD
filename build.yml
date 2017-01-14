@@ -10,7 +10,7 @@
 build_outputs:
   source/code/files/service_watcher.tar.xz:
     dependencies:
-      - source/apps/ServiceWatcher/**
+      - source/apps/ServiceWatcher/**/*
     build_script: |
       #!/bin/bash
       cd source/apps
@@ -18,7 +18,7 @@ build_outputs:
     groups: [ python, service_watcher ]
   source/code/files/KafkaConsoleBridge.jar:
     dependencies:
-      - source/apps/FlinkProcess/KafkaToConsole/src/**
+      - source/apps/FlinkProcess/KafkaToConsole/src/**/*
       - source/apps/FlinkProcess/KafkaToConsole/pom.xml
     build_script: |
       #!/bin/bash
@@ -27,7 +27,7 @@ build_outputs:
     groups: [ java, kafka_to_console, flink_process ]
   source/code/files/KafkaHbaseBridge.jar:
     dependencies:
-      - source/apps/FlinkProcess/KafkaToHBase/src/**
+      - source/apps/FlinkProcess/KafkaToHBase/src/**/*
       - source/apps/FlinkProcess/KafkaToHBase/pom.xml
     build_script: |
       #!/bin/bash
@@ -36,7 +36,7 @@ build_outputs:
     groups: [ java, kafka_to_hbase, flink_process ]
   source/code/files/FakeTwitterProducer.jar:
     dependencies:
-      - source/apps/FlinkProducer/FakeTwitter/src/**
+      - source/apps/FlinkProducer/FakeTwitter/src/**/*
       - source/apps/FlinkProducer/FakeTwitter/pom.xml
     build_script: |
       #!/bin/bash
