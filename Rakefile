@@ -19,3 +19,11 @@ end
 
 # Load custom tasks from `source/rake`
 Dir.glob("source/rake/*.rake").each { |r| import r }
+
+# The main task
+desc "Deploys, formats name nodes and starts the cluster"
+if $env == :development
+  task :up => %w(vagrant:reup deploy run:format_hdfs services:start)
+else
+  task :up => %w(deploy run:format_hdfs services:start)
+end
