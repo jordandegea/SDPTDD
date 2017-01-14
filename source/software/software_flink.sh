@@ -25,4 +25,22 @@ if (($FORCE_INSTALL)) || ! [ -d $FLINK_INSTALL_DIR ]; then
   # Install to the chosen location
   rm -rf $FLINK_INSTALL_DIR
   mv $FLINK_BASE_NAME $FLINK_INSTALL_DIR
+
+  # Symlink all files to /usr/local/bin
+  for BINARY in $FLINK_INSTALL_DIR/bin/*; do
+    case "$BINARY" in
+      *.bat)
+        echo -n # skip Windows bat file
+        ;;
+      *.sh)
+        echo -n # skip sh files
+        ;;
+      *)
+        FN=/usr/local/bin/$(basename "$BINARY")
+        echo "#!/bin/bash
+$BINARY \"\$@\"" >"$FN"
+        chmod +x "$FN"
+        ;;
+    esac
+  done
 fi

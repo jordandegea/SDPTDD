@@ -21,6 +21,21 @@ if (($FORCE_INSTALL)) || ! [ -d $HADOOP_HOME ]; then
   chown root:root -R hadoop-2.5.2
   rm -rf $HADOOP_HOME
   mv hadoop-2.5.2 $HADOOP_HOME
+
+  # Symlink all files to /usr/local/bin
+  for BINARY in $HADOOP_HOME/bin/*; do
+    case "$BINARY" in
+      *.cmd)
+        echo -n # skip Windows cmd file
+        ;;
+      *)
+        FN=/usr/local/bin/$(basename "$BINARY")
+        echo "#!/bin/bash
+$BINARY \"\$@\"" >"$FN"
+        chmod +x "$FN"
+        ;;
+    esac
+  done
 fi
 
 # Download HBase
@@ -37,4 +52,24 @@ if (($FORCE_INSTALL)) || ! [ -d $HBASE_HOME ]; then
   # Install to the chosen location
   rm -rf $HBASE_HOME
   mv hbase-1.0.3 $HBASE_HOME
+
+    # Symlink all files to /usr/local/bin
+  for BINARY in $HBASE_HOME/bin/*; do
+    if ! [ -d "$BINARY" ]; then
+      case "$BINARY" in
+        *.bat)
+          echo -n # skip Windows bat file
+          ;;
+        *.sh)
+          echo -n # skip sh files
+          ;;
+        *)
+          FN=/usr/local/bin/$(basename "$BINARY")
+          echo "#!/bin/bash
+$BINARY \"\$@\"" >"$FN"
+          chmod +x "$FN"
+          ;;
+      esac
+    fi
+  done
 fi
