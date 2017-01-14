@@ -98,10 +98,6 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 </property>
 </configuration>" > $HADOOP_HOME/etc/hadoop/core-site.xml
 
-# TODO: fix hardcoding
-echo "worker2
-worker3" > $HADOOP_HOME/etc/hadoop/slaves
-
 # Configure HBase
 echo "HBase: Configuration"
 
@@ -133,13 +129,6 @@ export HBASE_MANAGES_ZK=false
 export JAVA_HOME=$JAVA_HOME
 export HBASE_LOG_DIR=$HBASE_LOG_DIR
 # END HBASE CONF" >> $HBASE_HOME/conf/hbase-env.sh
-
-# TODO: fix hardcoding
-echo "worker2" > $HBASE_HOME/conf/backup-masters
-
-# TODO: fix hardcoding
-echo "worker2
-worker3" > $HBASE_HOME/conf/regionservers
 
 # Create the hadoop systemd service
 echo "[Unit]
