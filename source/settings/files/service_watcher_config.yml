@@ -1,12 +1,23 @@
 ---
 zookeeper:
   quorum: zookeeper_quorum_replace_me
+  timings:
+    loop_tick: 0.5
+    failed_loop_tick: 1.0
+    partitioner_boundary: 1.0
+    partitioner_reaction: 0.2
 services:
-  - name: flink_paris
-    count: 1
-  - name: flink_producer_fake
-    count: 1
-  - name: flink_nyc
-    count: 1
-  - name: flink_london
-    count: 1
+  - name: kafka
+    type: global
+  - name: hadoop
+    instances:
+      namenode: 1
+      secondarynamenode: 2
+      datanode: 3
+  # - name: flink_city
+  #   instances:
+  #     paris: 1
+  #     nyc: 1
+  #     london: 1
+  # - name: flink_producer_fake
+  #   count: 1

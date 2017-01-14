@@ -142,6 +142,26 @@ $HADOOP_HOME/sbin/stop-dfs.sh
 $HBASE_HOME/bin/stop-hbase.sh" > $STOP_SCRIPT
 chmod +x $STOP_SCRIPT
 
+# Create the hadoop systemd service
+echo "[Unit]
+Description=Apache Hadoop %i
+Requires=network.target
+After=network.target
+
+[Service]
+Type=forking
+User=hbase
+Group=hbase
+Environment=LOG_DIR=$HBASE_LOG_DIR
+Environment=HADOOP_LOG_DIR=$HBASE_LOG_DIR
+ExecStart=$HADOOP_HOME/sbin/hadoop-daemon.sh start %i
+ExecStop=$HADOOP_HOME/sbin/hadoop-daemon.sh stop %i
+Restart=on-failure
+SyslogIdentifier=hadoop
+
+[Install]
+WantedBy=multi-user.target" >$HADOOP_SERVICE_FILE
+
 # Create the hbase systemd service
 echo "[Unit]
 Description=Apache HBase
