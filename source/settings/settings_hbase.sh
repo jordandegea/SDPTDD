@@ -67,6 +67,11 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 </property>
 
 <property>
+<name>dfs.safemode.threshold.pct</name>
+<value>0</value>
+</property>
+
+<property>
 <name>dfs.name.dir</name>
 <value>$HADOOP_HOME/dfs/name</value>
 <final>true</final>
