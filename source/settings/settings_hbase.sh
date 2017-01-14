@@ -73,16 +73,20 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 
 <property>
 <name>dfs.name.dir</name>
-<value>$HADOOP_HOME/dfs/name</value>
+<value>/home/hbase/dfs/name</value>
 <final>true</final>
 </property>
 
 <property>
 <name>dfs.data.dir</name>
-<value>$HADOOP_HOME/dfs/name/data/</value>
+<value>/home/hbase/dfs/name/data/</value>
 <final>true</final>
 </property>
 </configuration>" > $HADOOP_HOME/etc/hadoop/hdfs-site.xml
+
+# Create the directory
+mkdir -p /home/hbase/dfs
+chown hbase:hbase -R /home/hbase/dfs
 
 # TODO: fix hardcoding
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
