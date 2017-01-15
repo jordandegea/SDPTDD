@@ -495,12 +495,12 @@ class MultiControlUnit(ControlUnit):
             # No worker should have to run the same service twice though
             # Also, do not assign failed services to workers
             for i in range(len(sorted_members)):
-                current_member = (current_member + 1) % len(sorted_members)
-                member_spec = sorted_members[current_member]
-                member_splitted = member_spec.split("@")
-                member_failed = member_splitted[1:]
-
                 if cnt > 0:
+                    current_member = (current_member + 1) % len(sorted_members)
+                    member_spec = sorted_members[current_member]
+                    member_splitted = member_spec.split("@")
+                    member_failed = member_splitted[1:]
+
                     if param not in member_failed:
                         # If running in exclusive mode for this service, do not allocate
                         # a service to a worker that already has another service from
