@@ -51,7 +51,7 @@ namespace :services do
       hostname = host.properties.name
 
       # Status all enabled services
-      info capture("systemctl", "status", *enabled_services(hostname, args))
+      info capture("systemctl", "status", *enabled_services(hostname, args), raise_on_non_zero_exit: false)
     end
   end
 
