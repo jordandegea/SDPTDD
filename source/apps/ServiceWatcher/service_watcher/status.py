@@ -18,6 +18,7 @@ class Status(Configurable, ZooKeeperClient):
 
     def begin_table(self):
         self.current_table = []
+        self.current_row = None
 
     def begin_row(self):
         self.end_row()
@@ -42,7 +43,8 @@ class Status(Configurable, ZooKeeperClient):
 
     def out_table(self):
         self.end_row()
-        print(tabulate(self.current_table, headers=["name", "type", "instance", "running", "failed", "health"]))
+        print(tabulate(self.current_table, headers=["name", "type", "instance", "running", "failed", "health"], tablefmt="grid"))
+        self.current_table = None
 
     def run(self):
         self.config.load()
