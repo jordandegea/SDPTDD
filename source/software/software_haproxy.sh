@@ -17,6 +17,4 @@ if (($FORCE_INSTALL)) || ! [ -f '/etc/init.d/haproxy' ]; then
     add-apt-repository ppa:vbernat/haproxy-1.7
     apt-get install -y -qq haproxy
   fi
-  sed -i "s/ENABLED=0/ENABLED=1/g" /etc/default/haproxy
-  sed -i "s/ENABLED=0/ENABLED=1/g" /etc/init.d/haproxy
 fi
