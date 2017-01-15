@@ -18,6 +18,8 @@ services:
       '2': 2
       '3': 3
   # begin actual services
+  - name: haproxy
+    type: global
   - name: kafka
     type: global
   - name: hadoop

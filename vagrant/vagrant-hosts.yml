@@ -19,6 +19,7 @@ deploy:
     quorum: '<%= hosts.map(&:name).join(",") %>'
     zkquorum: '<%= hosts.map { |h| "#{h.name}:2181" }.join(",") %>'
     flinkbootstrap: '<%= hosts.map { |h| "#{h.name}:9092" }.join(",") %>'
+    haproxyservers: '<%= hosts.map { |h| "-s #{h.name}" }.join(" ") %>'
   # Shared arguments to apply to all provision scripts
   shared_args: -v # Using '-v' to indicate Vagrant provisioning
   # List of provisioning steps.
@@ -41,6 +42,7 @@ deploy:
     - flink: -q $quorum -F $flinkbootstrap
     - hbase: -q $quorum
     - zeppelin:
+    - haproxy: $haproxyservers
   code:
     - service_watcher:
     - flink:
