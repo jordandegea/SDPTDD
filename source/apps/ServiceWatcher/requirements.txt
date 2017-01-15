@@ -1,3 +1,4 @@
 kazoo
 PyYaml
 pydbus
+tabulate
