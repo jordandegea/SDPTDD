@@ -479,6 +479,7 @@ class MultiControlUnit(ControlUnit):
     def partition_func(self, identifier, members, partitions):
         # Sort members so we have a consistent order over all allocators
         sorted_members = sorted(members)
+        current_member = 0
         allocation_state = {}
         allocated = {}
 
@@ -493,7 +494,9 @@ class MultiControlUnit(ControlUnit):
             # For the current param, allocate as much instances as possible
             # No worker should have to run the same service twice though
             # Also, do not assign failed services to workers
-            for member_spec in sorted_members:
+            for i in range(len(sorted_members)):
+                current_member = (current_member + 1) % len(sorted_members)
+                member_spec = sorted_members[current_member]
                 member_splitted = member_spec.split("@")
                 member_failed = member_splitted[1:]
 
