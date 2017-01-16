@@ -51,6 +51,11 @@ class Monitor(Configurable, ZooKeeperClient, SystemdClient):
     def run(self):
         logging.info("starting ServiceWatcher")
 
+        # Create temporary directory
+        tmpdir = "/tmp/service_watcher"
+        if not os.path.isdir(tmpdir):
+            os.mkdir(tmpdir)
+
         run_loop = True
         while run_loop:
             self.config.load()
@@ -70,7 +75,7 @@ class Monitor(Configurable, ZooKeeperClient, SystemdClient):
             self.start_systemd(self.on_job_event)
 
             # Start the control root for all services
-            with ControlRoot(self.zk, self.config.services, self.config.timings) as cr:
+            with ControlRoot(self.zk, self.config.services, self.config.timings, tmpdir) as cr:
                 # Start the main loop
                 self.run_event_loop()
 

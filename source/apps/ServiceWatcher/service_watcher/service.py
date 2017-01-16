@@ -1,5 +1,7 @@
 import logging
 
+from service_watcher.prestart import PrestartScript
+
 GLOBAL = 0
 SHARED = 1
 MULTI = 2
@@ -78,6 +80,12 @@ class Service(object):
                     self.instances[str(k)] = int(v)
             except ValueError:
                 raise ValueError("invalid instances specification for %s" % self.name)
+
+        # Parse prestart script
+        try:
+            self.prestart = PrestartScript(service_spec['prestart'])
+        except KeyError:
+            self.prestart = None
 
         logging.info("discovered type %d service %s" % (self.type, self.name))
 

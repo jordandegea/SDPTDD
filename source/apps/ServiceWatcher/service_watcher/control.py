@@ -8,10 +8,11 @@ from kazoo.recipe.partitioner import SetPartitioner
 from kazoo.recipe.party import ShallowParty
 
 from service_watcher import service as svc
+from service_watcher.prestart import *
 
 
 class ControlRoot(object):
-    def __init__(self, zk, services, timings):
+    def __init__(self, zk, services, timings, tmpdir):
         super(ControlRoot, self).__init__()
         # ZooKeeper instance
         self.zk = zk
@@ -23,6 +24,10 @@ class ControlRoot(object):
         self.control_groups = [self.control_group(service) for service in services]
         # Default to stop services on exit
         self.reload_exit = False
+        # Instance resolvers
+        self.instance_resolvers = {}
+        # Temporary directory
+        self.tmpdir = tmpdir
 
     def control_group(self, service):
         if service.type == svc.GLOBAL:
@@ -35,7 +40,21 @@ class ControlRoot(object):
     def set_reload_mode(self):
         self.reload_exit = True
 
+    def register_resolver(self, name, func):
+        self.instance_resolvers[name] = func
+
+    def instance_resolver_root(self, instance_name):
+        if instance_name not in self.instance_resolvers:
+            raise UnknownInstance()
+        else:
+            resolved = self.instance_resolvers[instance_name](instance_name)
+            # logging.info("ControlRoot: resolving %s to %s" % (instance_name, resolved))
+            return resolved
+
     def __enter__(self):
+        for control_group in self.control_groups:
+            control_group.prestart()
+
         for control_group in self.control_groups:
             control_group.start()
         return self
@@ -59,6 +78,9 @@ class ControlGroup(object):
         # but we cannot pass it to the constructor as this induces a circular dependency
         self.unit = None
 
+    def prestart(self):
+        self.unit.prestart()
+
     def start(self):
         self.unit.start()
 
@@ -73,6 +95,9 @@ class ControlUnit(threading.Thread):
         self.control_group = control_group
         # Loop event, to throttle on events
         self.loop_event = threading.Event()
+
+    def prestart(self):
+        pass
 
     def stop(self):
         # Unblock the event loop
@@ -109,11 +134,12 @@ class GlobalControlGroup(ControlGroup):
 
 
 class ServiceLogic(object):
-    def __init__(self, zk, name, service, unit):
+    def __init__(self, zk, name, service, unit, control_root):
         super(ServiceLogic, self).__init__()
         self.name = name
         self.service = service
         self.unit = unit
+        self.control_root = control_root
 
         # Group membership for this service object
         self.party = ShallowParty(zk, "/service_watcher/active/%s" % self.name, gethostname())
@@ -125,6 +151,14 @@ class ServiceLogic(object):
         self.service_stop_initiated = False
 
         self.should_run = None
+        self.joined_scheduled = False
+
+        # Restore state of prestart
+        if self.service.prestart is not None:
+            self.service.prestart.load_state(os.path.join(self.control_root.tmpdir, "%s.yml" % self.name))
+
+    def set_should_run(self, value):
+        self.should_run = value
 
     def tick(self):
         state = None
@@ -176,30 +210,58 @@ class ServiceLogic(object):
                 self.service_stop_initiated = False
 
         # Only take a decision if we know the current state of the service and what we should do
-        try:
-            if state is not None:
-                self.actions()
-        except GLib.Error:
-            logging.error("%s: failed controlling the service" % self.name)
+        if state is not None:
+            self.actions()
 
     def actions(self):
+        try:
+            self._actions()
+        except:
+            logging.error("%s: failed controlling the service" % self.name)
+
+    def _actions(self):
         if self.should_run is not None:
-            if self.should_run:
+            if self.should_run and not self.service_stop_initiated:
                 # try having the service running
                 if not self.service_started:
-                    self.start_service()
-            else:
+                    # run the pre-exec
+                    def prestart_cb():
+                        if self.service.prestart is not None:
+                            try:
+                                logging.info("%s: executing prestart script" % self.name)
+                                self.service.prestart.execute(self.control_root.instance_resolver_root)
+                                return True
+                            except RetryExecute:
+                                logging.info("%s: retrying later, missing scheduled instance" % self.name)
+                            except Exception as e:
+                                logging.error("%s: critical error in prestart script: %s" % (self.name, e))
+                        else:
+                            return True
+                        return False
+
+                    self.start_service(prestart_cb)
+                else:
+                    if self.service.prestart is not None and self.service.prestart.is_dirty(self.control_root.instance_resolver_root):
+                        logging.info("%s: prestart script state is not up-to-date, restarting service" % self.name)
+                        self.stop_service()
+            elif self.should_run:
                 # try having the service stopped
                 if self.service_started:
                     self.stop_service()
 
     def terminate(self, reload_mode):
+        if self.service.prestart is not None:
+            self.service.prestart.save_state(os.path.join(self.control_root.tmpdir, "%s.yml" % self.name))
+
         if self.service_start_initiated or self.service_started:
             # the service is currently running
             if reload_mode:
                 logging.info("%s: keeping service running for reload" % self.name)
             else:
-                self.stop_service()
+                try:
+                    self.stop_service()
+                except:
+                    logging.error("%s: error stopping service on terminate" % self.name)
         elif self.service_failed:
             # the service has failed
             if reload_mode:
@@ -208,11 +270,12 @@ class ServiceLogic(object):
             else:
                 logging.warning("%s: exiting with failed status" % self.name)
 
-    def start_service(self):
+    def start_service(self, guard = None):
         if not self.service_start_initiated:
-            logging.info("%s: starting service" % self.name)
-            self.unit.Start("fail")
-            self.service_start_initiated = True
+            if guard is None or guard():
+                logging.info("%s: starting service" % self.name)
+                self.unit.Start("fail")
+                self.service_start_initiated = True
 
     def stop_service(self):
         if not self.service_stop_initiated:
@@ -225,18 +288,29 @@ class GlobalControlUnit(ControlUnit):
     def __init__(self, control_group):
         super(GlobalControlUnit, self).__init__(control_group, control_group.service.name)
 
+    def prestart(self):
+        # ZooKeeper instance
+        self.zk = self.control_group.control_root.zk
+
+        # Encapsulated logic for the managed global service
+        self.sl = ServiceLogic(self.zk, self.control_group.service.name, self.control_group.service, self.get_unit(),
+                               self.control_group.control_root)
+
+        # Register the resolver for prestart scripts
+        def resolver(target_name):
+            raise ResolvingNotSupported()
+
+        self.control_group.control_root.register_resolver(self.sl.name, resolver)
+
     def run(self):
         # Event to signal the thread should exit
         exit_event = self.control_group.control_root.exit_event
 
-        # ZooKeeper instance
-        zk = self.control_group.control_root.zk
-
-        # Encapsulated logic for the managed global service
-        sl = ServiceLogic(zk, self.control_group.service.name, self.control_group.service, self.get_unit())
+        # Get the reference to sl
+        sl = self.sl
 
         # A global service should always run
-        sl.should_run = True
+        sl.set_should_run(True)
 
         # Main loop for this unit
         with self.control_group.service.handler(self.job_event_handler):
@@ -274,16 +348,34 @@ class SharedControlUnit(ControlUnit):
         # Initialize underlying thread
         # Note that the thread name is unique also in the ZooKeeper znode space
         super(SharedControlUnit, self).__init__(control_group, control_group.service.name)
+        self.last_partition = None
+
+    def prestart(self):
+        # ZooKeeper instance
+        self.zk = self.control_group.control_root.zk
+
+        # Encapsulated logic for the managed shared service
+        self.sl = ServiceLogic(self.zk, self.control_group.service.name, self.control_group.service, self.get_unit(),
+                               self.control_group.control_root)
+
+        # Register the resolver for prestart scripts
+        def resolver(target_name):
+            if target_name != self.control_group.service.name:
+                raise UnknownInstance()
+
+            if self.last_partition is None or len(self.last_partition) == 0:
+                raise DelayPrestart()
+            return ",".join(self.last_partition)
+
+        self.control_group.control_root.register_resolver(self.sl.name, resolver)
 
     def run(self):
         # Event to signal the thread should exit
         exit_event = self.control_group.control_root.exit_event
 
-        # ZooKeeper instance
-        zk = self.control_group.control_root.zk
-
-        # Encapsulated logic for the managed shared service
-        sl = ServiceLogic(zk, self.control_group.service.name, self.control_group.service, self.get_unit())
+        # Get the reference to sl and zk
+        zk = self.zk
+        sl = self.sl
 
         with self.control_group.service.handler(self.job_event_handler):
             # Loop forever
@@ -316,7 +408,7 @@ class SharedControlUnit(ControlUnit):
                                 # immediately release set, we will perform a diff-update on the next acquire
                                 logging.info("%s: releasing partitioner set" % self.name)
                                 # note that we should now leave the service as-is, while waiting for what to do
-                                sl.should_run = None
+                                sl.set_should_run(None)
                                 # actually release the partition
                                 partitioner.release_set()
                             elif partitioner.acquired:
@@ -328,7 +420,7 @@ class SharedControlUnit(ControlUnit):
                                     acquired = True
 
                                 # the service should run if the partition is non-empty
-                                sl.should_run = len(new_p) > 0
+                                sl.set_should_run(len(new_p) > 0)
 
                                 # force taking actions
                                 sl.actions()
@@ -344,7 +436,9 @@ class SharedControlUnit(ControlUnit):
                         # Release the partitioner when leaving
                         partitioner.finish()
                         # No action should be taken
-                        sl.should_run = None
+                        sl.set_should_run(None)
+                        # Remove scheduled state
+                        sl.tick()
 
         # When exiting, stop all services
         sl.terminate(self.control_group.control_root.reload_exit)
@@ -353,6 +447,7 @@ class SharedControlUnit(ControlUnit):
         # Sort members so we have a consistent order over all allocators
         sorted_members = sorted(members)
         allocation_state = {}
+        target_members = []
 
         for member in sorted_members:
             allocation_state[member] = []
@@ -360,9 +455,13 @@ class SharedControlUnit(ControlUnit):
         # For the current param, allocate as much instances as possible
         # No worker should have to run the same service twice though
         for i in range(min(service.count, len(members))):
-            allocation_state[sorted_members[i]].append("%d" % i)
+            member = sorted_members[i]
+            allocation_state[member].append("%d" % i)
+            target_members.append(member)
 
+        self.last_partition = target_members
         logging.info("%s: computed partition %s" % (self.name, json.dumps(allocation_state)))
+        logging.info("%s: resolver state %s" % (self.name, json.dumps(target_members)))
 
         # The resulting "partition" is the set of services for the current instance
         return allocation_state[identifier]
@@ -383,20 +482,45 @@ class MultiControlGroup(ControlGroup):
 class MultiControlUnit(ControlUnit):
     def __init__(self, control_group):
         super(MultiControlUnit, self).__init__(control_group, control_group.service.name)
+        self.last_partition = None
 
     def param_job_handler(self, job_id, job_object_path, status, param):
         super(MultiControlUnit, self).job_event_handler(job_id, job_object_path, status)
+
+    def prestart(self):
+        # ZooKeeper instance
+        self.zk = self.control_group.control_root.zk
+
+        # List of service logics
+        self.services = [ServiceLogic(self.zk, "%s@%s" % (self.name, s), self.control_group.service, self.get_unit(s),
+                                      self.control_group.control_root)
+                         for s in self.control_group.service.instances]
+
+        # Register the resolver for prestart scripts
+        def resolver(target_name):
+            if self.last_partition is None:
+                raise DelayPrestart()
+
+            if target_name not in self.last_partition:
+                raise UnknownInstance()
+
+            if len(self.last_partition[target_name]) == 0:
+                raise DelayPrestart()
+
+            return ",".join(self.last_partition[target_name])
+
+        for sl in self.services:
+            self.control_group.control_root.register_resolver(sl.name, resolver)
 
     def run(self):
         # Event to signal the thread should exit
         exit_event = self.control_group.control_root.exit_event
 
         # ZooKeeper instance
-        zk = self.control_group.control_root.zk
+        zk = self.zk
 
         # List of service logics
-        services = [ServiceLogic(zk, "%s@%s" % (self.name, s), self.control_group.service, self.get_unit(s)) for s in
-                    self.control_group.service.instances]
+        services = self.services
 
         # Tick all services once
         for service in services:
@@ -445,7 +569,7 @@ class MultiControlUnit(ControlUnit):
                             logging.info("%s: releasing partitioner set" % self.name)
                             # service logics should take no action
                             for service in services:
-                                service.should_run = None
+                                service.set_should_run(None)
                             # actually release the partition
                             partitioner.release_set()
                         elif partitioner.acquired:
@@ -458,7 +582,10 @@ class MultiControlUnit(ControlUnit):
 
                             # update activation status
                             for service in services:
-                                service.should_run = service.name.split("@")[1] in new_p
+                                service.set_should_run(service.name.split("@")[1] in new_p)
+
+                            # run actions
+                            for service in services:
                                 service.actions()
 
                             # wait for wake-up, but not too long so we are still responsive to
@@ -482,6 +609,10 @@ class MultiControlUnit(ControlUnit):
         current_member = 0
         allocation_state = {}
         allocated = {}
+        target_members = {}
+
+        for param, count in partitions:
+            target_members["%s@%s" % (self.control_group.service.name, param)] = []
 
         for member in sorted_members:
             allocation_state[member] = []
@@ -508,9 +639,12 @@ class MultiControlUnit(ControlUnit):
                         if not self.control_group.service.exclusive or not allocated[member_spec]:
                             allocated[member_spec] = True
                             allocation_state[member_spec].append("%s@%d" % (param, count - cnt + 1))
+                            target_members["%s@%s" % (self.control_group.service.name, param)].append(member_splitted[0])
                             cnt -= 1
 
+        self.last_partition = target_members
         logging.info("%s: computed partition %s" % (self.name, json.dumps(allocation_state)))
+        logging.info("%s: resolver state %s" % (self.name, json.dumps(target_members)))
 
         # The resulting "partition" is the set of services for the current instance
         return allocation_state[identifier]
