@@ -32,6 +32,7 @@ deploy:
     - python:
   software:
     - kafka:
+    - bookkeeper:
     - flink:
     - hbase:
     - zeppelin:
@@ -39,6 +40,7 @@ deploy:
   settings:
     - service_watcher: -z $zkquorum
     - kafka: $hostspec
+    - bookkeeper: -z $zkquorum
     - flink: -q $quorum -F $flinkbootstrap
     - hbase: -q $quorum
     - zeppelin:

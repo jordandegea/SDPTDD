@@ -22,6 +22,8 @@ services:
     type: global
   - name: kafka
     type: global
+  - name: bookkeeper
+    type: global
   - name: hadoop
     prestart: |
       #!/bin/bash
