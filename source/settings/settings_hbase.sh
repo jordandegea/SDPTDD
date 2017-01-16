@@ -10,10 +10,13 @@ source ./deploy_shared.sh
 source ./hbase_shared.sh
 
 # Read HBase quorum from args
-while getopts ":vfq:" opt; do
+while getopts ":vfq:z:" opt; do
     case "$opt" in
         q)
         HBASE_QUORUM="$OPTARG"
+        ;;
+        z)
+        ZOOKEEPER_QUORUM=$(tr ',' ';' <<<"$OPTARG")
         ;;
     esac
 done
@@ -58,10 +61,10 @@ export HADOOP_LOG_DIR=$HBASE_LOG_DIR
 # END HBASE CONF" >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh
 
 # We have 3 machines, we can have a replication factor of 3
-echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>
-<configuration>
-<property>
+CONF_HEAD="<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<configuration>"
+
+DFS_CONF_HEAD="<property>
 <name>dfs.replication</name>
 <value>3</value>
 </property>
@@ -72,18 +75,96 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 </property>
 
 <property>
-<name>dfs.name.dir</name>
-<value>/home/hbase/dfs/namenode/name</value>
+<name>dfs.data.dir</name>
+<value>/home/hbase/dfs/data</value>
 <final>true</final>
 </property>
 
 <property>
-<name>dfs.data.dir</name>
-<value>/home/hbase/dfs/namenode/data</value>
-<final>true</final>
+<name>dfs.nameservices</name>
+<value>twitter_cluster</value>
 </property>
-</configuration>" > $HADOOP_HOME/etc/hadoop/hdfs-site.xml.tpl
-sed 's#namenode#localhost#' $HADOOP_HOME/etc/hadoop/hdfs-site.xml.tpl > $HADOOP_HOME/etc/hadoop/hdfs-site.xml
+"
+
+DFS_CONF_NN1="<property>
+<name>dfs.ha.namenodes.twitter_cluster</name>
+<value>nn1</value>
+</property>
+
+<property>
+<name>dfs.namenode.rpc-address.twitter_cluster.nn1</name>
+<value>nn1:8020</value>
+</property>
+
+<property>
+<name>dfs.namenode.http-address.twitter_cluster.nn1</name>
+<value>nn1:50070</value>
+</property>
+"
+
+DFS_CONF_NN2="<property>
+<name>dfs.ha.namenodes.twitter_cluster</name>
+<value>nn1,nn2</value>
+</property>
+
+<property>
+<name>dfs.namenode.rpc-address.twitter_cluster.nn1</name>
+<value>nn1:8020</value>
+</property>
+<property>
+<name>dfs.namenode.rpc-address.twitter_cluster.nn2</name>
+<value>nn2:8020</value>
+</property>
+
+<property>
+<name>dfs.namenode.http-address.twitter_cluster.nn1</name>
+<value>nn1:50070</value>
+</property>
+<property>
+<name>dfs.namenode.http-address.twitter_cluster.nn2</name>
+<value>nn2:50070</value>
+</property>
+"
+
+DFS_CONF_POST="<property>
+<name>dfs.namenode.shared.edits.dir</name>
+<value>bookkeeper://$ZOOKEEPER_QUORUM/hdfsjournal</value>
+</property>
+
+<property>
+<name>dfs.client.failover.proxy.provider.twitter_cluster</name>
+<value>org.apache.hadoop.hdfs.server.namenode.ha.ConfiguredFailoverProxyProvider</value>
+</property>
+
+<property>
+<name>dfs.namenode.edits.journal-plugin.bookkeeper</name>
+<value>org.apache.hadoop.contrib.bkjournal.BookKeeperJournalManager</value>
+</property>
+"
+
+echo "$CONF_HEAD
+$DFS_CONF_HEAD
+$DFS_CONF_NN2
+$DFS_CONF_POST
+</configuration>" > $HADOOP_HOME/etc/hadoop/hdfs-site.xml.tpl2
+
+# Same config as above, but for only one NN
+echo "$CONF_HEAD
+$DFS_CONF_HEAD
+$DFS_CONF_NN1
+$DFS_CONF_POST
+</configuration>" > $HADOOP_HOME/etc/hadoop/hdfs-site.xml.tpl1
+
+IFS=',' read -r -a NN <<< "$HBASE_QUORUM"
+DEST=$HADOOP_HOME/etc/hadoop/hdfs-site.xml
+SRC=$HADOOP_HOME/etc/hadoop/hdfs-site.xml.tpl
+sed "s#nn1#${NN[0]}#" ${SRC}2 > $DEST
+sed -i "s#nn2#${NN[1]}#" $DEST
+
+echo "HBase: downloading HDFS BK plugin"
+get_file "http://central.maven.org/maven2/org/apache/hadoop/contrib/hadoop-hdfs-bkjournal/2.1.1-beta/hadoop-hdfs-bkjournal-2.1.1-beta.jar" \
+  hadoop-hdfs-bkjournal-2.1.1-beta.jar
+mv hadoop-hdfs-bkjournal-2.1.1-beta.jar $HADOOP_HOME/share/hadoop/hdfs/lib/
 
 # Create the directory
 mkdir -p /home/hbase/dfs
@@ -94,33 +175,43 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <configuration>
 <property>
 <name>fs.defaultFS</name>
-<value>hdfs://namenode:9000</value>
+<value>hdfs://twitter_cluster/</value>
 </property>
-</configuration>" > $HADOOP_HOME/etc/hadoop/core-site.xml.tpl
-sed 's#namenode#localhost#' $HADOOP_HOME/etc/hadoop/core-site.xml.tpl > $HADOOP_HOME/etc/hadoop/core-site.xml
+</configuration>" > $HADOOP_HOME/etc/hadoop/core-site.xml
 
 # Configure HBase
 echo "HBase: Configuration"
 
-echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
-<configuration>
-<property>
+HBASE_CONF_COMMON="<property>
 <name>hbase.cluster.distributed</name>
 <value>true</value>
 </property>
 
 <property>
 <name>hbase.rootdir</name>
-<value>hdfs://namenode:9000/hbase</value>
+<value>hdfs://nn1:8020/hbase</value>
 </property>
 
 <property>
 <name>hbase.zookeeper.quorum</name>
 <value>$HBASE_QUORUM</value>
 </property>
+"
+
+echo "$CONF_HEAD
+$HBASE_CONF_COMMON
+</configuration>" > $HBASE_HOME/conf/hbase-site.xml.tpl2
+
+# Same config as above, but for only one NN
+echo "$CONF_HEAD
+$HBASE_CONF_COMMON
+</configuration>" > $HBASE_HOME/conf/hbase-site.xml.tpl1
+
+echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
+<configuration>
+$HBASE_CONF_COMMON
 </configuration>
-" > $HBASE_HOME/conf/hbase-site.xml.tpl
-sed 's#namenode#localhost#' $HBASE_HOME/conf/hbase-site.xml.tpl > $HBASE_HOME/conf/hbase-site.xml
+" > $HBASE_HOME/conf/hbase-site.xml
 
 # Remove previous config
 sed -i '/# BEGIN HBASE CONF/,/# END HBASE CONF/d' $HBASE_HOME/conf/hbase-env.sh
@@ -143,6 +234,7 @@ User=hbase
 Group=hbase
 Environment=LOG_DIR=$HBASE_LOG_DIR
 Environment=HADOOP_LOG_DIR=$HBASE_LOG_DIR
+ExecStartPre=-/bin/mkdir -p /tmp/hadoop-hbase/dfs/name
 ExecStart=$HADOOP_HOME/sbin/hadoop-daemon.sh start %i
 ExecStop=-$HADOOP_HOME/sbin/hadoop-daemon.sh stop %i
 Restart=on-failure
@@ -164,6 +256,7 @@ Group=hbase
 Environment=LOG_DIR=$HBASE_LOG_DIR
 Environment=HBASE_LOG_DIR=$HBASE_LOG_DIR
 Environment=HADOOP_LOG_DIR=$HBASE_LOG_DIR
+ExecStartPre=-/bin/mkdir -p /tmp/hadoop-hbase/dfs/name
 ExecStart=$HBASE_HOME/bin/hbase-daemon.sh start %i
 ExecStop=-$HBASE_HOME/bin/hbase-daemon.sh stop %i
 Restart=on-failure

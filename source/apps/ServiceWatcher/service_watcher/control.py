@@ -365,7 +365,7 @@ class SharedControlUnit(ControlUnit):
 
             if self.last_partition is None or len(self.last_partition) == 0:
                 raise DelayPrestart()
-            return ",".join(self.last_partition)
+            return ",".join(sorted(self.last_partition))
 
         self.control_group.control_root.register_resolver(self.sl.name, resolver)
 
@@ -507,7 +507,7 @@ class MultiControlUnit(ControlUnit):
             if len(self.last_partition[target_name]) == 0:
                 raise DelayPrestart()
 
-            return ",".join(self.last_partition[target_name])
+            return ",".join(sorted(self.last_partition[target_name]))
 
         for sl in self.services:
             self.control_group.control_root.register_resolver(sl.name, resolver)

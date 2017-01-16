@@ -42,7 +42,7 @@ deploy:
     - kafka: $hostspec
     - bookkeeper: -z $zkquorum
     - flink: -q $quorum -F $flinkbootstrap
-    - hbase: -q $quorum
+    - hbase: -q $quorum -z $zkquorum
     - zeppelin:
     - haproxy: $haproxyservers
   code:
@@ -72,11 +72,10 @@ deploy:
     - source/configure
 # One-shot run command specifications
 run:
-  format_hdfs: sudo -u hbase /usr/local/hadoop/bin/hdfs namenode -format -force -nonInteractive
   format_bklocal: sudo -u zookeeper /usr/local/bookkeeper/bin/bookkeeper shell bookieformat -nonInteractive -force
-  format_bkmeta:
-    command: sudo -u zookeeper /usr/local/bookkeeper/bin/bookkeeper shell metaformat -nonInteractive -force
-    mode: once
+  format_hdfs:
+    command: sudo -u hbase /usr/local/hadoop/bin/hdfs namenode -format -force -nonInteractive -clusterId 391dd785-1cdb-45a5-9f87-d704f5d3b232
+    mode: sequential
 # Hosts definitions
 hosts:
   worker1:

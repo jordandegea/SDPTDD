@@ -7,7 +7,11 @@ namespace :run do
         if command_spec['mode'] == 'once'
           cmd_hosts = [cmd_hosts.first]
         end
-        on cmd_hosts do |host|
+        exec_mode = :parallel
+        if command_spec['mode'] == 'sequential'
+          exec_mode = :sequence
+        end
+        on cmd_hosts, in: exec_mode do |host|
           sudo command_spec['command']
         end
       end

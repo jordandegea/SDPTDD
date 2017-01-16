@@ -8,44 +8,61 @@ zookeeper:
     partitioner_reaction: 1.0
 services:
   # begin dummy services
-  - name: dummy_global
-    type: global
-  - name: dummy_shared
-    count: 2
-  - name: dummy_multi
-    instances:
-      '1': 1
-      '2': 2
-      '3': 3
+  # - name: dummy_global
+  #   type: global
+  # - name: dummy_shared
+  #   count: 2
+  # - name: dummy_multi
+  #   instances:
+  #     '1': 1
+  #     '2': 2
+  #     '3': 3
   # begin actual services
-  - name: haproxy
-    type: global
-  - name: kafka
-    type: global
+  # - name: haproxy
+  #   type: global
+  # - name: kafka
+  #   type: global
   - name: bookkeeper
     type: global
   - name: hadoop
     prestart: |
       #!/bin/bash
-      sed 's#namenode#{instance:hadoop@namenode}#' /usr/local/hadoop/etc/hadoop/core-site.xml.tpl > /usr/local/hadoop/etc/hadoop/core-site.xml
-      sed 's#namenode#{instance:hadoop@namenode}#' /usr/local/hadoop/etc/hadoop/hdfs-site.xml.tpl > /usr/local/hadoop/etc/hadoop/hdfs-site.xml
-      if ! [ -d /home/hbase/dfs/{instance:hadoop@namenode}/name ]; then
-        sudo -u hbase /usr/local/hadoop/bin/hdfs namenode -format -force -nonInteractive
+      NAMENODES="{instance:hadoop@namenode}"
+      DEST=/usr/local/hadoop/etc/hadoop/hdfs-site.xml
+      SRC=/usr/local/hadoop/etc/hadoop/hdfs-site.xml.tpl
+      if grep ',' <<<"$NAMENODES" >/dev/null ; then
+        # We have two namenodes
+        IFS=',' read -r -a NN <<< "$NAMENODES"
+        sed "s#nn1#${NN[0]}#" ${SRC}2 > $DEST
+        sed -i "s#nn2#${NN[1]}#" $DEST
+      else
+        # We only have one namenode
+        sed "s#nn1#${NAMENODES}#" ${SRC}1 > $DEST
       fi
     instances:
-      namenode: 1
-      secondarynamenode: 2
+      namenode: 2
       datanode: 3
-  - name: hbase
-    prestart: |
-      #!/bin/bash
-      sed 's#namenode#{instance:hadoop@namenode}#' /usr/local/hbase/conf/hbase-site.xml.tpl > /usr/local/hbase/conf/hbase-site.xml
-    exclusive: true
-    instances:
-      master: 1
-      regionserver: 2
-  - name: zeppelin
-    count: 2
+  # - name: hbase
+  #   prestart: |
+  #     #!/bin/bash
+  #     NAMENODES="{instance:hadoop@namenode}"
+  #     DEST=/usr/local/hbase/conf/hbase-site.xml
+  #     SRC=/usr/local/hbase/conf/hbase-site.xml.tpl
+  #     if grep ',' <<<"$NAMENODES" >/dev/null ; then
+  #       # We have two namenodes
+  #       IFS=',' read -r -a NN <<< "$NAMENODES"
+  #       sed "s#nn1#${NN[0]}#" ${SRC}2 > $DEST
+  #       sed -i "s#nn2#${NN[1]}#" $DEST
+  #     else
+  #       # We only have one namenode
+  #       sed "s#nn1#${NAMENODES}#" ${SRC}1 > $DEST
+  #     fi
+  #   exclusive: true
+  #   instances:
+  #     master: 1
+  #     regionserver: 2
+  # - name: zeppelin
+  #   count: 2
   # - name: flink_city
   #   instances:
   #     paris: 1
