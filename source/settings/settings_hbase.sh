@@ -143,7 +143,7 @@ Group=hbase
 Environment=LOG_DIR=$HBASE_LOG_DIR
 Environment=HADOOP_LOG_DIR=$HBASE_LOG_DIR
 ExecStart=$HADOOP_HOME/sbin/hadoop-daemon.sh start %i
-ExecStop=$HADOOP_HOME/sbin/hadoop-daemon.sh stop %i
+ExecStop=-$HADOOP_HOME/sbin/hadoop-daemon.sh stop %i
 Restart=on-failure
 SyslogIdentifier=hadoop
 
@@ -164,7 +164,7 @@ Environment=LOG_DIR=$HBASE_LOG_DIR
 Environment=HBASE_LOG_DIR=$HBASE_LOG_DIR
 Environment=HADOOP_LOG_DIR=$HBASE_LOG_DIR
 ExecStart=$HBASE_HOME/bin/hbase-daemon.sh start %i
-ExecStop=$HBASE_HOME/bin/hbase-daemon.sh stop %i
+ExecStop=-$HBASE_HOME/bin/hbase-daemon.sh stop %i
 Restart=on-failure
 SyslogIdentifier=hbase
 

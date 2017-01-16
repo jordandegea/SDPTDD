@@ -36,7 +36,7 @@ Type=forking
 User=zeppelin
 Group=zeppelin
 ExecStart=$START_SCRIPT
-ExecStop=$STOP_SCRIPT
+ExecStop=-$STOP_SCRIPT
 Restart=on-failure
 SyslogIdentifier=zeppelin
 
