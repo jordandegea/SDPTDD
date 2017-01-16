@@ -41,7 +41,8 @@ namespace :services do
     start: "Starts services according to service assignments in the host config file",
     restart: "Restarts services according to service assignments in the host config file",
     stop: "Stops services according to service assignments in the host config file",
-    kill: "Kills services according to service assignments in the host config file"
+    kill: "Kills services according to service assignments in the host config file",
+    'reset-failed': "Resets the failed status of services",
   }.each(&method(:systemctl_task))
 
   desc "Prints the status of services according to service assignments in the host config file"
