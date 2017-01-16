@@ -10,7 +10,7 @@ task :ssh do |task, args|
   raise "#{ARGV.first} not found" unless host
 
   # Run SSH command
-  sh "ssh", "-i", host.ssh_options[:keys].first, "#{host.user}@#{host.hostname}"
+  sh "ssh", "-o", "StrictHostKeyChecking=no", "-i", host.ssh_options[:keys].first, "#{host.user}@#{host.hostname}"
 
   # https://stackoverflow.com/questions/3586997/how-to-pass-multiple-parameters-to-rake-task
   #
