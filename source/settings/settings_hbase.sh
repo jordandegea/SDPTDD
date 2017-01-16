@@ -73,35 +73,35 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 
 <property>
 <name>dfs.name.dir</name>
-<value>/home/hbase/dfs/name</value>
+<value>/home/hbase/dfs/namenode/name</value>
 <final>true</final>
 </property>
 
 <property>
 <name>dfs.data.dir</name>
-<value>/home/hbase/dfs/name/data/</value>
+<value>/home/hbase/dfs/namenode/data</value>
 <final>true</final>
 </property>
-</configuration>" > $HADOOP_HOME/etc/hadoop/hdfs-site.xml
+</configuration>" > $HADOOP_HOME/etc/hadoop/hdfs-site.xml.tpl
+sed 's#namenode#localhost#' $HADOOP_HOME/etc/hadoop/hdfs-site.xml.tpl > $HADOOP_HOME/etc/hadoop/hdfs-site.xml
 
 # Create the directory
 mkdir -p /home/hbase/dfs
 chown hbase:hbase -R /home/hbase/dfs
 
-# TODO: fix hardcoding
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>
 <configuration>
 <property>
 <name>fs.defaultFS</name>
-<value>hdfs://worker1:9000</value>
+<value>hdfs://namenode:9000</value>
 </property>
-</configuration>" > $HADOOP_HOME/etc/hadoop/core-site.xml
+</configuration>" > $HADOOP_HOME/etc/hadoop/core-site.xml.tpl
+sed 's#namenode#localhost#' $HADOOP_HOME/etc/hadoop/core-site.xml.tpl > $HADOOP_HOME/etc/hadoop/core-site.xml
 
 # Configure HBase
 echo "HBase: Configuration"
 
-# TODO: fix hardcoding
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <configuration>
 <property>
@@ -111,7 +111,7 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 
 <property>
 <name>hbase.rootdir</name>
-<value>hdfs://worker1:9000/hbase</value>
+<value>hdfs://namenode:9000/hbase</value>
 </property>
 
 <property>
@@ -119,7 +119,8 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <value>$HBASE_QUORUM</value>
 </property>
 </configuration>
-" > $HBASE_HOME/conf/hbase-site.xml
+" > $HBASE_HOME/conf/hbase-site.xml.tpl
+sed 's#namenode#localhost#' $HBASE_HOME/conf/hbase-site.xml.tpl > $HBASE_HOME/conf/hbase-site.xml
 
 # Remove previous config
 sed -i '/# BEGIN HBASE CONF/,/# END HBASE CONF/d' $HBASE_HOME/conf/hbase-env.sh

@@ -4,8 +4,8 @@ zookeeper:
   timings:
     loop_tick: 0.5
     failed_loop_tick: 1.0
-    partitioner_boundary: 1.0
-    partitioner_reaction: 0.2
+    partitioner_boundary: 5.0
+    partitioner_reaction: 1.0
 services:
   # begin dummy services
   - name: dummy_global
@@ -23,11 +23,21 @@ services:
   - name: kafka
     type: global
   - name: hadoop
+    prestart: |
+      #!/bin/bash
+      sed 's#namenode#{instance:hadoop@namenode}#' /usr/local/hadoop/etc/hadoop/core-site.xml.tpl > /usr/local/hadoop/etc/hadoop/core-site.xml
+      sed 's#namenode#{instance:hadoop@namenode}#' /usr/local/hadoop/etc/hadoop/hdfs-site.xml.tpl > /usr/local/hadoop/etc/hadoop/hdfs-site.xml
+      if ! [ -d /home/hbase/dfs/{instance:hadoop@namenode}/name ]; then
+        sudo -u hbase /usr/local/hadoop/bin/hdfs namenode -format -force -nonInteractive
+      fi
     instances:
       namenode: 1
       secondarynamenode: 2
       datanode: 3
   - name: hbase
+    prestart: |
+      #!/bin/bash
+      sed 's#namenode#{instance:hadoop@namenode}#' /usr/local/hbase/conf/hbase-site.xml.tpl > /usr/local/hbase/conf/hbase-site.xml
     exclusive: true
     instances:
       master: 1
