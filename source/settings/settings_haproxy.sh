@@ -11,7 +11,7 @@ ZEPPELIN_ID=1
 while getopts ":vfs:" opt; do
   case "$opt" in
     s)
-      ZEPPELIN_SERVER_DECLS=$(printf "%s\n    server zeppelin%d %s:8080 cookie S%d check" "$ZEPPELIN_SERVER_DECLS" "$ZEPPELIN_ID" "$OPTARG" "$ZEPPELIN_ID")
+      ZEPPELIN_SERVER_DECLS=$(printf "%s\n    server zeppelin%d %s:8080 check" "$ZEPPELIN_SERVER_DECLS" "$ZEPPELIN_ID" "$OPTARG")
       ZEPPELIN_ID=$((ZEPPELIN_ID+1))
       ;;
   esac
@@ -48,6 +48,7 @@ defaults
     timeout connect 5000
     timeout client  50000
     timeout server  50000
+    timeout tunnel  3600s
     errorfile 400 /etc/haproxy/errors/400.http
     errorfile 403 /etc/haproxy/errors/403.http
     errorfile 408 /etc/haproxy/errors/408.http
@@ -57,12 +58,14 @@ defaults
     errorfile 504 /etc/haproxy/errors/504.http
 
 listen zeppelin
-    mode http
+    bind *:80
+    mode tcp
     stats enable
     stats uri /haproxy?stats
     balance roundrobin
     option httpclose
     option forwardfor
-    cookie SRVNAME insert
+    stick-table type ip size 1m expire 1h
+    stick on src
 $ZEPPELIN_SERVER_DECLS
 " > /etc/haproxy/haproxy.cfg
