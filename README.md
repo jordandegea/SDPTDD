@@ -49,8 +49,8 @@ Outil de deploiement : **Rake**
 ## Lancer en developpement local
 
 ```bash
-./start_vagrant.sh
 export RAKE_ENV=development
+rake vagrant:up
 ./deploy.sh
 ```
 
