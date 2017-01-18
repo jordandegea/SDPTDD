@@ -78,20 +78,10 @@ echo "  connection-mesh {
 }
 " >> ${RESOURCE_FILE}.tpl
 
-# ICNT=0
-# for I in $(seq 0 $((HOST_INDEX-1))); do
-#   for J in $(seq $((I+1)) $HOST_INDEX); do
-#     echo "  connection {
-#     host ${HOSTS[$I]} port $((7100+ICNT));
-#     host ${HOSTS[$J]} port $((7000+ICNT));
-#   }
-# " >> ${RESOURCE_FILE}.tpl
-#     ICNT=$((ICNT+1))
-#   done
-# done
-
-# echo "}
-# " >> ${RESOURCE_FILE}.tpl
+if drbdadm status $RESOURCE_NAME | grep Primary >/dev/null ; then
+  echo "DRBD: Not processing with DRBD config, already one primary running..."
+  exit 0
+fi
 
 # Disable resource
 $DRBDS down
