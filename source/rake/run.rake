@@ -1,7 +1,12 @@
 namespace :run do
   ($conf['run'] || {}).each do |task_name, command_spec|
     if command_spec.is_a? Hash
-      desc command_spec['command']
+      if command_spec['command'].is_a? Array
+        desc command_spec['command'].join(' ; ')
+      else
+        desc command_spec['command']
+      end
+
       task task_name.to_sym, :server do |task, args|
         cmd_hosts = hosts(args)
         if command_spec['mode'] == 'once'
