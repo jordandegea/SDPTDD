@@ -7,8 +7,6 @@ zookeeper:
     partitioner_boundary: 1.0
     partitioner_reaction: 0.2
 services:
-  - name: drbd-base
-    type: global
   - name: haproxy
     type: global
   - name: kafka

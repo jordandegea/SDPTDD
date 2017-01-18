@@ -80,40 +80,40 @@ echo "  connection-mesh {
 
 if drbdadm status $RESOURCE_NAME | grep Primary >/dev/null ; then
   echo "DRBD: Not processing with DRBD config, already one primary running..."
-  exit 0
-fi
+else
+  # Disable resource
+  $DRBDS down
 
-# Disable resource
-$DRBDS down
+  # Create block device
+  if (($FORCE_INSTALL)) || ! [ -f "$DEVICE_FILE" ]; then
+    echo "DRBD: Creating block device..."
 
-# Create block device
-if (($FORCE_INSTALL)) || ! [ -f "$DEVICE_FILE" ]; then
-  echo "DRBD: Creating block device..."
+    # Delete previous file
+    rm -f $DEVICE_FILE
 
-  # Delete previous file
-  rm -f $DEVICE_FILE
-
-  # Allocate file
-  fallocate -l 2G $DEVICE_FILE
-fi
-
-# Initialize metadata, will bring up lodevice
-$DRBDS initmd
-
-# Initial device sync
-$DRBDS up
-
-if [ "$(hostname)" == "$FIRST_HOST" ]; then
-  $DRBDS initsync
-  $DRBDS start
-
-  if ! file -s $DEVICE_DEV | grep 'ext4 filesystem' >/dev/null ; then
-    echo "DRBD: Formatting ext4 partition..."
-    mkfs.ext4 $DEVICE_DEV
+    # Allocate file
+    fallocate -l 2G $DEVICE_FILE
   fi
 
-  $DRBDS stop
+  # Initialize metadata, will bring up lodevice
+  $DRBDS initmd
+
+  # Initial device sync
+  $DRBDS up
+
+  if [ "$(hostname)" == "$FIRST_HOST" ]; then
+    $DRBDS initsync
+    $DRBDS start
+
+    if ! file -s $DEVICE_DEV | grep 'ext4 filesystem' >/dev/null ; then
+      echo "DRBD: Formatting ext4 partition..."
+      mkfs.ext4 $DEVICE_DEV
+    fi
+
+    $DRBDS stop
+  fi
 fi
+
 
 # Create the service
 echo "[Unit]
@@ -153,3 +153,5 @@ WantedBy=multi-user.target
 " > /etc/systemd/system/drbd-primary.service
 
 systemctl daemon-reload
+systemctl enable drbd-base.service
+systemctl start drbd-base.service
