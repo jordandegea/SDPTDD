@@ -14,7 +14,7 @@ if (($FORCE_INSTALL)) || ! [ -f '/etc/init.d/haproxy' ]; then
     apt-get install -y -qq haproxy -t jessie-backports
   else
     apt-get install -y -qq software-properties-common
-    add-apt-repository ppa:vbernat/haproxy-1.7
+    add-apt-repository -y ppa:vbernat/haproxy-1.7
     apt-get install -y -qq haproxy
   fi
 fi
