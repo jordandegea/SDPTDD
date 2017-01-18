@@ -97,7 +97,7 @@ case "$ACTION" in
     fi
 
     echo "Waiting for cluster connect"
-    while resource_status | grep Connecting >/dev/null ; do
+    while resource_status | grep -e Connecting -e Unconnected >/dev/null ; do
       sleep 5
     done
 
