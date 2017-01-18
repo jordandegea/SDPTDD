@@ -79,7 +79,7 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 
 <property>
 <name>dfs.data.dir</name>
-<value>/home/hbase/dfs/name/data/</value>
+<value>/home/hbase/dfs/data</value>
 <final>true</final>
 </property>
 </configuration>" > $HADOOP_HOME/etc/hadoop/hdfs-site.xml
@@ -88,20 +88,25 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 mkdir -p /home/hbase/dfs
 chown hbase:hbase -R /home/hbase/dfs
 
+# Prepare the link to the shared directory
+rm -f /home/hbase/dfs/name
+ln -s /mnt/shared/name /home/hbase/dfs/name
+
 # TODO: fix hardcoding
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>
 <configuration>
 <property>
 <name>fs.defaultFS</name>
-<value>hdfs://worker1:9000</value>
+<value>hdfs://namenode:9000</value>
 </property>
-</configuration>" > $HADOOP_HOME/etc/hadoop/core-site.xml
+</configuration>" > $HADOOP_HOME/etc/hadoop/core-site.xml.tpl
+
+sed 's#namenode#localhost#' $HADOOP_HOME/etc/hadoop/core-site.xml.tpl > $HADOOP_HOME/etc/hadoop/core-site.xml
 
 # Configure HBase
 echo "HBase: Configuration"
 
-# TODO: fix hardcoding
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <configuration>
 <property>
@@ -111,7 +116,7 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 
 <property>
 <name>hbase.rootdir</name>
-<value>hdfs://worker1:9000/hbase</value>
+<value>hdfs://namenode:9000/hbase</value>
 </property>
 
 <property>
@@ -119,7 +124,10 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <value>$HBASE_QUORUM</value>
 </property>
 </configuration>
-" > $HBASE_HOME/conf/hbase-site.xml
+" > $HBASE_HOME/conf/hbase-site.xml.tpl
+
+# Create a default config file
+sed 's#namenode#localhost#' $HBASE_HOME/conf/hbase-site.xml.tpl > $HBASE_HOME/conf/hbase-site.xml
 
 # Remove previous config
 sed -i '/# BEGIN HBASE CONF/,/# END HBASE CONF/d' $HBASE_HOME/conf/hbase-env.sh
@@ -149,6 +157,14 @@ SyslogIdentifier=hadoop
 
 [Install]
 WantedBy=multi-user.target" >$HADOOP_SERVICE_FILE
+
+mkdir -p /etc/systemd/system/hadoop@namenode.service.d
+echo "[Unit]
+Requires=
+Requires=network.target drbd-primary.service
+After=
+After=network.target drbd-primary.service
+" >/etc/systemd/system/hadoop@namenode.service.d/override.conf
 
 # Create the hbase systemd service
 echo "[Unit]

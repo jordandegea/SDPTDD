@@ -36,6 +36,7 @@ deploy:
     - hbase:
     - zeppelin:
     - haproxy:
+    - drbd:
   settings:
     - service_watcher: -z $zkquorum
     - kafka: $hostspec
@@ -43,6 +44,7 @@ deploy:
     - hbase: -q $quorum
     - zeppelin:
     - haproxy: $haproxyservers
+    - drbd: $hostspec
   code:
     - service_watcher:
     - flink:
@@ -70,7 +72,15 @@ deploy:
     - source/configure
 # One-shot run command specifications
 run:
-  format_hdfs: sudo -u hbase /usr/local/hadoop/bin/hdfs namenode -format -force -nonInteractive
+  format_hdfs:
+    command:
+      - systemctl start drbd-primary
+      - ls /mnt/shared >&2
+      - mkdir -p /mnt/shared/name
+      - chown hbase:hbase -R /mnt/shared/name
+      - sudo -u hbase /usr/local/hadoop/bin/hdfs namenode -format -force -nonInteractive
+      - systemctl stop drbd-primary
+    mode: once
 # Hosts definitions
 hosts:
   worker1:
