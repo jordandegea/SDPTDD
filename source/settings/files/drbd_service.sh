@@ -167,7 +167,7 @@ case "$ACTION" in
       drbdadm primary $RESOURCE_NAME
     done
 
-    if [ -n "$NO_MOUNT" ]; then
+    if [ -z "$NO_MOUNT" ]; then
       # Mount filesystem
       mkdir -p /mnt/shared
       if ! mount -t ext4 $DEVICE_DEV /mnt/shared ; then
@@ -180,7 +180,7 @@ case "$ACTION" in
     fi
     ;;
   stop)
-    if [ -n "$NO_MOUNT" ]; then
+    if [ -z "$NO_MOUNT" ]; then
       if ! umount /mnt/shared ; then
         echo "Failed to unmount device"
         exit 2
