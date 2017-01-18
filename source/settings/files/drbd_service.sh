@@ -34,10 +34,13 @@ do_mkconfig () {
     echo "Wrote $RESOURCE_FILE"
 }
 
-while getopts ":nh" opt; do
+while getopts ":nhM" opt; do
   case "$opt" in
     n)
       NO_ENV=yes
+    ;;
+    M)
+      NO_MOUNT=yes
     ;;
     h)
       print_usage
@@ -164,17 +167,26 @@ case "$ACTION" in
       drbdadm primary $RESOURCE_NAME
     done
 
-    # Mount filesystem
-    mkdir -p /mnt/shared
-    if ! mount -t ext4 $DEVICE_DEV /mnt/shared ; then
-      echo "Failed to mount device"
-      exit 3
+    if [ -n "$NO_MOUNT" ]; then
+      # Mount filesystem
+      mkdir -p /mnt/shared
+      if ! mount -t ext4 $DEVICE_DEV /mnt/shared ; then
+        echo "Failed to mount device"
+        exit 3
+      fi
+    else
+      echo "Not mounting device"
+      exit 0
     fi
     ;;
   stop)
-    if ! umount /mnt/shared ; then
-      echo "Failed to unmount device"
-      exit 2
+    if [ -n "$NO_MOUNT" ]; then
+      if ! umount /mnt/shared ; then
+        echo "Failed to unmount device"
+        exit 2
+      fi
+    else
+      echo "Not unmounting device"
     fi
 
     # Go secondary

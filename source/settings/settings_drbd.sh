@@ -27,7 +27,7 @@ DEVICE_DEV=$DEVICE_DEV
 " >/usr/local/bin/drbd_service_env.sh
 
 # Alias
-DRBDS="/usr/local/bin/drbd_service.sh -n"
+DRBDS="/usr/local/bin/drbd_service.sh -n -M"
 
 # Configure
 echo "resource ${RESOURCE_NAME} {
