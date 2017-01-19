@@ -1,4 +1,5 @@
 require_relative 'source/rake/config.rb'
+require_relative 'source/rake/formatter.rb'
 
 # Load build config
 $build_source = 'build.yml'
