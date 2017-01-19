@@ -43,9 +43,9 @@ echo "jobmanager.rpc.address: localhost
 jobmanager.rpc.port: 6123
 jobmanager.heap.mb: 256
 taskmanager.heap.mb: 512
-taskmanager.numberOfTaskSlots: 4
+taskmanager.numberOfTaskSlots: 20
 taskmanager.memory.preallocate: false
-parallelism.default: 4
+parallelism.default: 2
 jobmanager.web.port: 8081
 " > ${FLINK_CONF_FILE}
 
