@@ -23,7 +23,7 @@ namespace :deploy do
                       weak_dependencies: %w(deploy:system deploy:software deploy:settings))
 
   declare_deploy_task(:configure, "Configures every server",
-                      dependencies: %w(deploy:bootstrap))
+                      weak_dependencies: %w(deploy:bootstrap services:start))
 
   desc "Performs a full deploy"
   task :full, [:server, :what] => %w(deploy:system deploy:software deploy:settings deploy:code)
