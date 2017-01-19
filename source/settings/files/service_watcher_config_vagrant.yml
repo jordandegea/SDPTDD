@@ -23,6 +23,8 @@ services:
   - name: kafka
     type: global
   - name: hadoop
+    force:
+      namenode: worker1
     prestart: |
       #!/bin/bash
       SRC=/etc/hosts.tpl
