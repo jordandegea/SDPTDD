@@ -10,7 +10,7 @@ dev:
 	export RAKE_ENV=development
 
 prod: 
-	export RAKE_ENV=development
+	export RAKE_ENV=production
 
 reup:
 	rake vagrant:reup
