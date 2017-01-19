@@ -154,6 +154,7 @@ class ServiceLogic(object):
         self.joined_scheduled = False
 
         # Restore state of prestart
+        self.retry_later_notified = False
         if self.service.prestart is not None:
             self.service.prestart.load_state(os.path.join(self.control_root.tmpdir, "%s.yml" % self.name))
 
@@ -162,11 +163,20 @@ class ServiceLogic(object):
 
     def tick(self):
         state = None
+        exit_code = 0
 
         try:
             state = self.unit.ActiveState
+            exit_code = self.unit.ExecMainCode
         except GLib.Error:
             logging.error("%s: failed getting state from systemd" % self.name)
+
+        if exit_code == 143:
+            try:
+                self.unit.ResetFailed()
+            except GLib.Error:
+                logging.error("%s: failed resetting failed state of service (143)" % self.name)
+            state = "inactive"
 
         # First step, update current state
         if state == "active":
@@ -228,11 +238,14 @@ class ServiceLogic(object):
                     def prestart_cb():
                         if self.service.prestart is not None:
                             try:
-                                logging.info("%s: executing prestart script" % self.name)
+                                logging.debug("%s: executing prestart script" % self.name)
                                 self.service.prestart.execute(self.control_root.instance_resolver_root)
+                                self.retry_later_notified = False
                                 return True
                             except RetryExecute:
-                                logging.info("%s: retrying later, missing scheduled instance" % self.name)
+                                if not self.retry_later_notified:
+                                    logging.info("%s: retrying later, missing scheduled instance" % self.name)
+                                    self.retry_later_notified = True
                             except Exception as e:
                                 logging.error("%s: critical error in prestart script: %s" % (self.name, e))
                         else:
@@ -266,6 +279,9 @@ class ServiceLogic(object):
             # the service has failed
             if reload_mode:
                 logging.warning("%s: resetting failed status for reload" % self.name)
+                self.unit.ResetFailed()
+            elif self.unit.ExecMainCode == 143:
+                logging.warning("%s: resetting SIGTERM 143 exit" % self.name)
                 self.unit.ResetFailed()
             else:
                 logging.warning("%s: exiting with failed status" % self.name)
@@ -539,7 +555,7 @@ class MultiControlUnit(ControlUnit):
                 identifier_needs_update = False
                 # Note that we use a set of tuples for the partitioner, but as we use a custom partition_func, so
                 # this is ok
-                partitioner = SetPartitioner(zk, partitioner_path, self.control_group.service.instances.items(),
+                partitioner = SetPartitioner(zk, partitioner_path, [[x[0], x[1]] for x in self.control_group.service.instances.items()],
                                              self.partition_func, identifier,
                                              self.control_group.control_root.timings['partitioner_boundary'],
                                              self.control_group.control_root.timings['partitioner_reaction'])
@@ -605,42 +621,59 @@ class MultiControlUnit(ControlUnit):
 
     def partition_func(self, identifier, members, partitions):
         # Sort members so we have a consistent order over all allocators
-        sorted_members = sorted(members)
-        current_member = 0
+        sorted_members = list(sorted(members))
+        sorted_partitions = list(sorted(partitions, key=lambda x:x[0]))
         allocation_state = {}
+        allocation_params = {}
         allocated = {}
         target_members = {}
 
-        for param, count in partitions:
+        for param, count in sorted_partitions:
             target_members["%s@%s" % (self.control_group.service.name, param)] = []
 
         for member in sorted_members:
+            allocation_params[member] = {}
             allocation_state[member] = []
             allocated[member] = False
 
-        for param, count in partitions:
-            # Number of instances left to allocate
-            cnt = count
+        allocations = []
+        for part in sorted_partitions:
+            if part[1] == 1:
+                allocations.append("%s@1" % part[0])
+                part[1] = 0
 
-            # For the current param, allocate as much instances as possible
-            # No worker should have to run the same service twice though
-            # Also, do not assign failed services to workers
+        services_left = True
+        while services_left:
+            services_left = False
+            for service in sorted_partitions:
+                if service[1] > 0:
+                    allocations.append("%s@%d" % (service[0], service[1]))
+                    service[1] -= 1
+                    services_left = True
+
+        current_member = 0
+        for instance in allocations:
+            param = instance.split("@")[0]
+
+            next_current_member = current_member
             for i in range(len(sorted_members)):
-                if cnt > 0:
-                    current_member = (current_member + 1) % len(sorted_members)
-                    member_spec = sorted_members[current_member]
-                    member_splitted = member_spec.split("@")
-                    member_failed = member_splitted[1:]
+                member_spec = sorted_members[(current_member + i) % len(sorted_members)]
+                member_splitted = member_spec.split("@")
+                member_failed = member_splitted[1:]
 
-                    if param not in member_failed:
-                        # If running in exclusive mode for this service, do not allocate
-                        # a service to a worker that already has another service from
-                        # this pool allocated
-                        if not self.control_group.service.exclusive or not allocated[member_spec]:
-                            allocated[member_spec] = True
-                            allocation_state[member_spec].append("%s@%d" % (param, count - cnt + 1))
-                            target_members["%s@%s" % (self.control_group.service.name, param)].append(member_splitted[0])
-                            cnt -= 1
+                if param not in member_failed:
+                    # If running in exclusive mode for this service, do not allocate
+                    # a service to a worker that already has another service from
+                    # this pool allocated
+                    if (not self.control_group.service.exclusive or not allocated[member_spec]) and \
+                        param not in allocation_params[member_spec]:
+                        allocated[member_spec] = True
+                        allocation_state[member_spec].append(instance)
+                        allocation_params[member_spec][param] = True
+                        target_members["%s@%s" % (self.control_group.service.name, param)].append(member_splitted[0])
+                        next_current_member += 1
+                        break
+            current_member = next_current_member
 
         self.last_partition = target_members
         logging.info("%s: computed partition %s" % (self.name, json.dumps(allocation_state)))

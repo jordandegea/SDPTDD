@@ -92,17 +92,14 @@ chown hbase:hbase -R /home/hbase/dfs
 rm -f /home/hbase/dfs/name
 ln -s /mnt/shared/name /home/hbase/dfs/name
 
-# TODO: fix hardcoding
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>
 <configuration>
 <property>
 <name>fs.defaultFS</name>
-<value>hdfs://namenode:9000</value>
+<value>hdfs://currentnamenode:9000</value>
 </property>
-</configuration>" > $HADOOP_HOME/etc/hadoop/core-site.xml.tpl
-
-sed 's#namenode#localhost#' $HADOOP_HOME/etc/hadoop/core-site.xml.tpl > $HADOOP_HOME/etc/hadoop/core-site.xml
+</configuration>" > $HADOOP_HOME/etc/hadoop/core-site.xml
 
 # Configure HBase
 echo "HBase: Configuration"
@@ -116,7 +113,7 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 
 <property>
 <name>hbase.rootdir</name>
-<value>hdfs://namenode:9000/hbase</value>
+<value>hdfs://currentnamenode:9000/hbase</value>
 </property>
 
 <property>
@@ -124,10 +121,7 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <value>$HBASE_QUORUM</value>
 </property>
 </configuration>
-" > $HBASE_HOME/conf/hbase-site.xml.tpl
-
-# Create a default config file
-sed 's#namenode#localhost#' $HBASE_HOME/conf/hbase-site.xml.tpl > $HBASE_HOME/conf/hbase-site.xml
+" > $HBASE_HOME/conf/hbase-site.xml
 
 # Remove previous config
 sed -i '/# BEGIN HBASE CONF/,/# END HBASE CONF/d' $HBASE_HOME/conf/hbase-env.sh
@@ -146,12 +140,12 @@ After=network.target
 
 [Service]
 Type=forking
-User=hbase
-Group=hbase
+User=root
+Group=root
 Environment=LOG_DIR=$HBASE_LOG_DIR
 Environment=HADOOP_LOG_DIR=$HBASE_LOG_DIR
-ExecStart=$HADOOP_HOME/sbin/hadoop-daemon.sh start %i
-ExecStop=-$HADOOP_HOME/sbin/hadoop-daemon.sh stop %i
+ExecStart=/usr/bin/sudo -u hbase -g hbase $HADOOP_HOME/sbin/hadoop-daemon.sh start %i
+ExecStop=/usr/bin/sudo -u hbase -g hbase $HADOOP_HOME/sbin/hadoop-daemon.sh stop %i
 Restart=on-failure
 SyslogIdentifier=hadoop
 
@@ -159,11 +153,9 @@ SyslogIdentifier=hadoop
 WantedBy=multi-user.target" >$HADOOP_SERVICE_FILE
 
 mkdir -p /etc/systemd/system/hadoop@namenode.service.d
-echo "[Unit]
-Requires=
-Requires=network.target drbd-primary.service
-After=
-After=network.target drbd-primary.service
+echo "[Service]
+ExecStartPre=/bin/systemctl start drbd-primary
+ExecStopPost=/bin/systemctl stop drbd-primary
 " >/etc/systemd/system/hadoop@namenode.service.d/override.conf
 
 # Create the hbase systemd service
@@ -180,7 +172,7 @@ Environment=LOG_DIR=$HBASE_LOG_DIR
 Environment=HBASE_LOG_DIR=$HBASE_LOG_DIR
 Environment=HADOOP_LOG_DIR=$HBASE_LOG_DIR
 ExecStart=$HBASE_HOME/bin/hbase-daemon.sh start %i
-ExecStop=-$HBASE_HOME/bin/hbase-daemon.sh stop %i
+ExecStop=$HBASE_HOME/bin/hbase-daemon.sh stop %i
 Restart=on-failure
 SyslogIdentifier=hbase
 

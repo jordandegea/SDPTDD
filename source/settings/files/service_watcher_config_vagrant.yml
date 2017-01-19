@@ -25,20 +25,20 @@ services:
   - name: hadoop
     prestart: |
       #!/bin/bash
-      HADOOP_HOME=/usr/local/hadoop
-      SRC=$HADOOP_HOME/etc/hadoop/core-site.xml.tpl
-      DEST=$HADOOP_HOME/etc/hadoop/core-site.xml
-      sed 's#namenode#{instance:hadoop@namenode}#' $SRC > $DEST
+      SRC=/etc/hosts.tpl
+      DEST=/etc/hosts
+      IP=$(getent hosts {instance:hadoop@namenode} | awk '{print $1}')
+      sed "s#nn_ip#${IP}#" $SRC > $DEST
     instances:
       namenode: 1
       datanode: 3
   - name: hbase
     prestart: |
       #!/bin/bash
-      HBASE_HOME=/usr/local/hbase
-      SRC=$HBASE_HOME/conf/hbase-site.xml.tpl
-      DEST=$HBASE_HOME/conf/hbase-site.xml
-      sed 's#namenode#{instance:hadoop@namenode}#' $SRC > $DEST
+      SRC=/etc/hosts.tpl
+      DEST=/etc/hosts
+      IP=$(getent hosts {instance:hadoop@namenode} | awk '{print $1}')
+      sed "s#nn_ip#${IP}#" $SRC > $DEST
     exclusive: true
     instances:
       master: 1

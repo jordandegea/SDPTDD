@@ -7,7 +7,7 @@ defaults:
   # Default options for hosts
   hosts: &host_defaults
     user: vagrant     # Default non-privileged user
-    memory: 2048      # Default RAM amount (MB)
+    memory: 4096      # Default RAM amount (MB)
 # List of enabled services
 services:
   - zookeeper

@@ -31,6 +31,9 @@ if (($ENABLE_VAGRANT)); then
         rm -f /etc/hosts.head /etc/hosts/tail
     fi
 
+    # Clear old namenods definitions
+    sed -i 's/^.*namenode//' /etc/hosts
+
     # Hostnames are already configured by Vagrant hostmanager
 else
     printf "127.0.0.1\tlocalhost
@@ -45,3 +48,8 @@ ff02::3 ip6-allhosts
 
 %s\n" "$HOST_DEFS" >/etc/hosts
 fi
+
+cp /etc/hosts /etc/hosts.tpl
+echo "
+nn_ip currentnamenode
+" >> /etc/hosts.tpl

@@ -16,10 +16,4 @@ if (($ENABLE_VAGRANT)); then
 fi
 
 # Just update packages for future provisioning scripts
-apt-get update
-
-# If we are on production servers, upgrade all packages
-if ! (($ENABLE_VAGRANT)); then
-  apt-get upgrade -y
-  apt-get dist-upgrade -y
-fi
+apt-get -qq update -y
