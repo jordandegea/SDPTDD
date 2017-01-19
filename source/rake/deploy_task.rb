@@ -109,7 +109,7 @@ def file_transfer_tree(args, source_folders_param, working_directory, deploy_roo
 
   # Then, from all other hosts, use SFTP to pull from the root host
   on pending_hosts do |host|
-    execute "printf 'ls -al\\nget -r #{working_directory}' | sftp #{root_host.properties.name}"
+    execute "printf 'ls -al\\nget -r #{working_directory}' | sftp -o StrictHostKeyChecking=no #{root_host.properties.name}"
   end
 end
 
