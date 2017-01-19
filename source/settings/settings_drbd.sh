@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Fail if any command fail
-set -e
+set -ex
 
 # Load the shared provisioning script
 source ./deploy_shared.sh
@@ -152,4 +152,4 @@ WantedBy=multi-user.target
 
 systemctl daemon-reload
 systemctl enable drbd-base.service
-systemctl start drbd-base.service
+# systemctl start drbd-base.service
