@@ -128,7 +128,6 @@ Type=oneshot
 ExecStart=/usr/local/bin/drbd_service.sh up
 ExecStop=/usr/local/bin/drbd_service.sh down
 SyslogIdentifier=drbd-base
-RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
@@ -146,7 +145,6 @@ Type=oneshot
 ExecStart=/usr/local/bin/drbd_service.sh start
 ExecStop=/usr/local/bin/drbd_service.sh stop
 SyslogIdentifier=drbd-primary
-RemainAfterExit=yes
 
 [Install]
 WantedBy=multi-user.target
