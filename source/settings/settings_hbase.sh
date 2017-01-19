@@ -84,13 +84,14 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 </property>
 </configuration>" > $HADOOP_HOME/etc/hadoop/hdfs-site.xml
 
-# Create the directory
-mkdir -p /home/hbase/dfs
-chown hbase:hbase -R /home/hbase/dfs
+if readlink /home/hbase/dfs/name >/dev/null ; then
+  rm -f /home/hbase/dfs/name
+fi
 
-# Prepare the link to the shared directory
-rm -f /home/hbase/dfs/name
-ln -s /mnt/shared/name /home/hbase/dfs/name
+# Create the directory
+mkdir -p /home/hbase/dfs/name
+mkdir -p /home/hbase/dfs/data
+chown hbase:hbase -R /home/hbase/dfs
 
 echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <?xml-stylesheet type=\"text/xsl\" href=\"configuration.xsl\"?>
@@ -151,12 +152,6 @@ SyslogIdentifier=hadoop
 
 [Install]
 WantedBy=multi-user.target" >$HADOOP_SERVICE_FILE
-
-mkdir -p /etc/systemd/system/hadoop@namenode.service.d
-echo "[Service]
-ExecStartPre=/bin/systemctl start drbd-primary
-ExecStopPost=/bin/systemctl stop drbd-primary
-" >/etc/systemd/system/hadoop@namenode.service.d/override.conf
 
 # Create the hbase systemd service
 echo "[Unit]
