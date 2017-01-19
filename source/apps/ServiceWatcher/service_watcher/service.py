@@ -75,6 +75,11 @@ class Service(object):
                 self.exclusive = False
 
             try:
+                self.force = service_spec['force']
+            except KeyError:
+                self.force = {}
+
+            try:
                 self.instances = {}
                 for k, v in service_spec['instances'].iteritems():
                     self.instances[str(k)] = int(v)

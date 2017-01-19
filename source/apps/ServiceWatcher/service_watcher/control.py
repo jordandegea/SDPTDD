@@ -655,25 +655,39 @@ class MultiControlUnit(ControlUnit):
         for instance in allocations:
             param = instance.split("@")[0]
 
-            next_current_member = current_member
-            for i in range(len(sorted_members)):
-                member_spec = sorted_members[(current_member + i) % len(sorted_members)]
-                member_splitted = member_spec.split("@")
-                member_failed = member_splitted[1:]
+            if param in self.control_group.service.force:
+                target_host = self.control_group.service.force[param]
 
-                if param not in member_failed:
-                    # If running in exclusive mode for this service, do not allocate
-                    # a service to a worker that already has another service from
-                    # this pool allocated
-                    if (not self.control_group.service.exclusive or not allocated[member_spec]) and \
-                        param not in allocation_params[member_spec]:
+                # Forced allocation strategy
+                for member_spec in sorted_members:
+                    member_splitted = member_spec.split("@")
+                    if target_host == member_splitted[0]:
                         allocated[member_spec] = True
                         allocation_state[member_spec].append(instance)
                         allocation_params[member_spec][param] = True
                         target_members["%s@%s" % (self.control_group.service.name, param)].append(member_splitted[0])
-                        next_current_member += 1
                         break
-            current_member = next_current_member
+            else:
+                # Default allocation strategy
+                next_current_member = current_member
+                for i in range(len(sorted_members)):
+                    member_spec = sorted_members[(current_member + i) % len(sorted_members)]
+                    member_splitted = member_spec.split("@")
+                    member_failed = member_splitted[1:]
+
+                    if param not in member_failed:
+                        # If running in exclusive mode for this service, do not allocate
+                        # a service to a worker that already has another service from
+                        # this pool allocated
+                        if (not self.control_group.service.exclusive or not allocated[member_spec]) and \
+                            param not in allocation_params[member_spec]:
+                            allocated[member_spec] = True
+                            allocation_state[member_spec].append(instance)
+                            allocation_params[member_spec][param] = True
+                            target_members["%s@%s" % (self.control_group.service.name, param)].append(member_splitted[0])
+                            next_current_member += 1
+                            break
+                current_member = next_current_member
 
         self.last_partition = target_members
         logging.info("%s: computed partition %s" % (self.name, json.dumps(allocation_state)))
