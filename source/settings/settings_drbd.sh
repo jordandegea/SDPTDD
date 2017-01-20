@@ -114,29 +114,10 @@ else
   fi
 fi
 
-
-# Create the service
-echo "[Unit]
-Description=DRBD Base service $DEVICE_DEV
-Requires=network.target
-After=network.target
-
-[Service]
-User=root
-Group=root
-Type=oneshot
-ExecStart=/usr/local/bin/drbd_service.sh up
-ExecStop=/usr/local/bin/drbd_service.sh down
-SyslogIdentifier=drbd-base
-
-[Install]
-WantedBy=multi-user.target
-" > /etc/systemd/system/drbd-base.service
-
 echo "[Unit]
 Description=DRBD Primary service $DEVICE_DEV
-Requires=network.target drbd-base.service
-After=network.target drbd-base.service
+Requires=network.target
+After=network.target
 
 [Service]
 User=root
@@ -151,5 +132,3 @@ WantedBy=multi-user.target
 " > /etc/systemd/system/drbd-primary.service
 
 systemctl daemon-reload
-systemctl enable drbd-base.service
-# systemctl start drbd-base.service

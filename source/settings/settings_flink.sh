@@ -43,9 +43,9 @@ echo "jobmanager.rpc.address: localhost
 jobmanager.rpc.port: 6123
 jobmanager.heap.mb: 256
 taskmanager.heap.mb: 512
-taskmanager.numberOfTaskSlots: 4
+taskmanager.numberOfTaskSlots: 20
 taskmanager.memory.preallocate: false
-parallelism.default: 4
+parallelism.default: 2
 jobmanager.web.port: 8081
 " > ${FLINK_CONF_FILE}
 
@@ -75,7 +75,27 @@ WantedBy=multi-user.target" >$FLINK_SERVICE_FILE
 # Create systemd unit for flink service
 
 # Create the services
-echo "Flink: installing Flink city systemd template unit..." 1>&2
+echo "Flink: installing Flink city (hbase) systemd template unit..." 1>&2
+
+# Install the unit file
+echo "[Unit]
+Description=Flink bridge (%i)
+Requires=network.target
+After=network.target
+
+[Service]
+Type=forking
+User=flink
+Group=flink
+Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR/%i
+ExecStart=/bin/bash -c 'nohup $FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaHbaseBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i --hbasequorum $HBASE_QUORUM --hbaseport 2181 &'
+SyslogIdentifier=flink_city@%i
+
+[Install]
+WantedBy=multi-user.target" >/etc/systemd/system/flink_city@.service
+
+# Create the services
+echo "Flink: installing Flink city (console) systemd template unit..." 1>&2
 
 # Install the unit file
 echo "[Unit]
@@ -89,18 +109,18 @@ User=flink
 Group=flink
 Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR/%i
 ExecStart=/bin/bash -c 'nohup $FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaConsoleBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i --hbasequorum $HBASE_QUORUM --hbaseport 2181 &'
-SyslogIdentifier=flink_city@%i
+SyslogIdentifier=flink_console@%i
 
 [Install]
-WantedBy=multi-user.target" >/etc/systemd/system/flink_city@.service
+WantedBy=multi-user.target" >/etc/systemd/system/flink_city_console@.service
 
 # Create the services
 echo "Flink: installing Flink fake producer systemd unit..." 1>&2
 
 echo "[Unit]
 Description=Flink bridge producer
-Requires=network.target flink.service
-After=network.target flink.service
+Requires=network.target
+After=network.target
 
 [Service]
 Type=forking

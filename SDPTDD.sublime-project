@@ -3,6 +3,21 @@
 	[
 		{
 			"path": "."
+		},
+		{
+			"path": "features"
+		},
+		{
+			"path": "keys"
+		},
+		{
+			"path": "misc"
+		},
+		{
+			"path": "source"
+		},
+		{
+			"path": "vagrant"
 		}
 	]
 }

@@ -59,12 +59,14 @@ defaults
 
 listen zeppelin
     bind *:80
-    mode tcp
+    mode http
     stats enable
     stats uri /haproxy?stats
     balance roundrobin
     option httpclose
     option forwardfor
+    option http-server-close
+    option forceclose
     stick-table type ip size 1m expire 1h
     stick on src
 $ZEPPELIN_SERVER_DECLS

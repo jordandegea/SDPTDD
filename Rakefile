@@ -28,3 +28,16 @@ if $env == :development
 else
   task :up => %w(deploy run:format_hdfs services:start)
 end
+
+desc "Update the config for services and reload the services"
+task :upserv, [:what] do |task, args|
+  services = (args[:what] || "").split(';')
+  services = %w(service_watcher) if services.length == 0
+
+  services.each do |service|
+    %w(deploy:settings services:reload).each do |t|
+      Rake::Task[t].reenable
+      Rake::Task[t].invoke("", service)
+    end
+  end
+end
