@@ -10,11 +10,6 @@ source ./deploy_shared.sh
 FILE_SIZE=2G
 SWAPFILE=/swap
 
-# Add 4GB swap on Vagrant
-if (($ENABLE_VAGRANT)); then
-  FILE_SIZE=4G
-fi
-
 # Create the swap file on /
 if ! [ -f $SWAPFILE ]; then
   fallocate -l $FILE_SIZE $SWAPFILE
