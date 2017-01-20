@@ -28,3 +28,9 @@ if $env == :development
 else
   task :up => %w(deploy run:format_hdfs services:start)
 end
+
+desc "Update the config for ServiceWatcher and reload the service"
+task :upserv do
+  Rake::Task["deploy:settings"].invoke("", "service_watcher")
+  Rake::Task["services:reload"].invoke("", "service_watcher")
+end
