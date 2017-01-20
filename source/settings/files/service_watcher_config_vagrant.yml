@@ -24,7 +24,7 @@ services:
     type: global
   - name: hadoop
     force:
-      namenode: worker1
+      namenode: replace_me_first_host
     prestart: |
       #!/bin/bash
       SRC=/etc/hosts.tpl

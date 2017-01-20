@@ -20,6 +20,7 @@ deploy:
     zkquorum: '<%= hosts.map { |h| "#{h.name}:2181" }.join(",") %>'
     flinkbootstrap: '<%= hosts.map { |h| "#{h.name}:9092" }.join(",") %>'
     haproxyservers: '<%= hosts.map { |h| "-s #{h.name}" }.join(" ") %>'
+    firsthost: '<%= hosts.first.name %>'
   # Shared arguments to apply to all provision scripts
   shared_args: -v # Using '-v' to indicate Vagrant provisioning
   # List of provisioning steps.
@@ -30,6 +31,7 @@ deploy:
     - apt:
     - java:
     - python:
+    - swap:
   software:
     - kafka:
     - flink:
@@ -38,7 +40,7 @@ deploy:
     - haproxy:
     - drbd:
   settings:
-    - service_watcher: -z $zkquorum
+    - service_watcher: -z $zkquorum -F $firsthost
     - kafka: $hostspec
     - flink: -q $quorum -F $flinkbootstrap
     - hbase: -q $quorum
