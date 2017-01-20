@@ -11,6 +11,8 @@ services:
     type: global
   - name: kafka
     type: global
+  - name: flink
+    type: global
   - name: hadoop
     force:
       namenode: server-1
@@ -36,10 +38,10 @@ services:
       regionserver: 2
   - name: zeppelin
     count: 2
-  # - name: flink_city
-  #   instances:
-  #     paris: 1
-  #     nyc: 1
-  #     london: 1
-  # - name: flink_producer_fake
-  #   count: 1
+  - name: flink_city
+    instances:
+      paris: 1
+      nyc: 1
+      london: 1
+  - name: flink_producer_fake
+    count: 1

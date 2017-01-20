@@ -80,8 +80,8 @@ echo "Flink: installing Flink city systemd template unit..." 1>&2
 # Install the unit file
 echo "[Unit]
 Description=Flink bridge (%i)
-Requires=network.target flink.service
-After=network.target flink.service
+Requires=network.target
+After=network.target
 
 [Service]
 Type=forking
@@ -99,8 +99,8 @@ echo "Flink: installing Flink fake producer systemd unit..." 1>&2
 
 echo "[Unit]
 Description=Flink bridge producer
-Requires=network.target flink.service
-After=network.target flink.service
+Requires=network.target
+After=network.target
 
 [Service]
 Type=forking
