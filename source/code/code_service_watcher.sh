@@ -36,3 +36,6 @@ chmod 0755 "$SERVICE_WATCHER_INSTALL_DIR/service_watcher.py"
 # Install requirements
 apt-get -qq install -y libyaml-dev python-gi
 pip install --quiet -r "$SERVICE_WATCHER_INSTALL_DIR/requirements.txt"
+
+# Cleanup stale bytecode
+find "$SERVICE_WATCHER_INSTALL_DIR" -name "*.pyc" -delete
