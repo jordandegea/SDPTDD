@@ -37,7 +37,7 @@ services:
   - name: hadoop
     force:
       namenode: replace_me_first_host
-    prestart: |
+    prestart: &hostscript |
       #!/bin/bash
       SRC=/etc/hosts.tpl
       DEST=/etc/hosts
@@ -47,12 +47,7 @@ services:
       namenode: 1
       datanode: 3
   - name: hbase
-    prestart: |
-      #!/bin/bash
-      SRC=/etc/hosts.tpl
-      DEST=/etc/hosts
-      IP=$(getent hosts {instance:hadoop@namenode} | awk '{print $1}')
-      sed "s#nn_ip#${IP}#" $SRC > $DEST
+    prestart: *hostscript
     exclusive: true
     instances:
       master: 1
