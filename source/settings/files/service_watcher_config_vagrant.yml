@@ -55,6 +55,12 @@ services:
   - name: zeppelin
     count: 2
   - name: flink_city
+    enabled: false
+    instances:
+      paris: 1
+      nyc: 1
+      london: 1
+  - name: flink_city_console
     instances:
       paris: 1
       nyc: 1
