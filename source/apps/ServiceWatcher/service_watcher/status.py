@@ -1,3 +1,4 @@
+from kazoo.handlers.threading import KazooTimeoutError
 from kazoo.recipe.party import ShallowParty
 from tabulate import tabulate
 
@@ -53,7 +54,11 @@ class Status(Configurable, ZooKeeperClient):
     def run(self):
         self.config.load()
 
-        self.start_zk(self.config.zk_quorum)
+        try:
+            self.start_zk(self.config.zk_quorum)
+        except KazooTimeoutError:
+            # No need to warn about error, Kazoo already logs it
+            exit(2)
 
         # Prepare the output table
         self.begin_table()
