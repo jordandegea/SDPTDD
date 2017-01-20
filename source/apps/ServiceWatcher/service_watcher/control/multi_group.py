@@ -127,7 +127,8 @@ class MultiControlUnit(ControlUnit):
 
                             # update activation status
                             for service in services:
-                                service.set_should_run(service.name.split("@")[1] in new_p)
+                                service.set_should_run(self.control_group.service.enabled and
+                                                       service.name.split("@")[1] in new_p)
 
                             # run actions
                             for service in services:

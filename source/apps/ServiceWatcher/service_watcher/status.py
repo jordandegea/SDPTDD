@@ -33,7 +33,11 @@ class Status(Configurable, ZooKeeperClient):
             if hasattr(self.current_service, 'exclusive') and self.current_service.exclusive:
                 t = "%s (exclusive)" % t
 
-            self.current_row = [self.current_service.name, t]
+            n = self.current_service.name
+            if not self.current_service.enabled:
+                n = "%s (disabled)" % n
+
+            self.current_row = [n, t]
             self.is_first_row = False
         else:
             self.current_row = ["", ""]

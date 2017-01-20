@@ -48,6 +48,15 @@ class Service(object):
             else:
                 self.type = GLOBAL
 
+        # The enabled property
+        try:
+            self.enabled = bool(service_spec['enabled'])
+        except KeyError:
+            # Enabled by default
+            self.enabled = True
+        except ValueError:
+            raise ValueError("enabled must be a boolean for %s" % self.name)
+
         # Setup handlers
         if self.type != MULTI:
             self.unit_name = self.name + '.service'

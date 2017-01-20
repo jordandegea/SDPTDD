@@ -9,10 +9,13 @@ zookeeper:
 services:
   # begin dummy services
   - name: dummy_global
+    enabled: false
     type: global
   - name: dummy_shared
+    enabled: false
     count: 2
   - name: dummy_multi
+    enabled: false
     instances:
       '1': 1
       '2': 2

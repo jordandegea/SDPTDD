@@ -103,7 +103,7 @@ class SharedControlUnit(ControlUnit):
                                     acquired = True
 
                                 # the service should run if the partition is non-empty
-                                sl.set_should_run(len(new_p) > 0)
+                                sl.set_should_run(self.control_group.service.enabled and len(new_p) > 0)
 
                                 # force taking actions
                                 sl.actions()

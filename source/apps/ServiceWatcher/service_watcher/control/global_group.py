@@ -48,8 +48,8 @@ class GlobalControlUnit(ControlUnit):
         # Get the reference to sl
         sl = self.sl
 
-        # A global service should always run
-        sl.set_should_run(True)
+        # A global service should always run, if enabled
+        sl.set_should_run(self.control_group.service.enabled)
 
         # Main loop for this unit
         with self.control_group.service.handler(self.job_event_handler):
