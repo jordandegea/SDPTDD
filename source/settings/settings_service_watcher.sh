@@ -89,11 +89,7 @@ elif [[ \$1 == 'global' ]]; then
 fi
 
 EXIT_CODE=\$?
-if [[ \$EXIT_CODE -eq 143 ]]; then
-  exit 0
-else
-  exit \$EXIT_CODE
-fi
+exit \$EXIT_CODE
 "> $WRAPPER
   chmod +x $WRAPPER
 

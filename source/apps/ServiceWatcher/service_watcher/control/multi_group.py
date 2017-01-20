@@ -70,12 +70,8 @@ class MultiControlUnit(ControlUnit):
         # List of service logics
         services = self.services
 
-        # Tick all services once
-        for service in services:
-            service.tick()
-
         # List of services that are known to fail, and are included in the partitioning identifier
-        known_failed_services = [service.name.split("@")[1] for service in services if service.service_failed]
+        known_failed_services = [service.name.split("@")[1] for service in services if service.is_failed()]
 
         with self.control_group.service.handler(self.param_job_handler):
             # Loop forever
@@ -103,10 +99,10 @@ class MultiControlUnit(ControlUnit):
                             service.tick()
 
                             param = service.name.split("@")[1]
-                            if service.service_failed and param not in known_failed_services:
+                            if service.is_failed() and param not in known_failed_services:
                                 known_failed_services.append(param)
                                 identifier_needs_update = True
-                            elif not service.service_failed and param in known_failed_services:
+                            elif not service.is_failed() and param in known_failed_services:
                                 known_failed_services.remove(param)
                                 identifier_needs_update = True
 

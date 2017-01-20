@@ -67,7 +67,7 @@ class SharedControlUnit(ControlUnit):
                 # unit to be reset
                 sl.tick()
 
-                if sl.service_failed:
+                if sl.is_failed():
                     self.loop_tick(self.control_group.control_root.timings['failed_loop_tick'])
                 else:
                     # Create the partitioner
@@ -83,7 +83,7 @@ class SharedControlUnit(ControlUnit):
                     try:
                         acquired = False
 
-                        while not exit_event.is_set() and not partitioner.failed and not sl.service_failed:
+                        while not exit_event.is_set() and not partitioner.failed and not sl.is_failed():
                             # update service status from systemd
                             sl.tick()
 

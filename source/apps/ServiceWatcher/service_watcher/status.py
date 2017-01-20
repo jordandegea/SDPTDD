@@ -3,6 +3,7 @@ from kazoo.recipe.party import ShallowParty
 from tabulate import tabulate
 
 from service_watcher import service as svc
+from service_watcher.control.utils import KNOWN_PARTIES
 from service_watcher.roles import Configurable
 from service_watcher.zookeeper import ZooKeeperClient
 
@@ -47,7 +48,7 @@ class Status(Configurable, ZooKeeperClient):
 
     def out_table(self):
         self.end_row()
-        print(tabulate(self.current_table, headers=["name", "type", "instance", "running", "failed", "health"],
+        print(tabulate(self.current_table, headers=["name", "type", "instance"] + KNOWN_PARTIES + ["health"],
                        tablefmt="grid"))
         self.current_table = None
 
@@ -84,23 +85,23 @@ class Status(Configurable, ZooKeeperClient):
         self.stop_zk()
 
     def print_service_status(self, service, instance_name):
-        party = sorted(list(ShallowParty(self.zk, "/service_watcher/active/%s" % instance_name)))
-        failed_party = sorted(list(ShallowParty(self.zk, "/service_watcher/failed/%s" % instance_name)))
+        # Create parties
+        parties = {}
+        for party in KNOWN_PARTIES:
+            parties[party] = sorted(list(ShallowParty(self.zk, "/service_watcher/%s/%s" % (party, instance_name))))
 
         # Name of the current service instance
         self.add_field(instance_name)
 
-        # List of running members
-        self.add_field(", ".join(party))
-
-        # List of failed members
-        self.add_field(", ".join(failed_party))
+        # List parties
+        for party in KNOWN_PARTIES:
+            self.add_field(", ".join(parties[party]))
 
         # Health status
-        total_instances = len(party) + len(failed_party)
+        total_instances = len(parties['active']) + len(parties['failed'])
         if service.type == svc.SHARED:
             total_instances = service.count
         elif service.type == svc.MULTI:
             total_instances = service.instances[instance_name.split("@")[1]]
 
-        self.add_field("%d / %d ok" % (len(party), total_instances))
+        self.add_field("%d / %d ok" % (len(parties['active']), total_instances))

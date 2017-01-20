@@ -57,7 +57,7 @@ class GlobalControlUnit(ControlUnit):
                 # Update the service object
                 sl.tick()
 
-                if sl.service_failed:
+                if sl.is_failed():
                     # There is no way to detect a service unit has been reset using systemctl
                     # So we must resort to polling here. But as this is an inexpensive local operation,
                     # and a particularly edgy case (global services should not be failed), we can do this
