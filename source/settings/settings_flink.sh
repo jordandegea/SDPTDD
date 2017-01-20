@@ -39,7 +39,7 @@ fi
 # Create systemd unit for flink service
 echo "Flink: installing Flink systemd unit..." 1>&2
 
-echo "jobmanager.rpc.address: localhost
+echo "jobmanager.rpc.address: jobmanager_replace_me
 jobmanager.rpc.port: 6123
 jobmanager.heap.mb: 256
 taskmanager.heap.mb: 512
@@ -47,7 +47,9 @@ taskmanager.numberOfTaskSlots: 20
 taskmanager.memory.preallocate: false
 parallelism.default: 2
 jobmanager.web.port: 8081
-" > ${FLINK_CONF_FILE}
+" > ${FLINK_CONF_FILE}.tpl
+
+sed 's#jobmanager_replace_me#localhost#' ${FLINK_CONF_FILE}.tpl > $FLINK_CONF_FILE
 
 # Delete all previous flink units
 set +e
@@ -55,7 +57,7 @@ rm -rf /etc/systemd/system/flink*.service
 set -e
 
 echo "[Unit]
-Description=Apache Flink
+Description=Apache Flink %i
 Requires=network.target
 After=network.target
 
@@ -64,10 +66,12 @@ Type=forking
 User=flink
 Group=flink
 Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR
-ExecStart=$FLINK_INSTALL_DIR/bin/start-local.sh
-ExecStop=$FLINK_INSTALL_DIR/bin/stop-local.sh
+Environment=FLINK_PID_DIR=$FLINK_LOG_DIR
+ExecStart=/bin/bash $FLINK_INSTALL_DIR/bin/%i.sh start cluster
+ExecStop=/bin/bash $FLINK_INSTALL_DIR/bin/%i.sh stop
+PIDFile=$FLINK_LOG_DIR/flink-flink-%i.pid
 Restart=on-failure
-SyslogIdentifier=flink
+SyslogIdentifier=flink@%i
 
 [Install]
 WantedBy=multi-user.target" >$FLINK_SERVICE_FILE
@@ -100,8 +104,8 @@ echo "Flink: installing Flink city (console) systemd template unit..." 1>&2
 # Install the unit file
 echo "[Unit]
 Description=Flink bridge (%i)
-Requires=network.target flink.service
-After=network.target flink.service
+Requires=network.target
+After=network.target
 
 [Service]
 Type=forking

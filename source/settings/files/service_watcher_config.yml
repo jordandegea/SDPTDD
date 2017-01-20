@@ -12,7 +12,14 @@ services:
   - name: kafka
     type: global
   - name: flink
-    type: global
+    prestart: |
+      #!/bin/bash
+      SRC=/usr/local/flink/conf/flink-conf.yaml.tpl
+      DEST=/usr/local/flink/conf/flink-conf.yaml
+      sed "s#jobmanager_replace_me#{instance:flink@jobmanager}#" $SRC > $DEST
+    instances:
+      jobmanager: 1
+      taskmanager: 3
   - name: hadoop
     force:
       namenode: replace_me_first_host
