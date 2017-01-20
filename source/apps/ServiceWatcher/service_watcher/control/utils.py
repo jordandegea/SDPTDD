@@ -45,6 +45,11 @@ class ServiceLogic(object):
         try:
             # Fetch current state of service from systemd
             state = self.unit.ActiveState
+
+            if state == "failed":
+                if self.unit.ExecMainStatus == 143:
+                    self.unit.ResetFailed()
+                    state = "inactive"
         except GLib.Error:
             logging.error("%s: failed getting state from systemd" % self.name)
         self.last_state = state
@@ -65,8 +70,7 @@ class ServiceLogic(object):
             self.actions(state)
 
     def actions(self, state=None):
-        if state is None:
-            state = self.unit.ActiveState
+        state = state or (self.last_state or self.try_get_state())
 
         if self.should_run is not None:
             # only do something if we know what to do
