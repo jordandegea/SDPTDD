@@ -88,7 +88,7 @@ Type=forking
 User=flink
 Group=flink
 Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR/%i
-ExecStart=/bin/bash -c 'nohup $FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaHbaseBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i --hbasequorum $HBASE_QUORUM --hbaseport 2181 &'
+ExecStart=/bin/bash -c 'nohup $FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaHbaseBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i_tweets --hbasequorum $HBASE_QUORUM --hbaseport 2181 &'
 SyslogIdentifier=flink_city@%i
 
 [Install]
@@ -108,7 +108,7 @@ Type=forking
 User=flink
 Group=flink
 Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR/%i
-ExecStart=/bin/bash -c 'nohup $FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaConsoleBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i --hbasequorum $HBASE_QUORUM --hbaseport 2181 &'
+ExecStart=/bin/bash -c 'nohup $FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaConsoleBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i_tweets --hbasequorum $HBASE_QUORUM --hbaseport 2181 &'
 SyslogIdentifier=flink_console@%i
 
 [Install]

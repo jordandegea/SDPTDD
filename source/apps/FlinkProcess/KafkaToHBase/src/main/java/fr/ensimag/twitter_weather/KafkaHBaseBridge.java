@@ -22,6 +22,7 @@ import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.sling.commons.json.JSONException;
 import org.apache.sling.commons.json.JSONObject;
 
 
@@ -130,12 +131,20 @@ public class KafkaHBaseBridge {
 		@Override
 		public void writeRecord(String record) throws IOException {
             StreamObject obj = this.parse(record);
-            //Put put = new Put(Bytes.toBytes(taskNumber + UUID.randomUUID()));
-            Put put = new Put(Bytes.toBytes(System.currentTimeMillis() + "_" + obj.name));
-            put.addColumn(Bytes.toBytes("place"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(obj.name));
-            put.addColumn(Bytes.toBytes("datas"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(obj.content));
-            put.addColumn(Bytes.toBytes("feeling"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(obj.feeling.toString()));
-			table.put(put);
+            if (obj == null){
+                Put put = new Put(Bytes.toBytes(System.currentTimeMillis() + "_error"));
+                put.addColumn(Bytes.toBytes("place"), Bytes.toBytes(""), Bytes.toBytes("error"));
+                put.addColumn(Bytes.toBytes("datas"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(record));
+                put.addColumn(Bytes.toBytes("feeling"), Bytes.toBytes(""), Bytes.toBytes("0"));
+                table.put(put);
+            }else {
+                //Put put = new Put(Bytes.toBytes(taskNumber + UUID.randomUUID()));
+                Put put = new Put(Bytes.toBytes(System.currentTimeMillis() + "_" + obj.name));
+                put.addColumn(Bytes.toBytes("place"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(obj.name));
+                put.addColumn(Bytes.toBytes("datas"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(obj.content));
+                put.addColumn(Bytes.toBytes("feeling"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(obj.feeling.toString()));
+                table.put(put);
+            }
 		}
 
 		@Override
@@ -144,19 +153,21 @@ public class KafkaHBaseBridge {
 			connection.close();
 		}
 
-		/* Parse la ligne de kafka pour un sortir un objet pour HBase */
+        /* Parse la ligne de kafka pour un sortir un objet pour HBase */
         public StreamObject parse(String in) {
             StreamObject obj = null;
             try {
-                JSONObject json = JSONObject(in);
+                JSONObject json = new JSONObject(in);
                 String text = (String) json.get("text");
-                if ( text.contains("\ud") ){
+                if (text.contains("\\ud")) {
                     obj = new StreamObject();
                     obj.name = tablename;
                     obj.content = in;
-                    String substr = text.substring(text.indexOf("\ud") + 3 , text.indexOf("\ud") + 5);
-                    obj.feeling = Math.abs(Character.digit(substr[0], 10)) * 10 + Math.abs(Character.digit(substr[1], 10));
+                    String substr = text.substring(text.indexOf("\\ud") + 3, text.indexOf("\\ud") + 5);
+                    obj.feeling = Math.abs(Character.digit(substr.charAt(0), 10)) * 10 + Math.abs(Character.digit(substr.charAt(1), 10));
                 }
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
             return obj;
         }
