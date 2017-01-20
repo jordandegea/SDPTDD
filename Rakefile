@@ -29,8 +29,15 @@ else
   task :up => %w(deploy run:format_hdfs services:start)
 end
 
-desc "Update the config for ServiceWatcher and reload the service"
-task :upserv do
-  Rake::Task["deploy:settings"].invoke("", "service_watcher")
-  Rake::Task["services:reload"].invoke("", "service_watcher")
+desc "Update the config for services and reload the services"
+task :upserv, [:what] do |task, args|
+  services = (args[:what] || "").split(';')
+  services = %w(service_watcher) if services.length == 0
+
+  services.each do |service|
+    %w(deploy:settings services:reload).each do |t|
+      Rake::Task[t].reenable
+      Rake::Task[t].invoke("", service)
+    end
+  end
 end
