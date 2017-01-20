@@ -33,7 +33,7 @@ services:
       sed "s#jobmanager_replace_me#{instance:flink@jobmanager}#" $SRC > $DEST
     instances:
       jobmanager: 1
-      taskmanager: 3
+      taskmanager: 1
   - name: hadoop
     force:
       namenode: replace_me_first_host
@@ -45,15 +45,15 @@ services:
       sed "s#nn_ip#${IP}#" $SRC > $DEST
     instances:
       namenode: 1
-      datanode: 3
+      datanode: 1
   - name: hbase
     prestart: *hostscript
     exclusive: true
     instances:
       master: 1
-      regionserver: 2
+      regionserver: 1
   - name: zeppelin
-    count: 2
+    count: 1
   - name: flink_city
     enabled: false
     instances:
