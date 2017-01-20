@@ -41,9 +41,9 @@ def init_signal(signals, callback):
         install_glib_handler(sig)
 
 
-class Monitor(Configurable, ZooKeeperClient, SystemdClient):
+class Controller(Configurable, ZooKeeperClient, SystemdClient):
     def __init__(self, config_file):
-        super(Monitor, self).__init__(config_file=config_file)
+        super(Controller, self).__init__(config_file=config_file)
         self.services_lut = {}
         # Setup terminate and reload handler
         init_signal([15, 1], self.signal_callback)  # SIGTERM, SIGHUP
