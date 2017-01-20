@@ -7,6 +7,7 @@ from kazoo.handlers.threading import SequentialThreadingHandler
 class ZooKeeperClient(object):
     def __init__(self, *args, **kwargs):
         super(ZooKeeperClient, self).__init__()
+        self.zk = None
 
     def start_zk(self, zk_quorum):
         # Initialize the ZK client

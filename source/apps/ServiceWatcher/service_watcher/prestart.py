@@ -5,6 +5,7 @@ import yaml
 
 instance_regex = re.compile("\\{instance:([a-z@_]+)\\}")
 
+
 class PrestartScript(object):
     def __init__(self, script):
         super(PrestartScript, self).__init__()
@@ -25,6 +26,7 @@ class PrestartScript(object):
     def get_script_contents(self, resolver_func):
         # Invoke the resolver on all instance:xxx variables
         exec_state = {}
+
         def cb(match):
             key = match.group(1)
             val = resolver_func(key)
@@ -60,18 +62,22 @@ class PrestartScript(object):
             finally:
                 os.unlink(tmp.name)
 
+
 class RetryExecute(Exception):
     """ Exception thrown when resolving an instance for a prestart template failed and execution should be retried
     later """
     pass
 
+
 class DelayPrestart(Exception):
     """ Exception thrown by a resolver to indicate no instance is available yet and execution should be delayed """
     pass
 
+
 class UnknownInstance(Exception):
     """ Exception thrown by a resolver to indicate no such instance could be ever resolved """
     pass
+
 
 class ResolvingNotSupported(Exception):
     """ Exception thrown by a resolver to indicate this kind of unit cannot be resolved """

@@ -1,16 +1,19 @@
-from socket import gethostname
-
-from tabulate import tabulate
 from kazoo.recipe.party import ShallowParty
+from tabulate import tabulate
 
 from service_watcher import service as svc
-from service_watcher.zookeeper import ZooKeeperClient
 from service_watcher.roles import Configurable
+from service_watcher.zookeeper import ZooKeeperClient
 
 
 class Status(Configurable, ZooKeeperClient):
     def __init__(self, config_file):
         super(Status, self).__init__(config_file=config_file)
+        # Initialize attributes
+        self.current_service = None
+        self.is_first_row = False
+        self.current_table = None
+        self.current_row = None
 
     def set_current_service(self, service):
         self.current_service = service
@@ -24,11 +27,11 @@ class Status(Configurable, ZooKeeperClient):
         self.end_row()
 
         if self.is_first_row:
-            type = ["global", "shared", "multi"][self.current_service.type]
+            t = ["global", "shared", "multi"][self.current_service.type]
             if hasattr(self.current_service, 'exclusive') and self.current_service.exclusive:
-                type = "%s (exclusive)" % type
+                t = "%s (exclusive)" % t
 
-            self.current_row = [self.current_service.name, type]
+            self.current_row = [self.current_service.name, t]
             self.is_first_row = False
         else:
             self.current_row = ["", ""]
@@ -43,7 +46,8 @@ class Status(Configurable, ZooKeeperClient):
 
     def out_table(self):
         self.end_row()
-        print(tabulate(self.current_table, headers=["name", "type", "instance", "running", "failed", "health"], tablefmt="grid"))
+        print(tabulate(self.current_table, headers=["name", "type", "instance", "running", "failed", "health"],
+                       tablefmt="grid"))
         self.current_table = None
 
     def run(self):

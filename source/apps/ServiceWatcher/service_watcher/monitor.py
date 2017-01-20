@@ -5,15 +5,16 @@ from gi.repository import GLib
 
 from service_watcher.systemd import SystemdClient
 from service_watcher.zookeeper import ZooKeeperClient
-from service_watcher.control import ControlRoot
+from service_watcher.control.root import ControlRoot
 from service_watcher.roles import Configurable
 
 
 # https://stackoverflow.com/questions/26388088/python-gtk-signal-handler-not-working
-def InitSignal(signals, callback):
-    def signal_action(signal):
-        callback(signal)
+def init_signal(signals, callback):
+    def signal_action(sigarg):
+        callback(sigarg)
 
+    # noinspection PyUnusedLocal
     def idle_handler(*args):
         GLib.idle_add(signal_action, priority=GLib.PRIORITY_HIGH)
         return True
@@ -22,7 +23,7 @@ def InitSignal(signals, callback):
         signal_action(args[0])
         return True
 
-    def install_glib_handler(sig):
+    def install_glib_handler(sigarg):
         unix_signal_add = None
 
         if hasattr(GLib, "unix_signal_add"):
@@ -31,7 +32,7 @@ def InitSignal(signals, callback):
             unix_signal_add = GLib.unix_signal_add_full
 
         if unix_signal_add:
-            unix_signal_add(GLib.PRIORITY_HIGH, sig, handler, sig)
+            unix_signal_add(GLib.PRIORITY_HIGH, sigarg, handler, sigarg)
         else:
             logging.error("Can't install GLib signal handler, too old gi.")
 
@@ -43,9 +44,9 @@ def InitSignal(signals, callback):
 class Monitor(Configurable, ZooKeeperClient, SystemdClient):
     def __init__(self, config_file):
         super(Monitor, self).__init__(config_file=config_file)
-
+        self.services_lut = {}
         # Setup terminate and reload handler
-        InitSignal([15, 1], self.signal_callback) # SIGTERM, SIGHUP
+        init_signal([15, 1], self.signal_callback)  # SIGTERM, SIGHUP
         self.reload_signaled = False
 
     def run(self):
@@ -91,7 +92,6 @@ class Monitor(Configurable, ZooKeeperClient, SystemdClient):
             # Leave ZooKeeper
             self.stop_zk()
 
-
     def on_job_event(self, job_id, job_object_path, job_unit_name, status):
         try:
             filename, ext = os.path.splitext(job_unit_name)
@@ -101,9 +101,9 @@ class Monitor(Configurable, ZooKeeperClient, SystemdClient):
             pass
 
     def signal_callback(self, sgn):
-        if sgn == 15: # SIGTERM
+        if sgn == 15:  # SIGTERM
             self.exit()
-        elif sgn == 1: # SIGHUP
+        elif sgn == 1:  # SIGHUP
             self.reload()
 
     def exit(self):
