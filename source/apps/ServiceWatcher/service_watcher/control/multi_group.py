@@ -50,7 +50,7 @@ class MultiControlUnit(ControlUnit):
                 raise DelayPrestart()
 
             if target_name not in self.last_partition:
-                raise UnknownInstance()
+                raise UnknownInstance(target_name)
 
             if len(self.last_partition[target_name]) == 0:
                 raise DelayPrestart()
@@ -219,9 +219,12 @@ class MultiControlUnit(ControlUnit):
                     if try_allocate(i):
                         continue_allocating = True
 
-        self.last_partition = target_members
+        full_partition = {}
+        for p in target_members:
+            full_partition["%s@%s" % (self.name, p)] = target_members[p]
+        self.last_partition = full_partition
         logging.info("%s: computed partition %s" % (self.name, json.dumps(allocation_state)))
-        logging.info("%s: resolver state %s" % (self.name, json.dumps(target_members)))
+        logging.info("%s: resolver state %s" % (self.name, json.dumps(full_partition)))
 
         # The resulting "partition" is the set of services for the current instance
         return allocation_state[identifier.split("@")[0]]

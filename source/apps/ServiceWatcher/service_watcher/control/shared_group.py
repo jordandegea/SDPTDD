@@ -44,7 +44,7 @@ class SharedControlUnit(ControlUnit):
         # Register the resolver for prestart scripts
         def resolver(target_name):
             if target_name != self.control_group.service.name:
-                raise UnknownInstance()
+                raise UnknownInstance(target_name)
 
             if self.last_partition is None or len(self.last_partition) == 0:
                 raise DelayPrestart()

@@ -42,7 +42,7 @@ class ControlRoot(object):
 
     def instance_resolver_root(self, instance_name):
         if instance_name not in self.instance_resolvers:
-            raise UnknownInstance()
+            raise UnknownInstance(instance_name)
         else:
             resolved = self.instance_resolvers[instance_name](instance_name)
             # logging.info("ControlRoot: resolving %s to %s" % (instance_name, resolved))

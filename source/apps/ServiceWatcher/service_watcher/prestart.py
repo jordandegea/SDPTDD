@@ -76,7 +76,12 @@ class DelayPrestart(Exception):
 
 class UnknownInstance(Exception):
     """ Exception thrown by a resolver to indicate no such instance could be ever resolved """
-    pass
+    def __init__(self, instance_name):
+        super(UnknownInstance, self).__init__()
+        self.instance_name = instance_name
+
+    def __str__(self):
+        return "Unknown instance %s" % self.instance_name
 
 
 class ResolvingNotSupported(Exception):

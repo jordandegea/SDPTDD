@@ -65,44 +65,42 @@ class ServiceLogic(object):
             self.actions(state)
 
     def actions(self, state=None):
-        # noinspection PyBroadException
-        try:
-            if state is None:
-                state = self.unit.ActiveState
+        if state is None:
+            state = self.unit.ActiveState
 
-            if self.should_run is not None:
-                # only do something if we know what to do
+        if self.should_run is not None:
+            # only do something if we know what to do
 
-                if state == "active":
-                    # the service is running
-                    if not self.should_run:
-                        # the service should not be running, issue stop
+            if state == "active":
+                # the service is running
+                if not self.should_run:
+                    # the service should not be running, issue stop
+                    self.stop_service()
+                else:
+                    # check if there is an update to input parameters
+                    if self.service.prestart is not None and \
+                        self.service.prestart.is_dirty(self.control_root.instance_resolver_root):
+                        logging.info("%s: prestart script state is not up-to-date, restarting service" % self.name)
                         self.stop_service()
-                    else:
-                        # check if there is an update to input parameters
-                        if self.service.prestart is not None and \
-                            self.service.prestart.is_dirty(self.control_root.instance_resolver_root):
-                            logging.info("%s: prestart script state is not up-to-date, restarting service" % self.name)
-                            self.stop_service()
-                    pass
-                # ignoring state "reloading", transient
-                elif state == "inactive":
-                    # the service is stopped
-                    if self.should_run:
-                        # the service should be running, issue start
-                        self.start_service()
-                    pass
-                elif state == "failed":
-                    # the service is failed
-                    pass
-                elif state == "activating":
-                    # the service is trying to start
-                    pass
-                elif state == "deactivating":
-                    # the service is trying to stop
-                    pass
-        except:
-            logging.error("%s: failed controlling the service" % self.name)
+                pass
+            # ignoring state "reloading", transient
+            elif state == "inactive":
+                # the service is stopped
+                if self.should_run:
+                    # the service should be running, issue start
+                    self.start_service()
+                pass
+            elif state == "failed":
+                # the service is failed
+                pass
+            elif state == "activating":
+                # the service is trying to start
+                pass
+            elif state == "deactivating":
+                # the service is trying to stop
+                pass
+        # except:
+        #     logging.error("%s: failed controlling the service" % self.name)
 
     def terminate(self, reload_mode):
         # Save prestart state
@@ -138,8 +136,8 @@ class ServiceLogic(object):
                     if not self.retry_later_notified:
                         logging.info("%s: retrying later, missing scheduled instance" % self.name)
                         self.retry_later_notified = True
-                except Exception as e:
-                    logging.error("%s: critical error in prestart script: %s" % (self.name, e))
+                # except Exception as e:
+                #    logging.error("%s: critical error in prestart script: %s" % (self.name, e))
             else:
                 return True
             return False
