@@ -1,5 +1,6 @@
-import logging
 import json
+import logging
+from copy import copy
 from socket import gethostname
 
 from kazoo.recipe.partitioner import SetPartitioner
@@ -7,7 +8,6 @@ from kazoo.recipe.partitioner import SetPartitioner
 from service_watcher import service as svc
 from service_watcher.control.base_group import ControlGroup, ControlUnit
 from service_watcher.control.utils import ServiceLogic
-
 from service_watcher.prestart import *
 
 
@@ -150,78 +150,77 @@ class MultiControlUnit(ControlUnit):
 
     def partition_func(self, identifier, members, partitions):
         # Sort members so we have a consistent order over all allocators
-        sorted_members = list(sorted(members))
-        sorted_partitions = list(sorted(partitions, key=lambda x: x[0]))
+        sorted_members = list(sorted(member.split("@")[0] for member in members))
+        # Failed status of services for members
+        failed_status = {}
+        for member in members:
+            split = member.split("@")
+            failed_status[split[0]] = {}
+            for q in split[1:]: failed_status[split[0]][q] = True
+        # Sort partitions by service count then name
+        sorted_partitions = list(sorted([[x[0], copy(x[1])] for x in partitions], key=lambda service: "%04d_%s" % (service[1], service[0])))
+        # Original counts
+        org_counts = [service[1] for service in sorted_partitions]
+
+        logging.info("%s: from %s" % (self.name, json.dumps(partitions)))
+
+        # Computed partition set: keys are values of members, values are arrays of assigned service ids (param@id)
         allocation_state = {}
-        allocation_params = {}
-        allocated = {}
+        for m in sorted_members:
+            allocation_state[m] = []
+
+        # Computed service set: keys are instance names, values are worker arrays
         target_members = {}
-
         for param, count in sorted_partitions:
-            target_members["%s@%s" % (self.control_group.service.name, param)] = []
+            target_members[param] = []
 
-        for member in sorted_members:
-            allocation_params[member] = {}
-            allocation_state[member] = []
-            allocated[member] = False
+        # A reusable allocation method
+        def try_allocate(i):
+            param, count = sorted_partitions[i]
+            id = org_counts[i] - count + 1
 
-        allocations = []
-        for part in sorted_partitions:
-            if part[1] == 1:
-                allocations.append("%s@1" % part[0])
-                part[1] = 0
-
-        services_left = True
-        while services_left:
-            services_left = False
-            for service in sorted_partitions:
-                if service[1] > 0:
-                    allocations.append("%s@%d" % (service[0], service[1]))
-                    service[1] -= 1
-                    services_left = True
-
-        current_member = 0
-        for instance in allocations:
-            param = instance.split("@")[0]
-
+            target_host = None
             if param in self.control_group.service.force:
                 target_host = self.control_group.service.force[param]
+                if count > 1:
+                    logging.warning("%s: ignoring force directive for service with more than one replica" % self.name)
 
-                # Forced allocation strategy
-                for member_spec in sorted_members:
-                    member_splitted = member_spec.split("@")
-                    if target_host == member_splitted[0]:
-                        allocated[member_spec] = True
-                        allocation_state[member_spec].append(instance)
-                        allocation_params[member_spec][param] = True
-                        target_members["%s@%s" % (self.control_group.service.name, param)].append(member_splitted[0])
-                        break
-            else:
-                # Default allocation strategy
-                next_current_member = current_member
-                for i in range(len(sorted_members)):
-                    member_spec = sorted_members[(current_member + i) % len(sorted_members)]
-                    member_splitted = member_spec.split("@")
-                    member_failed = member_splitted[1:]
+            # Find the first member that can host the service with the least already-allocated services
+            member_set = sorted(sorted_members, key=lambda member: \
+                "%04d_%s" % (len(allocation_state[member]), member))
+            for member_name in member_set:
+                valid_host = param not in failed_status[member_name] and member_name not in target_members[param] \
+                             and (not self.control_group.service.exclusive or len(allocation_state[member_name]) == 0)
+                if target_host is None and valid_host or target_host == member_name:
+                    # allocate service
+                    allocation_state[member_name].append("%s@%d" % (param, id))
+                    # mirror allocation state in target members
+                    target_members[param].append(member_name)
+                    # no instances left to allocate
+                    sorted_partitions[i][1] -= 1
+                    # yay
+                    return True
 
-                    if param not in member_failed:
-                        # If running in exclusive mode for this service, do not allocate
-                        # a service to a worker that already has another service from
-                        # this pool allocated
-                        if (not self.control_group.service.exclusive or not allocated[member_spec]) and \
-                                param not in allocation_params[member_spec]:
-                            allocated[member_spec] = True
-                            allocation_state[member_spec].append(instance)
-                            allocation_params[member_spec][param] = True
-                            target_members["%s@%s" % (self.control_group.service.name, param)].append(
-                                member_splitted[0])
-                            next_current_member += 1
-                            break
-                current_member = next_current_member
+            # No allocation
+            return False
+
+        # On the first pass, allocate only services with one required replica (probably master)
+        for i in range(len(sorted_partitions)):
+            if sorted_partitions[i][1] == 1:
+                try_allocate(i)
+
+        # Then each subsequent pass must allocate instances
+        continue_allocating = True
+        while continue_allocating:
+            continue_allocating = False
+            for i in range(len(sorted_partitions)):
+                if sorted_partitions[i][1] > 0:
+                    if try_allocate(i):
+                        continue_allocating = True
 
         self.last_partition = target_members
         logging.info("%s: computed partition %s" % (self.name, json.dumps(allocation_state)))
         logging.info("%s: resolver state %s" % (self.name, json.dumps(target_members)))
 
         # The resulting "partition" is the set of services for the current instance
-        return allocation_state[identifier]
+        return allocation_state[identifier.split("@")[0]]

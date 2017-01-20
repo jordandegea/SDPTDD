@@ -128,7 +128,7 @@ class SharedControlUnit(ControlUnit):
 
     def partition_func(self, identifier, members, service):
         # Sort members so we have a consistent order over all allocators
-        sorted_members = sorted(members)
+        sorted_members = list(sorted(members))
         allocation_state = {}
         target_members = []
 
@@ -137,7 +137,7 @@ class SharedControlUnit(ControlUnit):
 
         # For the current param, allocate as much instances as possible
         # No worker should have to run the same service twice though
-        for i in range(min(service.count, len(members))):
+        for i in range(min(service.count, len(sorted_members))):
             member = sorted_members[i]
             allocation_state[member].append("%d" % i)
             target_members.append(member)
