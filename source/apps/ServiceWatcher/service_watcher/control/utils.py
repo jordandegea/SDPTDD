@@ -103,8 +103,6 @@ class ServiceLogic(object):
             elif state == "deactivating":
                 # the service is trying to stop
                 pass
-        # except:
-        #     logging.error("%s: failed controlling the service" % self.name)
 
     def terminate(self, reload_mode):
         # Save prestart state
@@ -140,8 +138,6 @@ class ServiceLogic(object):
                     if not self.retry_later_notified:
                         logging.info("%s: retrying later, missing scheduled instance" % self.name)
                         self.retry_later_notified = True
-                # except Exception as e:
-                #    logging.error("%s: critical error in prestart script: %s" % (self.name, e))
             else:
                 return True
             return False
