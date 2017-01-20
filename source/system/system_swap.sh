@@ -11,7 +11,12 @@ FILE_SIZE=2G
 SWAPFILE=/swap
 
 # Create the swap file on /
-if ! [ -f $SWAPFILE ]; then
+if ! [ -f $SWAPFILE ] || (($FORCE_INSTALL)); then
+  if swapon | grep $SWAPFILE >/dev/null ; then
+    swapoff $SWAPFILE
+  fi
+  rm -rf $SWAPFILE
+
   fallocate -l $FILE_SIZE $SWAPFILE
   chmod 0600 $SWAPFILE
   mkswap $SWAPFILE
