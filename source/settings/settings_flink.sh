@@ -30,11 +30,50 @@ else
   echo "Flink: flink user already created." 1>&2
 fi
 
-# Check the log path for zookeeper
-if ! [ -d $FLINK_LOG_DIR ]; then
-  mkdir -p $FLINK_LOG_DIR
-  chown flink:flink -R $FLINK_LOG_DIR
-fi
+# Check the log path for flink
+mkdir -p $FLINK_LOG_DIR
+chown flink:flink -R $FLINK_LOG_DIR
+
+# Check the pid path for flink
+mkdir -p $FLINK_PID_DIR
+chown flink:flink -R $FLINK_PID_DIR
+
+# tmpfiles.d
+echo "# Flink service folders
+d  $FLINK_LOG_DIR 0755 flink flink - -
+d  $FLINK_PID_DIR 0755 flink flink - -
+" >/etc/tmpfiles.d/flink.conf
+
+# Log to systemd
+echo "log4j.rootLogger=INFO, stdout
+
+# Log all infos in the given stdout
+log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+log4j.appender.stdout.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p %-60c %x - %m%n
+
+# suppress the irrelevant (wrong) warnings from the netty channel handler
+log4j.logger.org.jboss.netty.channel.DefaultChannelPipeline=ERROR, stdout
+" >$FLINK_INSTALL_DIR/conf/log4j.properties
+cp $FLINK_INSTALL_DIR/conf/log4j.properties $FLINK_INSTALL_DIR/conf/log4j-cli.properties
+cp $FLINK_INSTALL_DIR/conf/log4j.properties $FLINK_INSTALL_DIR/conf/log4j-yarn-session.properties
+
+echo "<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{60} %X{sourceThread} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>
+" >$FLINK_INSTALL_DIR/conf/logback.xml
+cp $FLINK_INSTALL_DIR/conf/logback.xml $FLINK_INSTALL_DIR/conf/logback-yarn.xml
+
+# Patch the daemon startup script (Apache doesn't know anything about daemons)
+sed -i 's/ > "$out"//' $FLINK_INSTALL_DIR/bin/flink-daemon.sh
 
 # Create systemd unit for flink service
 echo "Flink: installing Flink systemd unit..." 1>&2
@@ -47,6 +86,8 @@ taskmanager.numberOfTaskSlots: 20
 taskmanager.memory.preallocate: false
 parallelism.default: 2
 jobmanager.web.port: 8081
+env.log.dir: $FLINK_LOG_DIR
+env.pid.dir: $FLINK_PID_DIR
 " > ${FLINK_CONF_FILE}.tpl
 
 sed 's#jobmanager_replace_me#localhost#' ${FLINK_CONF_FILE}.tpl > $FLINK_CONF_FILE
@@ -65,11 +106,9 @@ After=network.target
 Type=forking
 User=flink
 Group=flink
-Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR
-Environment=FLINK_PID_DIR=$FLINK_LOG_DIR
 ExecStart=/bin/bash $FLINK_INSTALL_DIR/bin/%i.sh start cluster
 ExecStop=/bin/bash $FLINK_INSTALL_DIR/bin/%i.sh stop
-PIDFile=$FLINK_LOG_DIR/flink-flink-%i.pid
+PIDFile=$FLINK_PID_DIR/flink-flink-%i.pid
 Restart=on-failure
 SyslogIdentifier=flink@%i
 
@@ -90,7 +129,6 @@ After=network.target
 [Service]
 User=flink
 Group=flink
-Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR/%i
 ExecStart=$FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaHbaseBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i_tweets --hbasequorum $HBASE_QUORUM --hbaseport 2181
 SyslogIdentifier=flink_city@%i
 
@@ -109,7 +147,6 @@ After=network.target
 [Service]
 User=flink
 Group=flink
-Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR/%i
 ExecStart=$FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaConsoleBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i_tweets --hbasequorum $HBASE_QUORUM --hbaseport 2181
 SyslogIdentifier=flink_console@%i
 
@@ -127,7 +164,6 @@ After=network.target
 [Service]
 User=flink
 Group=flink
-Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR/flink_producer_fake
 WorkingDirectory=$FLINK_INSTALL_DIR
 ExecStart=$FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/FakeTwitterProducer.jar 1 $FLINK_BOOTSTRAP
 SyslogIdentifier=flink_producer_fake
