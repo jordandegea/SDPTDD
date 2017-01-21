@@ -88,11 +88,10 @@ Requires=network.target
 After=network.target
 
 [Service]
-Type=forking
 User=flink
 Group=flink
 Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR/%i
-ExecStart=/bin/bash -c 'nohup $FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaHbaseBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i_tweets --hbasequorum $HBASE_QUORUM --hbaseport 2181 &'
+ExecStart=$FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaHbaseBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i_tweets --hbasequorum $HBASE_QUORUM --hbaseport 2181
 SyslogIdentifier=flink_city@%i
 
 [Install]
@@ -108,11 +107,10 @@ Requires=network.target
 After=network.target
 
 [Service]
-Type=forking
 User=flink
 Group=flink
 Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR/%i
-ExecStart=/bin/bash -c 'nohup $FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaConsoleBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i_tweets --hbasequorum $HBASE_QUORUM --hbaseport 2181 &'
+ExecStart=$FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaConsoleBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i_tweets --hbasequorum $HBASE_QUORUM --hbaseport 2181
 SyslogIdentifier=flink_console@%i
 
 [Install]
@@ -127,12 +125,11 @@ Requires=network.target
 After=network.target
 
 [Service]
-Type=forking
 User=flink
 Group=flink
 Environment=FLINK_LOG_DIR=$FLINK_LOG_DIR/flink_producer_fake
 WorkingDirectory=$FLINK_INSTALL_DIR
-ExecStart=/bin/bash -c 'nohup $FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/FakeTwitterProducer.jar 1 $FLINK_BOOTSTRAP &'
+ExecStart=$FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/FakeTwitterProducer.jar 1 $FLINK_BOOTSTRAP
 SyslogIdentifier=flink_producer_fake
 
 [Install]
