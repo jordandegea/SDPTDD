@@ -1,5 +1,7 @@
 import logging
 import os
+import re
+from _socket import gethostname
 
 from gi.repository import GLib
 
@@ -149,3 +151,9 @@ class ServiceLogic(object):
     def stop_service(self):
         logging.info("%s: stopping service" % self.name)
         self.unit.Stop("fail")
+
+
+def fast_id(t = None):
+    if t is None:
+        t = gethostname()
+    return t[0] + "-" + re.search(r'\d+$', t).group()

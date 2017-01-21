@@ -3,7 +3,7 @@ from kazoo.recipe.party import ShallowParty
 from tabulate import tabulate
 
 from service_watcher import service as svc
-from service_watcher.control.utils import KNOWN_PARTIES
+from service_watcher.control.utils import KNOWN_PARTIES, fast_id
 from service_watcher.roles import Configurable
 from service_watcher.zookeeper import ZooKeeperClient
 
@@ -99,7 +99,7 @@ class Status(Configurable, ZooKeeperClient):
 
         # List parties
         for party in KNOWN_PARTIES:
-            self.add_field(", ".join(parties[party]))
+            self.add_field(", ".join(fast_id(member) for member in parties[party]))
 
         # Health status
         total_instances = len(parties['active']) + len(parties['failed'])

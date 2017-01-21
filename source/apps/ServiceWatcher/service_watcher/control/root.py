@@ -5,7 +5,7 @@ from service_watcher.prestart import *
 
 from service_watcher.control.global_group import GlobalControlGroup
 from service_watcher.control.shared_group import SharedControlGroup
-from service_watcher.control.multi_group import MultiControlGroup
+from service_watcher.control.multi_group import MultiControlRoot
 
 
 class ControlRoot(object):
@@ -17,8 +17,10 @@ class ControlRoot(object):
         self.timings = timings
         # The exit event to signal all control units should exit
         self.exit_event = threading.Event()
+        # Create the root for multi services
+        self.multi_root = MultiControlRoot(self, [service for service in services if service.type == svc.MULTI])
         # Create control groups for all shared services
-        self.control_groups = [self.control_group(service) for service in services]
+        self.control_groups = [self.control_group(service) for service in services if service.type != svc.MULTI]
         # Default to stop services on exit
         self.reload_exit = False
         # Instance resolvers
@@ -31,8 +33,6 @@ class ControlRoot(object):
             return GlobalControlGroup(self, service)
         elif service.type == svc.SHARED:
             return SharedControlGroup(self, service)
-        elif service.type == svc.MULTI:
-            return MultiControlGroup(self, service)
 
     def set_reload_mode(self):
         self.reload_exit = True
@@ -52,13 +52,19 @@ class ControlRoot(object):
         for control_group in self.control_groups:
             control_group.prestart()
 
+        self.multi_root.prestart()
+
         for control_group in self.control_groups:
             control_group.start()
+
+        self.multi_root.start()
+
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         # We are actively exiting
         self.exit_event.set()
         # Notify control groups they should exit
+        self.multi_root.stop()
         for control_group in self.control_groups:
             control_group.stop()

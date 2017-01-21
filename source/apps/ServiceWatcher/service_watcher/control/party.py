@@ -1,15 +1,11 @@
-import re
-
 from socket import gethostname
+
 from kazoo.recipe.party import ShallowParty
 
-def fast_id():
-    t = gethostname()
-    return t[0] + "-" + re.search(r'\d+$', t).group()
 
 class SWParty(ShallowParty):
     def __init__(self, client, path, **kwargs):
-        super(SWParty, self).__init__(client, path, fast_id())
+        super(SWParty, self).__init__(client, path, gethostname())
         self.joined = False
         self.on_join = None
         self.on_leave = None
