@@ -49,7 +49,7 @@ public class KafkaToConsole {
                         parameterTool.getProperties()));
 
         // write kafka stream to standard out.
-        messageStream.print();
+        //messageStream.print();
 
 			/* Passe chaque ligne dans la class HBaseOutputFormat */
         messageStream.addSink(new ConsoleOutputFormat());
@@ -81,12 +81,14 @@ public class KafkaToConsole {
             try {
                 JSONObject json = new JSONObject(in);
                 String text = (String) json.get("text");
+                obj = new StreamObject();
+                obj.name = "randomname";
+                obj.content = in;
                 if (text.contains("\\ud")) {
-                    obj = new StreamObject();
-                    obj.name = "randomname";
-                    obj.content = in;
                     String substr = text.substring(text.indexOf("\\ud") + 3, text.indexOf("\\ud") + 5);
                     obj.feeling = Math.abs(Character.digit(substr.charAt(0), 10)) * 10 + Math.abs(Character.digit(substr.charAt(1), 10));
+                }else{
+                    obj.feeling = 50;
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
