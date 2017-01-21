@@ -32,6 +32,7 @@ deploy:
     - java:
     - python:
     - swap:
+    - ulimit:
   software:
     - kafka:
     - flink:
