@@ -165,6 +165,39 @@ sed -i 's/ > ${logout}//' $HBASE_HOME/bin/hbase-daemon.sh
 sed -i 's/ >> "$logout"//' $HBASE_HOME/bin/hbase-daemon.sh
 sed -i 's/sleep 1; head "${logout}"//' $HBASE_HOME/bin/hbase-daemon.sh
 
+echo "# Define some default values that can be overridden by system properties
+hadoop.root.logger=INFO,console
+hadoop.log.dir=.
+hadoop.log.file=hadoop.log
+
+# Define the root logger to the system property \"hadoop.root.logger\".
+log4j.rootLogger=INFO,console
+
+# Logging Threshold
+log4j.threshold=ALL
+
+# Null Appender
+log4j.appender.NullAppender=org.apache.log4j.varia.NullAppender
+
+#
+# Rolling File Appender - cap space usage at 5gb.
+#
+hadoop.log.maxfilesize=256MB
+hadoop.log.maxbackupindex=20
+
+#
+# console
+#
+
+log4j.appender.console=org.apache.log4j.ConsoleAppender
+log4j.appender.console.target=System.err
+log4j.appender.console.layout=org.apache.log4j.PatternLayout
+log4j.appender.console.layout.ConversionPattern=%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n
+" >$HADOOP_HOME/etc/hadoop/log4j.properties
+
+cp files/hadoop-daemon.sh $HADOOP_HOME/sbin/hadoop-daemon.sh
+chmod 0755 $HADOOP_HOME/sbin/hadoop-daemon.sh
+
 # Create the hadoop systemd service
 echo "[Unit]
 Description=Apache Hadoop %i
