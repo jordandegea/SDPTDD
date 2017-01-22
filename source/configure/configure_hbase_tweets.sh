@@ -8,7 +8,7 @@ SCRIPT=""
 while getopts ":vft:" arg; do
     case $arg in
         t)
-        SCRIPT=$(printf "%screate '%s_tweets', 'place', 'feeling', 'datas'; " "$SCRIPT" "$OPTARG")
+        SCRIPT=$(printf "%screate '%s_tweets', 'place', 'feeling', 'data'; " "$SCRIPT" "$OPTARG")
         ;;
     esac
 done

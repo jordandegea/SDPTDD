@@ -168,14 +168,14 @@ public class KafkaHBaseBridge {
             if (obj == null) {
                 Put put = new Put(Bytes.toBytes(System.currentTimeMillis() + "_error"));
                 put.addColumn(Bytes.toBytes("place"), Bytes.toBytes(""), Bytes.toBytes("error"));
-                put.addColumn(Bytes.toBytes("datas"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(record));
+                put.addColumn(Bytes.toBytes("data"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(record));
                 put.addColumn(Bytes.toBytes("feeling"), Bytes.toBytes(""), Bytes.toBytes("0"));
                 table.put(put);
             } else {
                 //Put put = new Put(Bytes.toBytes(taskNumber + UUID.randomUUID()));
                 Put put = new Put(Bytes.toBytes(System.currentTimeMillis() + "_" + obj.name));
                 put.addColumn(Bytes.toBytes("place"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(obj.name));
-                put.addColumn(Bytes.toBytes("datas"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(obj.content));
+                put.addColumn(Bytes.toBytes("data"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(obj.content));
                 put.addColumn(Bytes.toBytes("feeling"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(obj.feeling.toString()));
                 table.put(put);
             }
