@@ -167,29 +167,33 @@ case "$ACTION" in
       drbdadm primary $RESOURCE_NAME
     done
 
-    if [ -z "$NO_MOUNT" ]; then
-      # Mount filesystem
-      mkdir -p /mnt/shared
-      if ! mount -t ext4 $DEVICE_DEV /mnt/shared ; then
-        echo "Failed to mount device"
-        rm -rf /mnt/shared
-        exit 3
+    if ! mount | grep /mnt/shared >/dev/null ; then
+      if [ -z "$NO_MOUNT" ]; then
+        # Mount filesystem
+        mkdir -p /mnt/shared
+        if ! mount -t ext4 $DEVICE_DEV /mnt/shared ; then
+          echo "Failed to mount device"
+          rm -rf /mnt/shared
+          exit 3
+        fi
+      else
+        echo "Not mounting device"
+        exit 0
       fi
-    else
-      echo "Not mounting device"
-      exit 0
     fi
     ;;
   stop)
-    if [ -z "$NO_MOUNT" ]; then
-      if ! umount /mnt/shared ; then
-        echo "Failed to unmount device"
-        exit 2
-      fi
+    if mount | grep /mnt/shared >/dev/null ; then
+      if [ -z "$NO_MOUNT" ]; then
+        if ! umount /mnt/shared ; then
+          echo "Failed to unmount device"
+          exit 2
+        fi
 
-      rm -rf /mnt/shared
-    else
-      echo "Not unmounting device"
+        rm -rf /mnt/shared
+      else
+        echo "Not unmounting device"
+      fi
     fi
 
     # Go secondary
