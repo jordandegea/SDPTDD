@@ -59,14 +59,14 @@ cp $FLINK_INSTALL_DIR/conf/log4j.properties $FLINK_INSTALL_DIR/conf/log4j-cli.pr
 cp $FLINK_INSTALL_DIR/conf/log4j.properties $FLINK_INSTALL_DIR/conf/log4j-yarn-session.properties
 
 echo "<configuration>
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name=\"STDOUT\" class=\"ch.qos.logback.core.ConsoleAppender\">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{60} %X{sourceThread} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <root level="INFO">
-        <appender-ref ref="STDOUT"/>
+    <root level=\"INFO\">
+        <appender-ref ref=\"STDOUT\"/>
     </root>
 </configuration>
 " >$FLINK_INSTALL_DIR/conf/logback.xml
@@ -116,6 +116,9 @@ SyslogIdentifier=flink@%i
 WantedBy=multi-user.target" >$FLINK_SERVICE_FILE
 
 # Create systemd unit for flink service
+cp files/flink_service.sh /usr/local/bin
+chmod 0755 /usr/local/bin/flink_service.sh
+chown root:root /usr/local/bin/flink_service.sh
 
 # Create the services
 echo "Flink: installing Flink city (hbase) systemd template unit..." 1>&2
@@ -129,7 +132,7 @@ After=network.target
 [Service]
 User=flink
 Group=flink
-ExecStart=$FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaHbaseBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i_tweets --hbasequorum $HBASE_QUORUM --hbaseport 2181
+ExecStart=/usr/local/bin/flink_service.sh -n 'Flink consumer %i' -- $FLINK_INSTALL_DIR/KafkaHbaseBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i_tweets --hbasequorum $HBASE_QUORUM --hbaseport 2181
 SyslogIdentifier=flink_city@%i
 
 [Install]
@@ -147,8 +150,8 @@ After=network.target
 [Service]
 User=flink
 Group=flink
-ExecStart=$FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/KafkaConsoleBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i_tweets --hbasequorum $HBASE_QUORUM --hbaseport 2181
-SyslogIdentifier=flink_console@%i
+ExecStart=/usr/local/bin/flink_service.sh -n 'Flink console consumer %i' -- $FLINK_INSTALL_DIR/KafkaConsoleBridge.jar --port 9000 --topic %i --bootstrap.servers $FLINK_BOOTSTRAP --zookeeper.connect localhost:2181 --group.id %iconsumer --hbasetable %i_tweets --hbasequorum $HBASE_QUORUM --hbaseport 2181
+SyslogIdentifier=flink_city_console@%i
 
 [Install]
 WantedBy=multi-user.target" >/etc/systemd/system/flink_city_console@.service
@@ -165,7 +168,7 @@ After=network.target
 User=flink
 Group=flink
 WorkingDirectory=$FLINK_INSTALL_DIR
-ExecStart=$FLINK_INSTALL_DIR/bin/flink run $FLINK_INSTALL_DIR/FakeTwitterProducer.jar 1 $FLINK_BOOTSTRAP
+ExecStart=/usr/local/bin/flink_service.sh -n 'Twitter Fake Producer' -- $FLINK_INSTALL_DIR/FakeTwitterProducer.jar 1 $FLINK_BOOTSTRAP
 SyslogIdentifier=flink_producer_fake
 
 [Install]
