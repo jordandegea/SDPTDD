@@ -220,8 +220,8 @@ WantedBy=multi-user.target" >$HADOOP_SERVICE_FILE
 
 mkdir -p /etc/systemd/system/hadoop@namenode.service.d
 echo "[Service]
-ExecStartPre=/bin/systemctl start drbd-primary
-ExecStopPost=/bin/systemctl stop drbd-primary
+ExecStartPre=/usr/local/bin/drbd_service.sh start
+ExecStopPost=/usr/local/bin/drbd_service.sh stop
 " >/etc/systemd/system/hadoop@namenode.service.d/override.conf
 
 # Create the hbase systemd service

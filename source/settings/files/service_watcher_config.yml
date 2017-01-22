@@ -21,8 +21,6 @@ services:
       jobmanager: 1
       taskmanager: 3
   - name: hadoop
-    force:
-      namenode: replace_me_first_host
     prestart: &hostscript |
       #!/bin/bash
       SRC=/etc/hosts.tpl

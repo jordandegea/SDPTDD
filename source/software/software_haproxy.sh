@@ -6,7 +6,7 @@ set -e
 # Load the shared provisioning script
 source ./deploy_shared.sh
 
-if (($FORCE_INSTALL)) || ! hash haproxy 2>/dev/null ; then
+if ! hash haproxy 2>/dev/null ; then
   if (($ENABLE_VAGRANT)); then
     echo deb http://httpredir.debian.org/debian jessie-backports main | \
         sed 's/\(.*\)-sloppy \(.*\)/&@\1 \2/' | tr @ '\n' | \

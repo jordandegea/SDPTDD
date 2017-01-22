@@ -115,23 +115,6 @@ else
 fi
 
 echo "[Unit]
-Description=DRBD Primary service $DEVICE_DEV
-Requires=network.target drbd-base.service
-After=network.target drbd-base.service
-
-[Service]
-User=root
-Group=root
-Type=oneshot
-ExecStart=/usr/local/bin/drbd_service.sh start
-ExecStop=/usr/local/bin/drbd_service.sh stop
-SyslogIdentifier=drbd-primary
-
-[Install]
-WantedBy=multi-user.target
-" > /etc/systemd/system/drbd-primary.service
-
-echo "[Unit]
 Description=DRBD Base service $DEVICE_DEV
 Requires=network.target
 After=network.target

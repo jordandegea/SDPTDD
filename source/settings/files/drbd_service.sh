@@ -172,6 +172,7 @@ case "$ACTION" in
       mkdir -p /mnt/shared
       if ! mount -t ext4 $DEVICE_DEV /mnt/shared ; then
         echo "Failed to mount device"
+        rm -rf /mnt/shared
         exit 3
       fi
     else
@@ -185,6 +186,8 @@ case "$ACTION" in
         echo "Failed to unmount device"
         exit 2
       fi
+
+      rm -rf /mnt/shared
     else
       echo "Not unmounting device"
     fi

@@ -77,12 +77,12 @@ deploy:
 run:
   format_hdfs:
     command:
-      - systemctl start drbd-primary
+      - /usr/local/bin/drbd_service.sh start
       - ls /mnt/shared >&2
       - mkdir -p /mnt/shared/name
       - chown hbase:hbase -R /mnt/shared/name
       - sudo -u hbase /usr/local/hadoop/bin/hdfs namenode -format -force -nonInteractive
-      - systemctl stop drbd-primary
+      - /usr/local/bin/drbd_service.sh stop
     mode: once
   format_data: rm -rf /home/hbase/dfs/data/VERSION /home/hbase/dfs/data/current
   fix_dpkg: dpkg --configure -a
