@@ -85,6 +85,7 @@ run:
       - /usr/local/bin/drbd_service.sh stop
     mode: once
   format_data: rm -rf /home/hbase/dfs/data/VERSION /home/hbase/dfs/data/current
+  format_zk: rm -rf /tmp/zookeeper
   fix_dpkg: dpkg --configure -a
   up_drbd: /usr/local/bin/drbd_service.sh up
 # Hosts definitions
