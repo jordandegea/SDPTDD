@@ -54,7 +54,7 @@ public class KafkaToConsole {
 			/* Passe chaque ligne dans la class HBaseOutputFormat */
         messageStream.addSink(new ConsoleOutputFormat());
 
-        env.execute(String.format("Flink console consumer %s", topic));
+        env.execute(String.format("Flink console consumer %s", parameterTool.getRequired("topic")));
     }
 
     public static class StreamObject {
