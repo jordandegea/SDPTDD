@@ -18,9 +18,9 @@ if (($FORCE_INSTALL)) || ! [ -d $HADOOP_HOME ]; then
   tar xf $HADOOP_TGZ
 
   # Fix ownership
-  chown root:root -R hadoop-2.5.2
+  chown root:root -R hadoop-$HADOOP_VERSION
   rm -rf $HADOOP_HOME
-  mv hadoop-2.5.2 $HADOOP_HOME
+  mv hadoop-$HADOOP_VERSION $HADOOP_HOME
 
   # Symlink all files to /usr/local/bin
   for BINARY in $HADOOP_HOME/bin/*; do
@@ -47,11 +47,11 @@ if (($FORCE_INSTALL)) || ! [ -d $HBASE_HOME ]; then
   tar xf $HBASE_TGZ
 
   # Fix ownership
-  chown root:root -R hbase-1.0.3
+  chown root:root -R hbase-$HBASE_VERSION
   
   # Install to the chosen location
   rm -rf $HBASE_HOME
-  mv hbase-1.0.3 $HBASE_HOME
+  mv hbase-$HBASE_VERSION $HBASE_HOME
 
     # Symlink all files to /usr/local/bin
   for BINARY in $HBASE_HOME/bin/*; do
