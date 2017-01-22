@@ -7,10 +7,12 @@ from pydbus import SystemBus
 class SystemdClient(object):
     def __init__(self, *args, **kwargs):
         super(SystemdClient, self).__init__()
-
+        self.bus = None
+        self.systemd = None
         self.systemd_subscribed = False
+        self.main_loop = None
 
-    def start_systemd(self, job_notification = None):
+    def start_systemd(self, job_notification=None):
         # Get systemd object from the system bus
         self.bus = SystemBus()
         self.systemd = self.bus.get(".systemd1")
@@ -48,6 +50,7 @@ class SystemdClient(object):
         if self.main_loop is not None:
             self.main_loop.quit()
 
+    # noinspection PyMethodMayBeStatic
     def stop_systemd(self):
         logging.info("disconnecting from systemd")
         # nothing to do in fact

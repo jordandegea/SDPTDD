@@ -3,13 +3,30 @@
 # Fail if any command fail
 set -e
 
-if ! [ -f /var/swap ]; then
-  touch /var/swap
-  chmod 0600 /var/swap
-  dd if=/dev/zero of=/var/swap bs=1024k count=2000
-  mkswap /var/swap
+# Load shared params
+source ./deploy_shared.sh
+
+# Swap parameters
+FILE_SIZE=2G
+SWAPFILE=/swap
+
+# Create the swap file on /
+if ! [ -f $SWAPFILE ] || (($FORCE_INSTALL)); then
+  if swapon | grep $SWAPFILE >/dev/null ; then
+    swapoff $SWAPFILE
+  fi
+  rm -rf $SWAPFILE
+
+  fallocate -l $FILE_SIZE $SWAPFILE
+  chmod 0600 $SWAPFILE
+  mkswap $SWAPFILE
 fi
 
-if ! swapon | grep /var/swap >/dev/null ; then
-  swapon /var/swap
+# Enable the swap file
+if ! swapon | grep $SWAPFILE >/dev/null ; then
+  swapon $SWAPFILE
 fi
+
+# Update /etc/fstab
+sed -i "s#.*${SWAPFILE}.*\n##" /etc/fstab
+printf "%s\tnone\tswap\tsw\t0\t0\n" "$SWAPFILE" >> /etc/fstab

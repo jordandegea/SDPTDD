@@ -1,8 +1,15 @@
 {
-	"folders":
-	[
-		{
-			"path": "."
-		}
-	]
+    "folders": [
+        {
+            "path": ".",
+            "file_exclude_patterns": [
+                "vagrant/resources",
+                ".idea"
+            ],
+            "folder_exclude_patterns": [
+                "vagrant/resources",
+                ".idea"
+            ]
+        }
+    ]
 }

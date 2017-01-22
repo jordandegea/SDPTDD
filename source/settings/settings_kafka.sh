@@ -69,6 +69,18 @@ if (($ENABLE_VAGRANT)); then
   MORE_ENV="Environment='KAFKA_HEAP_OPTS=-Xmx126M -Xms126M'"
 fi
 
+# Log4j
+echo "kafka.logs.dir=logs
+
+log4j.rootLogger=INFO, stdout
+
+log4j.appender.stdout=org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.layout=org.apache.log4j.PatternLayout
+log4j.appender.stdout.layout.ConversionPattern=[%d] %p %m (%c)%n
+" >$KAFKA_INSTALL_DIR/config/log4j.properties
+
+sed -i 's# > "$CONSOLE_OUTPUT_FILE"##' $KAFKA_INSTALL_DIR/bin/kafka-run-class.sh
+
 # Install the unit file
 echo "[Unit]
 Description=Apache Zookeeper

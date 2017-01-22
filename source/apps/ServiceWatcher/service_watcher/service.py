@@ -6,8 +6,9 @@ GLOBAL = 0
 SHARED = 1
 MULTI = 2
 
+
 class JobEventHandle(object):
-    def __init__(self, service, handler, parameter = None):
+    def __init__(self, service, handler, parameter=None):
         super(JobEventHandle, self).__init__()
         self.service = service
         self.handler = handler
@@ -18,6 +19,7 @@ class JobEventHandle(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.service.remove_job_event_handler(self.handler, self.parameter)
+
 
 class Service(object):
     def __init__(self, service_spec):
@@ -45,6 +47,15 @@ class Service(object):
                 self.type = MULTI
             else:
                 self.type = GLOBAL
+
+        # The enabled property
+        try:
+            self.enabled = bool(service_spec['enabled'])
+        except KeyError:
+            # Enabled by default
+            self.enabled = True
+        except ValueError:
+            raise ValueError("enabled must be a boolean for %s" % self.name)
 
         # Setup handlers
         if self.type != MULTI:
@@ -94,7 +105,7 @@ class Service(object):
 
         logging.info("discovered type %d service %s" % (self.type, self.name))
 
-    def get_unit(self, parameter = None):
+    def get_unit(self, parameter=None):
         if self.type == MULTI:
             if parameter is None:
                 raise ValueError("parameter must be provided for multi service %s" % self.name)
@@ -111,7 +122,8 @@ class Service(object):
 
     def default_job_event_handler_param(self, job_id, job_object_path, status, parameter):
         logging.debug("on_job_event %d %s %s %s, unit is currently %s" %
-                      (job_id, job_object_path, "%s@%s" % (self.name, parameter), status, self.get_unit(parameter).ActiveState))
+                      (job_id, job_object_path, "%s@%s" % (self.name, parameter), status,
+                       self.get_unit(parameter).ActiveState))
 
     def on_job_event(self, job_id, job_object_path, job_unit_fn_without_ext, status):
         if self.type == MULTI:
@@ -133,23 +145,25 @@ class Service(object):
                 # noinspection PyCallingNonCallable
                 handler(job_id, job_object_path, status)
 
-    def add_job_event_handler(self, handler, parameter = None):
+    def add_job_event_handler(self, handler, parameter=None):
         if self.type == MULTI:
             key = '' if parameter is None else parameter
 
-            if not key in self.job_event_handlers:
+            if key not in self.job_event_handlers:
                 self.job_event_handlers[key] = []
 
             self.job_event_handlers[key].append(handler)
         else:
+            # noinspection PyUnresolvedReferences
             self.job_event_handlers.append(handler)
 
-    def remove_job_event_handler(self, handler, parameter = None):
+    def remove_job_event_handler(self, handler, parameter=None):
         if self.type == MULTI:
             key = '' if parameter is None else parameter
             self.job_event_handlers[key].remove(handler)
         else:
+            # noinspection PyUnresolvedReferences
             self.job_event_handlers.remove(handler)
 
-    def handler(self, handler, parameter = None):
+    def handler(self, handler, parameter=None):
         return JobEventHandle(self, handler, parameter)

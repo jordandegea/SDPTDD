@@ -13,6 +13,7 @@ build_outputs:
       - source/apps/ServiceWatcher/**/*
     build_script: |
       #!/bin/bash
+      set -euo pipefail
       cd source/apps
       tar --exclude=.idea --exclude='*.pyc' -cJvf ../code/files/service_watcher.tar.xz ServiceWatcher
     groups: [ python, service_watcher ]
@@ -22,6 +23,7 @@ build_outputs:
       - source/apps/FlinkProcess/KafkaToConsole/pom.xml
     build_script: |
       #!/bin/bash
+      set -euo pipefail
       (cd source/apps/FlinkProcess/KafkaToConsole && mvn package)
       cp source/apps/FlinkProcess/KafkaToConsole/target/flink-kafka-to-console-0.1.jar source/code/files/KafkaConsoleBridge.jar
     groups: [ java, kafka_to_console, flink_process ]
@@ -31,6 +33,7 @@ build_outputs:
       - source/apps/FlinkProcess/KafkaToHBase/pom.xml
     build_script: |
       #!/bin/bash
+      set -euo pipefail
       (cd source/apps/FlinkProcess/KafkaToHBase && mvn package)
       cp source/apps/FlinkProcess/KafkaToHBase/target/flink-kafka-hbase-bridge-0.1.jar source/code/files/KafkaHbaseBridge.jar
     groups: [ java, kafka_to_hbase, flink_process ]
@@ -40,13 +43,15 @@ build_outputs:
       - source/apps/FlinkProducer/FakeTwitter/pom.xml
     build_script: |
       #!/bin/bash
+      set -euo pipefail
       (cd source/apps/FlinkProducer/FakeTwitter && mvn package)
       cp source/apps/FlinkProducer/FakeTwitter/target/flink-producer-fake-twitter-0.1.jar source/code/files/FakeTwitterProducer.jar
     groups: [ java, fake_twitter, flink_producer ]
   source/code/files/fake_tweet.json:
     dependencies:
       - source/apps/FlinkProducer/FakeTwitter/fake_tweet.json
-    build_script:
+    build_script: |
       #!/bin/bash
+      set -euo pipefail
       cp source/apps/FlinkProducer/FakeTwitter/fake_tweet.json source/code/files/fake_tweet.json
     groups: [ seed_data ]

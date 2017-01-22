@@ -2,17 +2,20 @@
 zookeeper:
   quorum: zookeeper_quorum_replace_me
   timings:
-    loop_tick: 0.5
-    failed_loop_tick: 1.0
-    partitioner_boundary: 1.0
-    partitioner_reaction: 0.2
+    loop_tick: 1.5
+    failed_loop_tick: 3.0
+    partitioner_boundary: 5.0
+    partitioner_reaction: 2.0
 services:
   # begin dummy services
   - name: dummy_global
+    enabled: false
     type: global
   - name: dummy_shared
+    enabled: false
     count: 2
   - name: dummy_multi
+    enabled: false
     instances:
       '1': 1
       '2': 2
@@ -22,10 +25,19 @@ services:
     type: global
   - name: kafka
     type: global
+  - name: flink
+    prestart: &jobscript |
+      #!/bin/bash
+      SRC=/usr/local/flink/conf/flink-conf.yaml.tpl
+      DEST=/usr/local/flink/conf/flink-conf.yaml
+      sed "s#jobmanager_replace_me#{instance:flink@jobmanager}#" $SRC > $DEST
+    instances:
+      jobmanager: 1
+      taskmanager: 1
   - name: hadoop
     force:
-      namenode: worker1
-    prestart: |
+      namenode: replace_me_first_host
+    prestart: &hostscript |
       #!/bin/bash
       SRC=/etc/hosts.tpl
       DEST=/etc/hosts
@@ -35,22 +47,27 @@ services:
       namenode: 1
       datanode: 3
   - name: hbase
-    prestart: |
-      #!/bin/bash
-      SRC=/etc/hosts.tpl
-      DEST=/etc/hosts
-      IP=$(getent hosts {instance:hadoop@namenode} | awk '{print $1}')
-      sed "s#nn_ip#${IP}#" $SRC > $DEST
+    prestart: *hostscript
     exclusive: true
     instances:
       master: 1
-      regionserver: 2
+      regionserver: 1
   - name: zeppelin
-    count: 2
+    prestart: *hostscript
+    count: 1
   - name: flink_city
+    prestart: *jobscript
+    instances:
+      paris: 1
+      nyc: 1
+      london: 1
+  - name: flink_city_console
+    prestart: *jobscript
+    enabled: false
     instances:
       paris: 1
       nyc: 1
       london: 1
   - name: flink_producer_fake
+    prestart: *jobscript
     count: 1

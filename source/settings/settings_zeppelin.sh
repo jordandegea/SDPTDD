@@ -25,6 +25,14 @@ fi
 
 chown zeppelin:zeppelin -R $ZEPPELIN_INSTALL_DIR
 
+echo "log4j.rootLogger = INFO, stdout
+log4j.appender.stdout = org.apache.log4j.ConsoleAppender
+log4j.appender.stdout.layout = org.apache.log4j.PatternLayout
+log4j.appender.stdout.layout.ConversionPattern=%5p [%d] ({%t} %F[%M]:%L) - %m%n
+" > $ZEPPELIN_INSTALL_DIR/conf/log4j.properties
+
+sed -i 's# >> "${ZEPPELIN_OUTFILE}"##' $ZEPPELIN_INSTALL_DIR/bin/zeppelin-daemon.sh
+
 # Create the zeppelin systemd service
 echo "[Unit]
 Description=Apache Zeppelin

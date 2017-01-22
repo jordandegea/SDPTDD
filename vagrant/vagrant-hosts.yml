@@ -7,7 +7,7 @@ defaults:
   # Default options for hosts
   hosts: &host_defaults
     user: vagrant     # Default non-privileged user
-    memory: 1700      # Default RAM amount (MB)
+    memory: 1536      # Default RAM amount (MB)
 # List of enabled services
 services:
   - zookeeper
@@ -20,6 +20,7 @@ deploy:
     zkquorum: '<%= hosts.map { |h| "#{h.name}:2181" }.join(",") %>'
     flinkbootstrap: '<%= hosts.map { |h| "#{h.name}:9092" }.join(",") %>'
     haproxyservers: '<%= hosts.map { |h| "-s #{h.name}" }.join(" ") %>'
+    firsthost: '<%= hosts.first.name %>'
   # Shared arguments to apply to all provision scripts
   shared_args: -v # Using '-v' to indicate Vagrant provisioning
   # List of provisioning steps.
@@ -30,6 +31,8 @@ deploy:
     - apt:
     - java:
     - python:
+    - swap:
+    - ulimit:
   software:
     - kafka:
     - flink:
@@ -38,7 +41,7 @@ deploy:
     - haproxy:
     - drbd:
   settings:
-    - service_watcher: -z $zkquorum
+    - service_watcher: -z $zkquorum -F $firsthost
     - kafka: $hostspec
     - flink: -q $quorum -F $flinkbootstrap
     - hbase: -q $quorum
@@ -81,6 +84,9 @@ run:
       - sudo -u hbase /usr/local/hadoop/bin/hdfs namenode -format -force -nonInteractive
       - systemctl stop drbd-primary
     mode: once
+  format_data: rm -rf /home/hbase/dfs/data/VERSION /home/hbase/dfs/data/current
+  fix_dpkg: dpkg --configure -a
+  up_drbd: /usr/local/bin/drbd_service.sh up
 # Hosts definitions
 hosts:
   worker1:

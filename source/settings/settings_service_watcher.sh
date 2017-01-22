@@ -10,10 +10,13 @@ source ./deploy_shared.sh
 source ./service_watcher_shared.sh
 
 # Read HBase and ZooKeeper quorum from args
-while getopts ":vfz:" opt; do
+while getopts ":vfz:F:" opt; do
     case "$opt" in
         z)
         ZOOKEEPER_QUORUM="$OPTARG"
+        ;;
+        F)
+        FIRST_HOST_SERVICE="$OPTARG"
         ;;
     esac
 done
@@ -27,9 +30,11 @@ fi
 echo "ServiceWatcher: configuring..." 2>&1
 
 if (($ENABLE_VAGRANT)); then
-  mv files/service_watcher_config_vagrant.yml $SERVICE_WATCHER_CONFIG
+  sed "s/replace_me_first_host/$FIRST_HOST_SERVICE/" \
+    files/service_watcher_config_vagrant.yml > $SERVICE_WATCHER_CONFIG
 else
-  mv files/service_watcher_config.yml $SERVICE_WATCHER_CONFIG
+  sed "s/replace_me_first_host/$FIRST_HOST_SERVICE/" \
+    files/service_watcher_config.yml > $SERVICE_WATCHER_CONFIG
 fi
 chown root:root $SERVICE_WATCHER_CONFIG
 
@@ -59,7 +64,7 @@ Type=simple
 User=root
 Group=root
 WorkingDirectory=$SERVICE_WATCHER_INSTALL_DIR
-ExecStart=/usr/bin/python $SERVICE_WATCHER_INSTALL_DIR/service_watcher.py monitor --config $SERVICE_WATCHER_CONFIG
+ExecStart=/usr/bin/python $SERVICE_WATCHER_INSTALL_DIR/service_watcher.py controller --config $SERVICE_WATCHER_CONFIG
 ExecReload=/bin/kill -HUP \$MAINPID
 Restart=on-failure
 SyslogIdentifier=service_watcher
@@ -84,11 +89,7 @@ elif [[ \$1 == 'global' ]]; then
 fi
 
 EXIT_CODE=\$?
-if [[ \$EXIT_CODE -eq 143 ]]; then
-  exit 0
-else
-  exit \$EXIT_CODE
-fi
+exit \$EXIT_CODE
 "> $WRAPPER
   chmod +x $WRAPPER
 

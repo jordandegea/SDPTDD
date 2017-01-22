@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Fail if any command fail
-set -ex
+set -e
 
 # Load the shared provisioning script
 source ./deploy_shared.sh
@@ -116,8 +116,8 @@ fi
 
 echo "[Unit]
 Description=DRBD Primary service $DEVICE_DEV
-Requires=network.target
-After=network.target
+Requires=network.target drbd-base.service
+After=network.target drbd-base.service
 
 [Service]
 User=root
@@ -131,4 +131,21 @@ SyslogIdentifier=drbd-primary
 WantedBy=multi-user.target
 " > /etc/systemd/system/drbd-primary.service
 
+echo "[Unit]
+Description=DRBD Base service $DEVICE_DEV
+Requires=network.target
+After=network.target
+
+[Service]
+User=root
+Group=root
+Type=oneshot
+ExecStart=/usr/local/bin/drbd_service.sh up
+SyslogIdentifier=drbd-base
+
+[Install]
+WantedBy=multi-user.target
+" > /etc/systemd/system/drbd-base.service
+
 systemctl daemon-reload
+systemctl enable drbd-base.service

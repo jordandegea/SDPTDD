@@ -88,22 +88,22 @@ under the License.
 		<dependency>
 			<groupId>org.apache.hbase</groupId>
 			<artifactId>hbase-common</artifactId>
-			<version>1.2.3</version>
+			<version>1.0.3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.hbase</groupId>
 			<artifactId>hbase-client</artifactId>
-			<version>1.2.3</version>
+			<version>1.0.3</version>
 		</dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-kafka-0.8_2.10</artifactId>
-            <version>1.1.2</version>
+            <version>1.1.3</version>
         </dependency>
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
 			<artifactId>kafka-clients</artifactId>
-			<version>0.10.1.0</version>
+			<version>0.8.2.2</version>
 		</dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -325,34 +325,4 @@ under the License.
 		-->
 
 	</build>
-	<profiles>
-		<profile>
-			<!-- A profile that does everyting correctly:
-			We set the Flink dependencies to provided -->
-			<id>build-jar</id>
-			<activation>
-				<activeByDefault>false</activeByDefault>
-			</activation>
-			<dependencies>
-				<dependency>
-					<groupId>org.apache.flink</groupId>
-					<artifactId>flink-java</artifactId>
-					<version>0.9.1</version>
-					<scope>provided</scope>
-				</dependency>
-				<dependency>
-					<groupId>org.apache.flink</groupId>
-					<artifactId>flink-streaming-core</artifactId>
-					<version>0.9.1</version>
-					<scope>provided</scope>
-				</dependency>
-				<dependency>
-					<groupId>org.apache.flink</groupId>
-					<artifactId>flink-clients</artifactId>
-					<version>0.9.1</version>
-					<scope>provided</scope>
-				</dependency>
-			</dependencies>
-		</profile>
-	</profiles>
 </project>

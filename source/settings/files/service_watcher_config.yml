@@ -2,21 +2,28 @@
 zookeeper:
   quorum: zookeeper_quorum_replace_me
   timings:
-    loop_tick: 0.5
-    failed_loop_tick: 1.0
-    partitioner_boundary: 1.0
-    partitioner_reaction: 0.2
+    loop_tick: 1.5
+    failed_loop_tick: 3.0
+    partitioner_boundary: 5.0
+    partitioner_reaction: 2.0
 services:
   - name: haproxy
     type: global
   - name: kafka
     type: global
   - name: flink
-    type: global
+    prestart: |
+      #!/bin/bash
+      SRC=/usr/local/flink/conf/flink-conf.yaml.tpl
+      DEST=/usr/local/flink/conf/flink-conf.yaml
+      sed "s#jobmanager_replace_me#{instance:flink@jobmanager}#" $SRC > $DEST
+    instances:
+      jobmanager: 1
+      taskmanager: 3
   - name: hadoop
     force:
-      namenode: s1
-    prestart: |
+      namenode: replace_me_first_host
+    prestart: &hostscript |
       #!/bin/bash
       SRC=/etc/hosts.tpl
       DEST=/etc/hosts
@@ -26,12 +33,7 @@ services:
       namenode: 1
       datanode: 3
   - name: hbase
-    prestart: |
-      #!/bin/bash
-      SRC=/etc/hosts.tpl
-      DEST=/etc/hosts
-      IP=$(getent hosts {instance:hadoop@namenode} | awk '{print $1}')
-      sed "s#nn_ip#${IP}#" $SRC > $DEST
+    prestart: *hostscript
     exclusive: true
     instances:
       master: 1
@@ -39,6 +41,12 @@ services:
   - name: zeppelin
     count: 2
   - name: flink_city
+    enabled: false
+    instances:
+      paris: 1
+      nyc: 1
+      london: 1
+  - name: flink_city_console
     instances:
       paris: 1
       nyc: 1

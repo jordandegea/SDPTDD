@@ -7,12 +7,14 @@ set -e
 source ./deploy_shared.sh
 
 ZEPPELIN_SERVER_DECLS=""
-ZEPPELIN_ID=1
+FLINK_JOBMANAGER_DECLS=""
+SERVER_ID=1
 while getopts ":vfs:" opt; do
   case "$opt" in
     s)
-      ZEPPELIN_SERVER_DECLS=$(printf "%s\n    server zeppelin%d %s:8080 check" "$ZEPPELIN_SERVER_DECLS" "$ZEPPELIN_ID" "$OPTARG")
-      ZEPPELIN_ID=$((ZEPPELIN_ID+1))
+      ZEPPELIN_SERVER_DECLS=$(printf "%s\n    server zeppelin%d %s:8080 check" "$ZEPPELIN_SERVER_DECLS" "$SERVER_ID" "$OPTARG")
+      FLINK_JOBMANAGER_DECLS=$(printf "%s\n    server flink%d %s:8081 check" "$FLINK_JOBMANAGER_DECLS" "$SERVER_ID" "$OPTARG")
+      SERVER_ID=$((SERVER_ID+1))
       ;;
   esac
 done
@@ -70,4 +72,18 @@ listen zeppelin
     stick-table type ip size 1m expire 1h
     stick on src
 $ZEPPELIN_SERVER_DECLS
+
+listen flink
+    bind *:81
+    mode http
+    stats enable
+    stats uri /haproxy?stats
+    balance roundrobin
+    option httpclose
+    option forwardfor
+    option http-server-close
+    option forceclose
+    stick-table type ip size 1m expire 1h
+    stick on src
+$FLINK_JOBMANAGER_DECLS
 " > /etc/haproxy/haproxy.cfg
