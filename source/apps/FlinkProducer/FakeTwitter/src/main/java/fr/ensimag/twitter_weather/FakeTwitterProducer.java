@@ -24,7 +24,6 @@ public class FakeTwitterProducer {
         props.put("buffer.memory", 33554432);
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        props.put("fakeTweetPath", "/usr/local/flink/fake_tweet.json");
 
         /* Configure the environnement with
          * - create a checkpoint every 5 seconds

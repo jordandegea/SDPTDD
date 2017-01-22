@@ -22,7 +22,7 @@ public class FakeTwitterSource implements SourceFunction<StringPair> {
         this.lastCheck = System.currentTimeMillis() / 1000.0;
 
         /* read the fake tweet */
-        File file = new File(props.getProperty("fakeTweetPath"));
+        File file = new File("/usr/local/flink/fake_tweet.json");
         FileInputStream fis = new FileInputStream(file);
         byte[] data = new byte[(int) file.length()];
         fis.read(data);

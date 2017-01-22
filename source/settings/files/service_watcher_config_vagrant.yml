@@ -26,7 +26,7 @@ services:
   - name: kafka
     type: global
   - name: flink
-    prestart: |
+    prestart: &jobscript |
       #!/bin/bash
       SRC=/usr/local/flink/conf/flink-conf.yaml.tpl
       DEST=/usr/local/flink/conf/flink-conf.yaml
@@ -53,17 +53,21 @@ services:
       master: 1
       regionserver: 1
   - name: zeppelin
+    prestart: *hostscript
     count: 1
   - name: flink_city
+    prestart: *jobscript
     instances:
       paris: 1
       nyc: 1
       london: 1
   - name: flink_city_console
+    prestart: *jobscript
     enabled: false
     instances:
       paris: 1
       nyc: 1
       london: 1
   - name: flink_producer_fake
+    prestart: *jobscript
     count: 1

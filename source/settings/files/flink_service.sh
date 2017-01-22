@@ -23,13 +23,6 @@ _service_id () {
   _service_status_line | awk '{print $4}'
 }
 
-_start_service () {
-  if ! /usr/local/flink/bin/flink run -d "$@" ; then
-    echo "Failed to schedule the service, flink run returned $?" >&2
-    exit 3
-  fi
-}
-
 _stop_service () {
   /usr/local/flink/bin/flink cancel $(_service_id)
 }
@@ -76,7 +69,10 @@ while [ -z "$EXIT_LOOP" ]; do
     wait
   else
     # We need to schedule the service
-    _start_service
+    if ! /usr/local/flink/bin/flink run -d "$@" ; then
+      echo "Failed to schedule the service, flink run returned $?" >&2
+      exit 3
+    fi
   fi
 done
 

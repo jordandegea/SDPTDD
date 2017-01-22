@@ -10,6 +10,7 @@ import java.util.Properties;
 
 public class KafkaOutputFormat implements OutputFormat<StringPair> {
     private Properties props;
+    private KafkaProducer<String, String> producer;
 
     public KafkaOutputFormat(Properties props) {
         this.props = props;
@@ -21,11 +22,11 @@ public class KafkaOutputFormat implements OutputFormat<StringPair> {
 
     @Override
     public void open(int taskNumber, int numTasks) throws IOException {
+        producer = new KafkaProducer<String, String>(this.props);
     }
 
     @Override
     public void writeRecord(StringPair record) throws IOException {
-        KafkaProducer<String, String> producer = new KafkaProducer<String, String>(this.props);
         producer.send(new ProducerRecord<String, String>(
             record.s1,
             record.s2
@@ -34,5 +35,6 @@ public class KafkaOutputFormat implements OutputFormat<StringPair> {
 
     @Override
     public void close() throws IOException {
+        producer.close();
     }
 }
