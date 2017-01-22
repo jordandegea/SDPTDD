@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Fail if any command fail
-set -ex
+set -e
 
 # Load the shared provisioning script
 source ./deploy_shared.sh
