@@ -37,6 +37,7 @@ services:
       master: 1
       regionserver: 2
   - name: zeppelin
+    prestart: *hostscript
     count: 2
   - name: flink_city
     prestart: *jobscript
