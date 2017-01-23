@@ -64,6 +64,11 @@ done
 # Main service loop
 while [ -z "$EXIT_LOOP" ]; do
   if _service_scheduled ; then
+    # Check there are not too many replicas of the service running
+    while [ "$(_service_status_line | wc -l)" \> 1 ]; do
+      /usr/local/flink/bin/flink cancel $(_service_id | head -n 1)
+    done
+
     # The service has been scheduled, just wait
     sleep 5
   else
