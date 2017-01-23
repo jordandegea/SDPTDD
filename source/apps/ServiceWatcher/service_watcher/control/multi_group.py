@@ -262,7 +262,37 @@ class MultiControlRoot(ControlUnit):
             for key in allocated_status[member_name]:
                 # member_name is the current member that has "key" (x@param) allocated
                 if key in partition_lut:
-                    part_allocate(member_name, partition_lut[key])
+                    # Extract service properties
+                    part = partition_lut[key]
+                    service, param, count = part
+                    key = "%s@%s" % (service.name, param)
+                    allocate_clear = True
+
+                    # Check if keeping currently allocated services will not block exclusive one-instance services
+                    # from starting
+                    if service.exclusive:
+                        if org_counts[key] > 1:
+                            allocate_clear = False
+                            # Check if any other service for this service will be blocked
+                            for other_service, other_param, other_count in sorted_partitions:
+                                if other_service == service and other_count == 1:
+                                    # This is a one-instance param service for the same service
+                                    found = False
+                                    other_key = "%s@%s" % (other_service.name, other_param)
+                                    for m in allocated_status:
+                                        if other_key in allocated_status[m]:
+                                            # Other service instance is allocated in existing partition, ok
+                                            found = True
+                                            break
+                                    # break as soon as we have a candidate
+                                    if found:
+                                        allocate_clear = True
+                                        break
+                                if allocate_clear:
+                                    break
+
+                    if allocate_clear:
+                        part_allocate(member_name, part)
 
         # On the first pass, allocate only services with one required replica (probably master)
         for i in range(len(sorted_partitions)):
