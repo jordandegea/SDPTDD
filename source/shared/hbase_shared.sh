@@ -1,7 +1,7 @@
 # HBase parameters
 JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
-HADOOP_VERSION=2.5.2
+HADOOP_VERSION=2.6.5
 HADOOP_TGZ="hadoop-${HADOOP_VERSION}.tar.gz"
 HADOOP_URL="http://apache.mindstudios.com/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz"
 HADOOP_HOME="/usr/local/hadoop"

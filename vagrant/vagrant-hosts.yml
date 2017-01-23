@@ -28,6 +28,7 @@ deploy:
     - hosts: $hostspec
     - ssh: $hostspec
   system:
+    - sysctl:
     - apt:
     - java:
     - python:
@@ -40,6 +41,7 @@ deploy:
     - zeppelin:
     - haproxy:
     - drbd:
+    - spark:
   settings:
     - service_watcher: -z $zkquorum -F $firsthost
     - kafka: $hostspec
