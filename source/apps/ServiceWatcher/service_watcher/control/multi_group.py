@@ -81,7 +81,7 @@ class MultiControlRoot(ControlUnit):
         failed_services = [service.name for service in services if service.is_failed()]
 
         # List of service we have been allocated last
-        allocated_services = []
+        allocated_services = [service.name for service in services if service.is_running()]
 
         # Build the allocation partitions
         partitioner_seed = []

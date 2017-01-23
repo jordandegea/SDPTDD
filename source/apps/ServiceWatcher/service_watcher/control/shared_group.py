@@ -62,7 +62,7 @@ class SharedControlUnit(ControlUnit):
         sl = self.sl
 
         # Current status
-        enabled = False
+        enabled = sl.is_running()
 
         with self.control_group.service.handler(self.job_event_handler):
             # Loop forever

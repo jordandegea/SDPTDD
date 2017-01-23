@@ -42,6 +42,9 @@ class ServiceLogic(object):
     def is_failed(self):
         return (self.last_state or self.try_get_state()) == "failed"
 
+    def is_running(self):
+        return (self.last_state or self.try_get_state()) in ["active", "activating"]
+
     def try_get_state(self):
         state = None
         try:
