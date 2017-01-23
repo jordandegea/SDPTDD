@@ -6,21 +6,19 @@ namespace :deploy do
                       extra_quiet: true)
 
   declare_deploy_task(:system, "Installs system software and packages",
-                      bootstrap: true,
+                      dependencies: %w(deploy:bootstrap),
                       quiet: true)
 
   declare_deploy_task(:software, "Installs core software",
-                      dependencies: %w(deploy:bootstrap),
-                      weak_dependencies: %w(deploy:system))
+                      weak_dependencies: %w(deploy:bootstrap deploy:system))
 
   declare_deploy_task(:settings, "Configures core software",
-                      dependencies: %w(deploy:bootstrap),
-                      weak_dependencies: %w(deploy:system deploy:software))
+                      weak_dependencies: %w(deploy:bootstrap deploy:system deploy:software))
 
   # Note the dependency on the build task here
   declare_deploy_task(:code, "Installs application code",
-                      dependencies: %w(deploy:bootstrap build),
-                      weak_dependencies: %w(deploy:system deploy:software deploy:settings))
+                      dependencies: %w(build),
+                      weak_dependencies: %w(deploy:bootstrap deploy:system deploy:software deploy:settings))
 
   declare_deploy_task(:configure, "Configures every server",
                       weak_dependencies: %w(deploy:bootstrap services:start))
