@@ -86,8 +86,11 @@ class ServiceLogic(object):
                     # check if there is an update to input parameters
                     if self.service.prestart is not None and \
                         self.service.prestart.is_dirty(self.control_root.instance_resolver_root):
-                        logging.info("%s: prestart script state is not up-to-date, restarting service" % self.name)
-                        self.stop_service()
+                        if self.service.prestart.will_delay(self.control_root.instance_resolver_root):
+                            logging.info("%s: prestart script state is not up-to-date, but will delay" % self.name)
+                        else:
+                            logging.info("%s: prestart script state is not up-to-date, restarting service" % self.name)
+                            self.stop_service()
                 pass
             # ignoring state "reloading", transient
             elif state == "inactive":
