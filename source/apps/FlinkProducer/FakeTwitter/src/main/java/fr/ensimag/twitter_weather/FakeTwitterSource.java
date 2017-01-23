@@ -1,6 +1,8 @@
 package fr.ensimag.twitter_weather;
 
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
+import org.apache.sling.commons.json.JSONException;
+import org.apache.sling.commons.json.JSONObject;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,7 +19,7 @@ public class FakeTwitterSource implements SourceFunction<StringPair> {
 
     private final String[] topics = new String[] {"paris", "london", "nyc"};
 
-    public FakeTwitterSource(Properties props, int rate) throws IOException {
+    public FakeTwitterSource(Properties props, int rate) throws IOException, JSONException {
         this.rate = rate;
         this.lastCheck = System.currentTimeMillis() / 1000.0;
 
@@ -27,8 +29,8 @@ public class FakeTwitterSource implements SourceFunction<StringPair> {
         byte[] data = new byte[(int) file.length()];
         fis.read(data);
         fis.close();
-        this.fakeTweet = new String(data, "UTF-8");
-        this.fakeTweet.replace('\n', ' ');
+        /* format it as a single line */
+        this.fakeTweet = new JSONObject(new String(data, "UTF-8")).toString();
     }
 
     @Override

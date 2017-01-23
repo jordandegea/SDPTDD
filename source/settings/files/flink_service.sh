@@ -70,8 +70,10 @@ while [ -z "$EXIT_LOOP" ]; do
   else
     # We need to schedule the service
     if ! /usr/local/flink/bin/flink run -d "$@" ; then
-      echo "Failed to schedule the service, flink run returned $?" >&2
-      exit 3
+      echo "Failed to schedule the service" >&2
+      if [ -z "$EXIT_LOOP" ]; then
+        exit 3
+      fi
     fi
   fi
 done

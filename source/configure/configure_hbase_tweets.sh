@@ -3,10 +3,14 @@
 
 source ./hbase_shared.sh
 
+SCRIPT=""
+
 while getopts ":vft:" arg; do
     case $arg in
         t)
-        echo "create '${OPTARG}_tweets', 'place', 'feeling', 'datas'" | $HBASE_HOME/bin/hbase shell
+        SCRIPT=$(printf "%screate '%s_tweets', 'place', 'feeling', 'data'; " "$SCRIPT" "$OPTARG")
         ;;
     esac
 done
+
+$HBASE_HOME/bin/hbase shell <<< "$SCRIPT"

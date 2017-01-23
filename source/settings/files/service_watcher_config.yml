@@ -12,7 +12,7 @@ services:
   - name: kafka
     type: global
   - name: flink
-    prestart: |
+    prestart: &jobscript |
       #!/bin/bash
       SRC=/usr/local/flink/conf/flink-conf.yaml.tpl
       DEST=/usr/local/flink/conf/flink-conf.yaml
@@ -21,8 +21,6 @@ services:
       jobmanager: 1
       taskmanager: 3
   - name: hadoop
-    force:
-      namenode: replace_me_first_host
     prestart: &hostscript |
       #!/bin/bash
       SRC=/etc/hosts.tpl
@@ -39,17 +37,21 @@ services:
       master: 1
       regionserver: 2
   - name: zeppelin
+    prestart: *hostscript
     count: 2
   - name: flink_city
-    enabled: false
+    prestart: *jobscript
     instances:
       paris: 1
       nyc: 1
       london: 1
   - name: flink_city_console
+    prestart: *jobscript
+    enabled: false
     instances:
       paris: 1
       nyc: 1
       london: 1
   - name: flink_producer_fake
+    prestart: *jobscript
     count: 1

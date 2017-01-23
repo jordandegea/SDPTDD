@@ -7,12 +7,14 @@ Scenario Outline: Starting a service using rake
     And the "<service>" service should be running
 
     Examples:
-        | service   |
-        | zookeeper |
-        | kafka     |
-        # | flink     | TODO: Add when ready
-        # | hbase     | TODO: Add when ready
-        | zeppelin  |
+        | service             |
+        | zookeeper           |
+        | haproxy             |
+        | kafka               |
+        | flink@taskmanager   |
+        | hadoop@datanode     |
+        | hbase@regionserver  |
+        | zeppelin            |
 
 Scenario: Starting a service on one host
     Given the "zookeeper" service is not running
