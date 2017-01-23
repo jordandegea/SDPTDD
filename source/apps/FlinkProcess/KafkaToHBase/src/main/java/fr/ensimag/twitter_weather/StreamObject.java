@@ -27,11 +27,16 @@ public class StreamObject {
     public void put(Table table) throws IOException {
         Put put = new Put(Bytes.toBytes(UUID.randomUUID().toString()));
 
+        // Report critical parsing errors
         if (parsingException != null) {
             putString(put, "feeling", "error", parsingException.getMessage());
             table.put(put);
             return;
         }
+
+        // Early cancel if no text
+        if (!rawTweet.has("text"))
+            return;
 
         parseDate(rawTweet);
 
