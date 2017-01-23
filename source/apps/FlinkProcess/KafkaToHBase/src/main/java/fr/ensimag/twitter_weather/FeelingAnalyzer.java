@@ -19,11 +19,11 @@ import java.util.Map;
 public class FeelingAnalyzer {
     private static final String[] languages = new String[]{"en", "fr"};
     private static FeelingAnalyzer instance;
-    private Map<String, Map<String, String[]>> feelingMap;
+    private Map<String, Map<Integer, String[]>> feelingMap;
     private Map<String, Map<String, Integer>> wordValueMap;
 
     private FeelingAnalyzer() throws ParserConfigurationException, IOException, SAXException {
-        feelingMap = new HashMap<String, Map<String, String[]>>();
+        feelingMap = new HashMap<String, Map<Integer, String[]>>();
         wordValueMap = new HashMap<String, Map<String, Integer>>();
 
         DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
@@ -33,9 +33,9 @@ public class FeelingAnalyzer {
             // Parse the annotations
             Document doc = builder.parse(getClass().getResourceAsStream(String.format("/annotations/%s.xml", language)));
 
-            Map<String, String[]> langDict = feelingMap.get(language);
+            Map<Integer, String[]> langDict = feelingMap.get(language);
             if (langDict == null) {
-                langDict = new HashMap<String, String[]>();
+                langDict = new HashMap<Integer, String[]>();
                 feelingMap.put(language, langDict);
             }
 
@@ -45,7 +45,7 @@ public class FeelingAnalyzer {
                 if (item.getNodeName().equals("annotation")) {
                     NamedNodeMap attributes = item.getAttributes();
                     if (attributes.getNamedItem("tts") == null) {
-                        langDict.put(attributes.getNamedItem("cp").getNodeValue(),
+                        langDict.put(attributes.getNamedItem("cp").getNodeValue().codePointAt(0),
                             item.getTextContent().split(" \\| "));
                     }
                 }
@@ -92,7 +92,7 @@ public class FeelingAnalyzer {
         StringBuilder sb = new StringBuilder();
 
         // Get the default language dict and value map
-        Map<String, String[]> langDict = feelingMap.get(language);
+        Map<Integer, String[]> langDict = feelingMap.get(language);
         Map<String, Integer> valueMap = wordValueMap.get(language);
         if (langDict == null)
             langDict = feelingMap.get(languages[0]);
@@ -100,23 +100,23 @@ public class FeelingAnalyzer {
             valueMap = wordValueMap.get(languages[0]);
 
         int emojiCount = 0, totalCharCount = 0;
-        Map<String, Integer> seenEmoji = new HashMap<String, Integer>();
+        Map<Integer, Integer> seenEmoji = new HashMap<Integer, Integer>();
 
         boolean lastCharWasSeparator = true;
-        for (int i = 0; i < language.length(); ++i) {
-            char c = language.charAt(i);
-            String key = String.valueOf(c);
-            String[] value = langDict.get(key);
+        int codePointCount = tweetText.codePointCount(0, tweetText.length());
+        for (int i = 0; i < codePointCount; ++i) {
+            int cp = language.codePointAt(i);
+            String[] value = langDict.get(cp);
 
             if (value == null) {
-                if (!Character.isLetterOrDigit(c)) {
+                if (!Character.isLetterOrDigit(cp)) {
                     if (!lastCharWasSeparator) {
                         sb.append(' ');
                         lastCharWasSeparator = true;
                     }
                 } else {
                     // not an emoji
-                    sb.append(Character.toLowerCase(c));
+                    sb.appendCodePoint(Character.toLowerCase(cp));
                     totalCharCount++;
                     lastCharWasSeparator = false;
                 }
@@ -126,10 +126,10 @@ public class FeelingAnalyzer {
                     sb.append(' ');
                 }
 
-                if (!seenEmoji.containsKey(key))
-                    seenEmoji.put(key, 1);
+                if (!seenEmoji.containsKey(cp))
+                    seenEmoji.put(cp, 1);
                 else
-                    seenEmoji.put(key, seenEmoji.get(key) + 1);
+                    seenEmoji.put(cp, seenEmoji.get(cp) + 1);
 
                 emojiCount++;
                 totalCharCount++;
@@ -165,15 +165,19 @@ public class FeelingAnalyzer {
 
         ret.put("unique_emoji_count", Integer.toString(seenEmoji.size()));
 
-        String keyMax = "";
+        Integer keyMax = 0;
         Integer valueMax = 0;
-        for (Map.Entry<String, Integer> kv : seenEmoji.entrySet()) {
+        for (Map.Entry<Integer, Integer> kv : seenEmoji.entrySet()) {
             if (kv.getValue() > valueMax) {
                 keyMax = kv.getKey();
                 valueMax = kv.getValue();
             }
         }
-        ret.put("most_used_emoji", keyMax);
+        if (keyMax != 0) {
+            ret.put("most_used_emoji", new String(Character.toChars(keyMax)));
+        } else {
+            ret.put("most_used_emoji", "");
+        }
         ret.put("most_used_emoji_count", Integer.toString(valueMax));
 
         // Decoded text
