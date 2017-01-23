@@ -17,6 +17,11 @@ if (($FORCE_INSTALL)) || ! [ -d "$SPARK_INSTALL_DIR" ]; then
   echo "Spark: installing..."
 
   tar xf ${SPARK_FILENAME}.tgz
+
+  if ! id -u zeppelin >/dev/null 2>&1; then
+    useradd -m -s /bin/bash zeppelin
+    sudo passwd -d zeppelin
+  fi
   chown zeppelin:zeppelin -R $SPARK_FILENAME
 
   rm -rf $SPARK_INSTALL_DIR

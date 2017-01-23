@@ -32,17 +32,6 @@ if (($FORCE_INSTALL)) || ! [ -d $ZEPPELIN_INSTALL_DIR ]; then
   rm -rf $ZEPPELIN_INSTALL_DIR
   mv $ZEPPELIN_NAME-bin-all $ZEPPELIN_INSTALL_DIR
 
-  echo "export HBASE_HOME=/usr/local/hbase
-export SPARK_HOME=/usr/local/spark
-export HADOOP_CONF_DIR=/usr/local/hadoop/etc/hadoop
-export PYTHONPATH=\$SPARK_HOME/python:\$SPARK_HOME/python/build:\$PYTHONPATH
-export PYTHONPATH=\$SPARK_HOME/python/lib/py4j-0.8.2.1-src.zip:\$PYTHONPATH
-export HBASE_RUBY_SOURCES=\$HBASE_HOME/lib/ruby/
-export ZEPPELIN_LOG_DIR=$ZEPPELIN_LOG_DIR
-export ZEPPELIN_PID_DIR=$ZEPPELIN_PID_DIR
-export ZEPPELIN_WEBSOCKET_MAX_TEXT_MESSAGE_SIZE=104857600
-" >> zeppelin/conf/zeppelin-env.sh
-
   echo "Zeppelin: successfully installed!" 1>&2
 else
   echo "Zeppelin: already installed." 1>&2
