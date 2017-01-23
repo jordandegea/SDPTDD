@@ -65,8 +65,7 @@ done
 while [ -z "$EXIT_LOOP" ]; do
   if _service_scheduled ; then
     # The service has been scheduled, just wait
-    sleep 5 &
-    wait
+    sleep 5
   else
     # We need to schedule the service
     if ! /usr/local/flink/bin/flink run -d "$@" ; then
