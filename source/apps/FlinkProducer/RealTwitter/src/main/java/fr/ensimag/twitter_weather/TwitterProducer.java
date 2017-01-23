@@ -62,8 +62,8 @@ public class TwitterProducer {
         env.enableCheckpointing(5000);
 
         /* Connecte Twitter en entrée */
-        DataStreamSource<String> streamTwitter = env.addSource(TwitterProducer.getSource());
-        DataStream<StringPair> streamSource = streamTwitter.flatMap(new getTopicFlatMap());
+        //DataStreamSource<String> streamTwitter = env.addSource(TwitterProducer.getSource());
+        DataStream<StringPair> streamSource = env.addSource(TwitterProducer.getSource()).flatMap(new getTopicFlatMap());
 //        streamSource.name("twitter_source");
 
         /* Passe chaque ligne dans la class KafkaOutputFormat */
@@ -80,8 +80,8 @@ public class TwitterProducer {
         p.setProperty(TwitterSource.TOKEN_SECRET, "Wmcf2Qfil0LkSYDJJ97c0sUbIoBpWtn7F03Kf6ac3amUk");
 
         TwitterSource source = new TwitterSource(p);
-        TwitterSource.EndpointInitializer endFilt = new FilterImplements();
-        source.setCustomEndpointInitializer(endFilt);
+        // TwitterSource.EndpointInitializer endFilt = new FilterImplements();
+        // source.setCustomEndpointInitializer(endFilt);
         return source;
     }
 }
