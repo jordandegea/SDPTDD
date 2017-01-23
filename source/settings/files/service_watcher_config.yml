@@ -42,13 +42,13 @@ services:
       paris: 1
       nyc: 1
       london: 1
-  - name: flink_city_console
-    prestart: *jobscript
-    enabled: false
-    instances:
-      paris: 1
-      nyc: 1
-      london: 1
+  # - name: flink_city_console
+  #   prestart: *jobscript
+  #   enabled: false
+  #   instances:
+  #     paris: 1
+  #     nyc: 1
+  #     london: 1
   - name: flink_producer_fake
     prestart: *jobscript
     count: 1
