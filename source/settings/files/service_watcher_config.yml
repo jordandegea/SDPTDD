@@ -54,6 +54,7 @@ services:
   #     london: 1
   - name: flink_producer_fake
     prestart: *jobscript
+    enabled: false
     count: 1
   - name: flink_producer
     prestart: *jobscript
