@@ -18,6 +18,7 @@ build_outputs:
       tar --exclude=.idea --exclude='*.pyc' -cJvf ../code/files/service_watcher.tar.xz ServiceWatcher
     groups: [ python, service_watcher ]
   source/code/files/KafkaConsoleBridge.jar:
+    enabled: false
     dependencies:
       - source/apps/FlinkProcess/KafkaToConsole/src/**/*
       - source/apps/FlinkProcess/KafkaToConsole/pom.xml
