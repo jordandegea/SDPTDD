@@ -20,7 +20,7 @@ Pour découper l'enregistrement des tweets, on enregistre chaque tweet dans le l
 ## Structure des tables
 
 Table **<Place>_Tweet**
-- ***RowIdentifier*** - *timestamp_UniqID* : concatenation timestamp et un identifiant pseudo unique. 
-- **place** : le lieu
-- **data** : Le contenu de tout le tweet
-- **feeling** : l'estimation de l'humeur de la personne
+- ***RowIdentifier*** - *timestamp_UniqID* : identifiant unique.
+- **user** : propriétés de l'utilisateur auteur du tweet
+- **tweet** : propriétés du tweet
+- **feeling** : estimation de l'humeur du tweet
