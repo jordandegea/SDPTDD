@@ -83,7 +83,7 @@ bundle
 # Utilisation de l'environnement de développement
 export RAKE_ENV=development
 # Ne pas oublier de démarrer les machines virtuelles pour l'environnement de développement
-(cd vagrant && vagrant up)
+rake vagrant:up
 
 # Utilisation de l'environnement de production
 export RAKE_ENV=production
@@ -99,14 +99,14 @@ rake -T
 ## Deploiement
 
 ```bash
-# Connexion SSH
-rake ssh server-1
-
 # Déploiement et provisioning
 rake deploy
 
 # Uniquement sur deux serveurs (définis dans hosts.yml)
 rake deploy[server-2;server-3]
+
+# Connexion SSH
+rake ssh server-1
 ```
 
 ## Services
