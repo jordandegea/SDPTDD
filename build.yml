@@ -55,3 +55,13 @@ build_outputs:
       set -euo pipefail
       cp source/apps/FlinkProducer/FakeTwitter/fake_tweet.json source/code/files/fake_tweet.json
     groups: [ seed_data ]
+  source/code/files/TwitterProducer.jar:
+    dependencies:
+      - source/apps/FlinkProducer/RealTwitter/src/**/*
+      - source/apps/FlinkProducer/RealTwitter/pom.xml
+    build_script: |
+      #!/bin/bash
+      set -euo pipefail
+      (cd source/apps/FlinkProducer/RealTwitter && mvn package)
+      cp source/apps/FlinkProducer/RealTwitter/target/flink-producer-twitter-0.1.jar source/code/files/TwitterProducer.jar
+    groups: [ java, twitter_producer, flink_producer ]
