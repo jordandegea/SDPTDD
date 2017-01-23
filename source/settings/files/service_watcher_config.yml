@@ -21,12 +21,9 @@ services:
       jobmanager: 1
       taskmanager: 3
   - name: hadoop
+    force:
+      namenode: s7
     prestart: &hostscript |
-      #!/bin/bash
-      SRC=/etc/hosts.tpl
-      DEST=/etc/hosts
-      IP=$(getent hosts {instance:hadoop@namenode} | awk '{print $1}')
-      sed "s#nn_ip#${IP}#" $SRC > $DEST
     instances:
       namenode: 1
       datanode: 3
@@ -54,4 +51,8 @@ services:
   #     london: 1
   - name: flink_producer_fake
     prestart: *jobscript
+    count: 1
+  - name: flink_producer
+    prestart: *jobscript
+    enabled: false
     count: 1

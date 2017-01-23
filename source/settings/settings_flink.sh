@@ -174,4 +174,21 @@ SyslogIdentifier=flink_producer_fake
 [Install]
 WantedBy=multi-user.target" >/etc/systemd/system/flink_producer_fake.service
 
+echo "Flink: installing Flink Twitter producer systemd unit..." 1>&2
+
+echo "[Unit]
+Description=Flink Twitter producer
+Requires=network.target
+After=network.target
+
+[Service]
+User=flink
+Group=flink
+WorkingDirectory=$FLINK_INSTALL_DIR
+ExecStart=/usr/local/bin/flink_service.sh -n 'Twitter Producer' -- $FLINK_INSTALL_DIR/TwitterProducer.jar $FLINK_BOOTSTRAP
+SyslogIdentifier=flink_producer
+
+[Install]
+WantedBy=multi-user.target" >/etc/systemd/system/flink_producer.service
+
 systemctl daemon-reload
