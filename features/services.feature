@@ -10,8 +10,8 @@ Scenario Outline: Starting a service using rake
         | service   |
         | zookeeper |
         | kafka     |
-        # | flink     | TODO: Add when ready
-        # | hbase     | TODO: Add when ready
+        | flink     |
+        | hbase     |
         | zeppelin  |
 
 Scenario: Starting a service on one host
