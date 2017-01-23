@@ -35,14 +35,13 @@ public class TwitterProducer {
     }
 
     public static void main(String[] argv) throws Exception {
-        if (argv.length < 2) {
-            throw new IllegalArgumentException("Usage: arg 1 : rate\nArg 2 : kafka_address:9092");
+        if (argv.length != 1) {
+            throw new IllegalArgumentException("Usage: arg 1 : kafka_address:9092");
         }
-        int rate = Integer.parseInt(argv[0]);
 
         /* Kafka properties */
         Properties props = new Properties();
-        props.put("bootstrap.servers", argv[1]);
+        props.put("bootstrap.servers", argv[0]);
         props.put("acks", "all");
         props.put("retries", 0);
         props.put("batch.size", 16384);
