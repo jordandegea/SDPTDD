@@ -29,13 +29,13 @@ services:
       sed "s#nn_ip#${IP}#" $SRC > $DEST
     instances:
       namenode: 1
-      datanode: 3
+      datanode: 5
   - name: hbase
     prestart: *hostscript
     exclusive: true
     instances:
       master: 1
-      regionserver: 2
+      regionserver: 6
   - name: zeppelin
     prestart: *hostscript
     count: 2
@@ -58,5 +58,4 @@ services:
     count: 1
   - name: flink_producer
     prestart: *jobscript
-    enabled: false
     count: 1
