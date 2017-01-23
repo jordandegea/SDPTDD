@@ -103,9 +103,10 @@ public class FeelingAnalyzer {
         Map<Integer, Integer> seenEmoji = new HashMap<Integer, Integer>();
 
         boolean lastCharWasSeparator = true;
-        int codePointCount = tweetText.codePointCount(0, tweetText.length());
-        for (int i = 0; i < codePointCount; ++i) {
-            int cp = language.codePointAt(i);
+        for (int i = 0; i < tweetText.length(); ) {
+            int cp = tweetText.codePointAt(i);
+            i += Character.charCount(cp);
+
             String[] value = langDict.get(cp);
 
             if (value == null) {
