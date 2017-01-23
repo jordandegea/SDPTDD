@@ -1,5 +1,6 @@
 import logging
 import json
+from copy import copy
 from socket import gethostname
 
 from kazoo.recipe.partitioner import SetPartitioner
@@ -60,6 +61,9 @@ class SharedControlUnit(ControlUnit):
         zk = self.zk
         sl = self.sl
 
+        # Current status
+        enabled = False
+
         with self.control_group.service.handler(self.job_event_handler):
             # Loop forever
             while not exit_event.is_set():
@@ -75,7 +79,8 @@ class SharedControlUnit(ControlUnit):
                     # Note that we use the service as a set for the partitioner, but as we use a custom partition_func,
                     # so this is ok
                     partitioner = SetPartitioner(zk, partitioner_path, self.control_group.service,
-                                                 self.partition_func, gethostname(),
+                                                 self.partition_func,
+                                                 "%s:%s" % (gethostname(), "true" if enabled else "false"),
                                                  self.control_group.control_root.timings['partitioner_boundary'],
                                                  self.control_group.control_root.timings['partitioner_reaction'])
                     logging.info("%s: created partitioner at %s" % (self.name, partitioner_path))
@@ -86,6 +91,11 @@ class SharedControlUnit(ControlUnit):
                         while not exit_event.is_set() and not partitioner.failed and not sl.is_failed():
                             # update service status from systemd
                             sl.tick()
+
+                            if sl.should_run is not None:
+                                if sl.should_run != enabled:
+                                    enabled = sl.should_run
+                                    break
 
                             if partitioner.release:
                                 # immediately release set, we will perform a diff-update on the next acquire
@@ -128,23 +138,49 @@ class SharedControlUnit(ControlUnit):
 
     def partition_func(self, identifier, members, service):
         # Sort members so we have a consistent order over all allocators
-        sorted_members = list(sorted(members))
-        allocation_state = {}
-        target_members = []
+        sorted_members = list(sorted(member[:member.index(":")] for member in members))
 
+        # Print initial state
+        logging.info("%s: from %s" % (self.name, json.dumps(list(members))))
+
+        # Parse current allocated state
+        allocated_status = {}
+        for member in members:
+            split = member.split(":")
+            allocated_status[split[0]] = (split[1] == "true")
+
+        # Allocation state for members
+        allocation_state = {}
+        # Member allocation status
+        target_members = []
+        # Initialize state
         for member in sorted_members:
             allocation_state[member] = []
 
-        # For the current param, allocate as much instances as possible
-        # No worker should have to run the same service twice though
-        for i in range(min(service.count, len(sorted_members))):
-            member = sorted_members[i]
-            allocation_state[member].append("%d" % i)
+        # Reusable allocation method
+        def allocate(member, count):
+            allocation_state[member].append(str(service.count - count + 1))
             target_members.append(member)
+            allocated_status[member] = True
+
+        # Apply current allocation state
+        count = copy(service.count)
+        for member in allocated_status:
+            if allocated_status[member] and count > 0:
+                allocate(member, count)
+                count -= 1
+            else:
+                allocated_status[member] = False
+
+        # Allocate left instances
+        for member in sorted_members:
+            if count > 0 and not allocated_status[member]:
+                allocate(member, count)
+                count -= 1
 
         self.last_partition = target_members
         logging.info("%s: computed partition %s" % (self.name, json.dumps(allocation_state)))
         logging.info("%s: resolver state %s" % (self.name, json.dumps(target_members)))
 
         # The resulting "partition" is the set of services for the current instance
-        return allocation_state[identifier]
+        return allocation_state[identifier[:identifier.index(":")]]
