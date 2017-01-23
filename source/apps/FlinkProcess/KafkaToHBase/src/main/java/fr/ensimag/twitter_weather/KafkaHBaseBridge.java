@@ -1,24 +1,15 @@
 package fr.ensimag.twitter_weather;
 
-import org.apache.flink.api.common.io.OutputFormat;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.api.java.utils.ParameterTool;
-import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer08;
 import org.apache.flink.streaming.util.serialization.SimpleStringSchema;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Connection;
-import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
-import org.apache.sling.commons.json.JSONException;
 import org.apache.sling.commons.json.JSONObject;
 
 import java.io.IOException;
@@ -78,133 +69,5 @@ public class KafkaHBaseBridge {
         env.execute(String.format("Flink consumer %s", topic));
     }
 
-    public static class StreamObject {
-        public String name;
-        public String content;
-        public Number feeling;
-    }
-
-
-    /**
-     * Process each line and write in HBase
-     */
-    private static class ConsoleOutputFormat extends PrintSinkFunction<String> {
-
-        @Override
-        public void invoke(String record) {
-            StreamObject so = this.parse(record);
-            record += so.name + so.feeling.toString();
-            super.invoke(record);
-        }
-
-        /* Parse la ligne de kafka pour un sortir un objet pour HBase */
-        public StreamObject parse(String in) {
-            StreamObject obj = null;
-            try {
-                JSONObject json = new JSONObject(in);
-                String text = (String) json.get("text");
-                obj = new StreamObject();
-                obj.name = "randomname";
-                obj.content = in;
-                if (text.contains("\\ud")) {
-                    String substr = text.substring(text.indexOf("\\ud") + 3, text.indexOf("\\ud") + 5);
-                    obj.feeling = Math.abs(Character.digit(substr.charAt(0), 10)) * 10 + Math.abs(Character.digit(substr.charAt(1), 10));
-                }else{
-                    obj.feeling = 50;
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            return obj;
-        }
-    }
-
-    /**
-     * Process each line and write in HBase
-     */
-    private static class HBaseOutputFormat implements OutputFormat<String> {
-
-        public static final String HBASE_CONFIGURATION_ZOOKEEPER_QUORUM = "hbase.zookeeper.quorum";
-        public static final String HBASE_CONFIGURATION_ZOOKEEPER_CLIENTPORT = "hbase.zookeeper.property.clientPort";
-        private static final long serialVersionUID = 1L;
-        private org.apache.hadoop.conf.Configuration conf = null;
-        private Table table = null;
-        private Connection connection = null;
-        private String tablename = "table1";
-        private String hbaseZookeeperQuorum = "localhost";
-        private int hbaseZookeeperClientPort = 10000;
-
-        public HBaseOutputFormat(String tablename, String quorum, int port) {
-            this.tablename = tablename;
-            this.hbaseZookeeperQuorum = quorum;
-            this.hbaseZookeeperClientPort = port;
-        }
-
-        @Override
-        public void configure(Configuration parameters) {
-            conf = HBaseConfiguration.create();
-
-            conf.set(HBASE_CONFIGURATION_ZOOKEEPER_QUORUM, hbaseZookeeperQuorum);
-            conf.setInt(HBASE_CONFIGURATION_ZOOKEEPER_CLIENTPORT, hbaseZookeeperClientPort);
-
-            try {
-                connection = ConnectionFactory.createConnection(conf);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public void open(int taskNumber, int numTasks) throws IOException {
-            table = connection.getTable(TableName.valueOf(tablename));
-        }
-
-        /**
-         * Pour chaque ligne, parse le contenu de la ligne et ecrit le resultat dans HBase
-         */
-        @Override
-        public void writeRecord(String record) throws IOException {
-            StreamObject obj = this.parse(record);
-            if (obj == null) {
-                Put put = new Put(Bytes.toBytes(System.currentTimeMillis() + "_error"));
-                put.addColumn(Bytes.toBytes("place"), Bytes.toBytes(""), Bytes.toBytes("error"));
-                put.addColumn(Bytes.toBytes("data"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(record));
-                put.addColumn(Bytes.toBytes("feeling"), Bytes.toBytes(""), Bytes.toBytes("0"));
-                table.put(put);
-            } else {
-                //Put put = new Put(Bytes.toBytes(taskNumber + UUID.randomUUID()));
-                Put put = new Put(Bytes.toBytes(System.currentTimeMillis() + "_" + obj.name));
-                put.addColumn(Bytes.toBytes("place"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(obj.name));
-                put.addColumn(Bytes.toBytes("data"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(obj.content));
-                put.addColumn(Bytes.toBytes("feeling"), Bytes.toBytes(""), System.currentTimeMillis(), Bytes.toBytes(obj.feeling.toString()));
-                table.put(put);
-            }
-        }
-
-        @Override
-        public void close() throws IOException {
-            table.close();
-            connection.close();
-        }
-
-        /* Parse la ligne de kafka pour un sortir un objet pour HBase */
-        public StreamObject parse(String in) {
-            StreamObject obj = null;
-            try {
-                JSONObject json = new JSONObject(in);
-                String text = (String) json.get("text");
-                if (text.contains("\\ud")) {
-                    obj = new StreamObject();
-                    obj.name = tablename;
-                    obj.content = in;
-                    String substr = text.substring(text.indexOf("\\ud") + 3, text.indexOf("\\ud") + 5);
-                    obj.feeling = Math.abs(Character.digit(substr.charAt(0), 10)) * 10 + Math.abs(Character.digit(substr.charAt(1), 10));
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-            return obj;
-        }
-    }
 }
 

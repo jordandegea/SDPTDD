@@ -88,10 +88,16 @@ zookeeper:
     partitioner_reaction: 0.2
 services:
   - name: dummy_global
+    enabled: false
     type: global
   - name: dummy_shared
+    prestart: |
+      #!/bin/bash
+      echo "dummy_multi@3 is running on {instance:dummy_multi@3}"
     count: 2
   - name: dummy_multi
+    force:
+      '1': worker2
     instances:
       '1': 1
       '2': 2
@@ -128,6 +134,7 @@ différents types de services sont décrits ci-dessous.
 #### Déclaration
 
 * `name` : nom de l'unité systemd correspondant au service.
+* `enabled` : booléen, active ou désactive le service.
 * `type: global` : indique que ce service est de type global.
 
 #### Comportement
@@ -143,6 +150,7 @@ des services.
 #### Déclaration
 
 * `name` : nom de l'unité systemd correspondant au service.
+* `enabled` : booléen, active ou désactive le service.
 * `count` : nombre d'instances du service demandées.
 * `type: shared` : (optionel si `count` est spécifié) indique que ce service
 est de type shared.
@@ -173,8 +181,12 @@ systemctl reload service_watcher
 ### Déclaration
 
 * `name` : nom de base du template d'unité systemd correspondant au service.
+* `enabled` : booléen, active ou désactive le service.
 * `instances` : ensemble de clés et de valeurs indiquant, pour chaque paramètre
 du template d'unité systemd (clé) le nombre d'instances désirées (valeur).
+* `force` : tableau associatif où les clés désignent des instances du service
+template, et les valeurs le hostname de la machine cible. Les instances
+spécifiées ne peuvent avoir qu'un nombre attendu d'instances de 1.
 * `type: multi` : (optionel si `instances` est spécifié) indique que ce service
 est de type multi.
 
@@ -189,6 +201,8 @@ effet, pour chaque instance `X` définie dans la section correspondante :
 serveur.
 * Le nombre d'instances demandé pour `dummy_multi@X` est réparti sur l'ensemble
 des serveurs disponibles pour ce service.
+* Si une instance est spécifiée dans `force`, elle ne sera allouée que si le
+pair dont le hostname est spécifié est disponible.
 
 ## Contrôle du service
 

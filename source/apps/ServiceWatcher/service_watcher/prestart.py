@@ -50,6 +50,15 @@ class PrestartScript(object):
 
         return False
 
+    def will_delay(self, resolver_func):
+        for k in self.last_exec_state:
+            try:
+                resolver_func(k)
+            except DelayPrestart:
+                return True
+
+        return False
+
     def execute(self, resolver_func):
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             try:
