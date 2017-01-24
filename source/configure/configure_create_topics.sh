@@ -13,6 +13,7 @@ while getopts ":vft:" arg; do
             else
                 echo "Topic $OPTARG already exists."
             fi
+            kafka-topics.sh --zookeeper $(hostname):2181 --alter --topic "$OPTARG" --config retention.ms=60000
         ;;
     esac
 done
