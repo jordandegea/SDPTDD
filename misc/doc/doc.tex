@@ -1,5 +1,5 @@
 
-\documentclass[a4paper,oneside,10pt]{article}
+\documentclass[a4paper,oneside,11pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc} 
 \usepackage{hyperref}
@@ -142,10 +142,19 @@ Nous éxécutons le projet sur 3 villes : Paris, London, NYC
 
 \section{Configurations et Aides}
 
-\subsubsection{Configuration \& Aide pour Flink Producer}
+\subsection{Configuration \& Aide pour Flink Producer}
 
-%## [Pour commencer](Help/FLINK.md)
+\subsubsection{Pour commencer}
 
+\textbf{Information}
+
+\begin{verbatim}
+ # Aller dans le dossier de glink
+cd <flink_directory>
+
+# Lancer une tache
+/bin/flink run <Task>.jar <params>
+\end{verbatim}
 
 \subsubsection{Information}
 
@@ -182,7 +191,85 @@ Si Kafka n'est pas accessible à un moment, on ne cherche pas a envoyer de nouve
 
 \subsection{Configuration d'Apache Kafka}
 
-%## [Pour commencer](Help/KAFKA.md)
+\subsubsection{Introduction concernant Apache Kafka}
+
+\textbf{Principe de fonctionnement}
+
+Apache Kafka est un système de \textbf{gestion de messages applicatifs}. 
+
+En quelques mots, lorsque des informations doivent être stockées et 
+communiquées de manière structurée entre plusieurs applications 
+potentiellement hétérogènes, Apache Kafka est une des solutions 
+envisageables. Ses caractéristiques intrinsèques permettent à Apache 
+Kafka d'atteindre des performances, notamment en termes d'écriture
+sur disque des messages à stocker. C'est pour cela qu'Apache Kafka 
+occupe une position dominante lorsqu'il s'agit de \textbf{streaming} de
+messages applicatifs.
+
+Apache Kafka met à disposition des API permettant à toute application 
+de se connecter à lui, dont notamment :
+\begin{itemize}
+\item une interface pour la production de message qui seront stockés 
+et mis à disposition par Apache Kafka, on parle d'interface 
+\textbf{Producer} ;
+\item une interface pour accéder aux messages stockés par Kafka, on parle d'interface **Consumer**.
+\end{itemize}
+
+L'architecture interne d'Apache Kafka repose sur le principe de 
+\textbf{publication/abonnement}. Pour le dire plus simplement, Apache Kafka
+offre la possibilité de structurer les messages stockés sous forme
+de topics (généralement, la ségrégation des messages entre les
+différents topics repose sur des considérations thématiques).
+Les différents producteurs de messages peuvent alors décider dans
+quel topic ils souhaitent publier leurs messages. 
+De même, les consommateurs de messages peuvent choisir les topics
+auxquels ils s'abonnent. Les messages étant stockés sur les 
+périphériques de stockage de données physiques des machines hébergeant
+Apache Kafka, plusieurs consommateurs différents peuvent s'abonner au
+même topic, et chacun pour lire l'ensemble des messages y figurant
+exactement une fois.
+
+De plus, Apache Kafka est pensé pour être une application distribuée.
+Ainsi, les fonctionnalités de réplication des messages entre 
+différents serveurs (on réplique des \textit{partitions}, une partition 
+pouvant contenir plusieurs \textit{topics}) sont nativement présentes.
+Cela permet de mettre en place une politique de tolérance aux fautes
+assez aisément.
+
+\textbf{Dépendance envers Apache Zookeeper}
+
+Afin d'assurer les propriétés de réplication et de tolérance aux 
+pannes explicitées ci-dessus, Apache Kafka a recours aux services
+proposés par Apache Zookeeper.
+
+En conséquence, avant d'instancier un cluster Apache Kafka, il faut
+s'assurer d'avoir mis à disposition de ce dernier un quorum Zookeeper.
+
+\textbf{Prendre Kafka en main}
+
+Afin de clôturer cette présentation rapide , voici quelques 
+manipulations basiques pour établir un premier contact pratique 
+avec Apache Kafka :
+\begin{verbatim}
+
+# Décompresser et se rendre dans le dossier d'Apache Kafka.
+tar -xzf kafka_2.11-0.10.1.0.tgz
+cd kafka_2.11-0.10.1.0
+# Démarrer un daemon Apache Zookeeper.
+bin/zookeeper-server-start.sh config/zookeeper.properties
+# Démarrer un serveur Apache Kafka.
+bin/kafka-server-start.sh config/server.properties
+# Créer un topic dans une partition unique sans réplication.
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+# Lister les topics existants.
+bin/kafka-topics.sh --list --zookeeper localhost:2181
+# Publier des messages.
+bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test
+This is a message
+This is another message
+# Lire lesdits messages.
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning
+\end{verbatim}
 
 \subsubsection{Gestion manuelle du cycle de vie}
 
@@ -203,9 +290,6 @@ De plus, \textit{systemd} essayera de redémarrer Apache Kafka en cas d'erreur
 inopinée.
 
 \subsection{Configuration \& Aide pour Flink Processing}
-
-%## [Pour commencer](Help/FLINK.md)
-
 
 \subsubsection{Information}
 
@@ -254,7 +338,73 @@ Lorsque des données sont perdues, nous ne cherchons pas à les récupérer. Si 
 
 \subsection{Configuration \& Aide pour HBase}
 
-%## [Pour commencer](Help/HBASE.md)
+
+\subsubsection{Pour commencer avec HBase}
+
+\textbf{Information}
+
+HBase enregistre les données sous forme de ligne texte. Chaque ligne correspond à un couple \textit{<row, column>}. 
+Par exemple, 
+\verb!row1      column=col1:a, timestamp=1481392727887, value=value2!
+
+\begin{itemize}
+\item \textbf{row1} est l'identifiant de la ligne, HBase store les données par leur identifiant de ligne en respectant l'ordre lexicographique. 
+\item \textbf{col1} est le nom de la colonne
+\item \textbf{a} est un \textit{qualifier}. Une colonne peut contenir un nombre illimité de \textit{qualifier}. Nous ne l'utiliserons pas dans ce projet. 
+\item \textbf{timestamp} est l'heure à laquelle le donnée a été ecrite. 
+\item \textbf{value2} est la valeur dans la colonne. 
+\end{itemize}
+
+\textbf{Commandes}
+
+\begin{verbatim}
+# Creer la table "test" avec deux colonnes "col1", "col2" 
+create 'test', 'col1', 'col2'
+
+# Inserer une ligne avec l'identifiant <row1>
+# La commande <Put> entre colonne par colonne, remplissons les deux colonnes
+put 'test', 'row1', 'col1', 'value11'
+put 'test', 'row1', 'col2', 'value12'
+
+# Ecrire d'autres lignes pour la demonstration
+put 'test', 'row2', 'col1', 'value21'
+put 'test', 'row2', 'col2', 'value22'
+put 'test', 'row3', 'col1', 'value31'
+put 'test', 'row3', 'col2', 'value32'
+put 'test', 'row4', 'col1', 'value41'
+put 'test', 'row4', 'col2', 'value42'
+
+# Afficher tout le contenu
+scan 'test'
+
+# Afficher depuis <row2> jusqu'à <row4> exclu
+scan 'test', {STARTROW => 'row2', ENDROW => 'row4'}
+scan 'test', {STARTROW => 'row2', STOPROW => 'row4' }
+
+# HBase cherche par prefix. Les deux commandes suivantes fournissent le meme resultat.
+scan 'test', {STARTROW => 'row'}
+scan 'test', {STARTROW => 'row1'}
+
+# Afficher avec un filtre sur la colonne
+scan 'test', { STARTROW=>'row2', STOPROW=>'row4', COLUMNS=>'col1'}
+
+# Afficher les colonnes pour la ligne *row*
+get 'test', 'row1'
+
+# Mettre a jour une valeur
+put 'test', 'row4', 'col2', 'newvalue42'
+
+# Vider une table
+truncate 'test'
+
+# Desactiver une table
+disable 'test'
+
+# Supprimer une table
+drop 'test'
+
+\end{verbatim}
+
 
 \subsubsection{Information}
 
@@ -268,8 +418,6 @@ Table \textbf{<Place>\_Tweet}
 - \textbf{tweet} : propriétés du tweet
 - \textbf{feeling} : estimation de l'humeur du tweet
 
-
-%\subsection{[Zeppelin](./misc/ZEPPELIN.md)
 
 \section{Informations}
 
