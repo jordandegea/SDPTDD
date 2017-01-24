@@ -445,6 +445,68 @@ drop 'test'
 
 \end{verbatim}
 
+\subsection{Configuration \& Aide pour Zeppelin}
+
+\subsubsection{Pour commencer}
+
+\textbf{Information}
+
+Apache Zeppelin est un système de visualisation de données au travers d'une 
+interface web. 
+Il permet d'accéder et de mettre en forme de gros volumes de données,
+de façon visuelle et interactive, afin de permettre leur analyse.
+
+Grâce à un système de plugins et d'interpréteurs, Apache Zeppelin peut 
+s'interfacer avec de nombreux systèmes et langages, ici notamment avec 
+Apache HBase.
+
+\textbf{Commands}
+
+Une fois Apache Zeppelin lancé sur un serveur, il suffit de se connecter 
+au serveur en question sur le port 8080 via un navigateur web pour y accéder.
+
+Apache Zeppelin fonctionne grâce à des notes, permettant d'écrire les 
+requêtes souhaitées aux différents systèmes avec lesquels Zeppelin
+s'interface.
+
+Pour créer un nouveau Notebook, cliquez sur \textit{Notebook} -> \textit{Create new note}.
+Si l'intrepreteur du système ou langage que vous désirez utiliser est installé
+et Apache Zeppelin correctement configuré, il suffira d'écrire en début de note
+\%\textit{nom\_du\_système\_ou\_langage} puis d'écrire les commandes du système en question.
+Par exemple pour Apache HBase, la note suivante permet de lister les tables :  
+\begin{verbatim}
+%hbase  
+list
+\end{verbatim}
+
+La configuration de Apache Zeppelin dépend de l'interpréteur que l'on veut utiliser,
+mais s'effectuera en modifiant les fichiers \verb!conf/zeppelin-env.sh! et \verb!conf/zeppelin-site.xml!
+du dossier d'installation de Apache Zeppelin.
+
+\subsubsection{Utilisation manuelle de Zeppelin}
+
+Si l'on souhaite gérer manuellement le cycle de vie d'Apache Zeppelin 
+(c'est-à-dire sans avoir recours à \textit{ServiceWatcher}), il est 
+recommandé d'utiliser \textit{systemd} :
+
+\begin{verbatim}
+# Monitorer l'état d'Apache Zeppelin.
+sudo systemctl status zeppelin
+# Démarrer le service associé à Apache Zeppelin.
+sudo systemctl start zeppelin
+# Stopper le service associé à Apache Zeppelin.
+sudo systemctl stop zeppelin
+\end{verbatim}
+
+De plus, \textit{systemd} essayera de redémarrer Apache Zeppelin en cas d'erreur
+inopinée.
+
+\subsubsection{Zeppelin via HAProxy}
+
+Dans le cadre de ce projet, la connection à Zeppelin peut s'effectuer directement
+sur un des serveurs où HAProxy est lancé, sur le port 80, et la redirection vers
+Apache Zeppelin s'effectuera automatiquement.
+
 
 \subsubsection{Information}
 
@@ -655,6 +717,8 @@ Le réseau privé utilisé pour les machines Vagrant est 10.20.1.0/24. Par défa
 sous debian il peut être nécessaire d'installer le paquet ruby-dev.
 
 \appendix
+
+\section{Images}
 
 \appendixpicture{vuelogique}{Vue Logique}{15}
 \appendixpicture{archioptimal}{Attribution Optimale}{15}
