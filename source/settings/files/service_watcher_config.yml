@@ -67,6 +67,7 @@ services:
     count: 1
   - name: spark
     exclusive: true
+    enabled: false
     prestart: |
       #!/bin/bash
       echo -n "spark://{instance:spark@master}:7077" >/usr/local/spark/master
