@@ -31,9 +31,9 @@ William DUCLOT - Mathieu STOFFEL - Joseph PEREZ - Imane Rachdi - Salim ABOUBACAR
 L'objectif de ce projet est d'estimer l'\textbf{humeur} des gens dans différentes régions. Nous récupérons des flux twitters sur différentes régions. Sur chaque tweet, nous attribuons une appréciation. Puis nous stockons chaque tweet traité et son appreciation dans la base. 
 
 
-\subsection{Composants}
+\section{Composants}
 
-\subsubsection{Kafka}
+\subsection{Kafka}
 
 \textbf{Kafka} est un système de messagerie distribué. Il joue le rôle de 
 {broker} pour des flux de données : des \textbf{producteurs} envoient des flux de données à Kafka, qui va les stocker et permettre à des \textbf{consommateurs} de traiter ces flux.
@@ -49,7 +49,7 @@ Dans notre cas, Kafka sera utilisé pour s'abonner aux flux Twitter et météo, 
 \textbf{Utilisé par :} Netflix, PayPal, Uber...
 
 
-\subsubsection{Flink}
+\subsection{Flink}
 
 \textbf{Apache Flink} est un framework de traitement temps-réel. Il permet donc de traiter des données arrivant en temps-réel, plutôt que par \textit{batch}, et donc d'avoir un temps de latence extrêmement court.
 
@@ -57,7 +57,7 @@ En utilisant \textbf{Flink} pour traiter les flux fournis par Kafka, nous conser
 
 \textbf{Utilisé par :} Bouygues Telecom, Alibaba, Amadeus, ATOS...
 
-\subsubsection{HBase}
+\subsection{HBase}
 
 HBase est une base de données distribuée non-relationnelle. Cette technologie permet de stocker de larges quantités de données, et est très efficace pour les applications ayant un haut débit de données.
 
@@ -68,7 +68,7 @@ Hbase gère la réplication au sein du cluster, le sharding et le équilibrage d
 \textbf{HBase} assure une cohérence stricte des écritures et lectures, c'est à dire qu'une lecture renvoie toujours le résultat de la dernière écriture effectuée.
 HBase gère de manière automatique la réplication au sein du cluster ainsi que le basculement en cas de panne.
 
-\subsubsection{Zeppelin}
+\subsection{Zeppelin}
 
 \textbf{Zeppelin} fournit une interface web de visualisation de données. Son principal intérêt est d'être capable d'analyser et mettre en forme de grandes quantités de données, et de s'intégrer très bien aux autres technologies (faisant partie de l'écosystème Apache).
 
@@ -77,29 +77,67 @@ Cet outil fournit de nombreux graphes pour la visualisation de données, permett
 Zeppelin, en tant que simple outil de visualisation, ne garantit en rien la tolérance aux fautes. Cependant, Zeppelin intervient en bout de chaîne et son interruption n'a aucune incidence sur le fonctionnement du reste des composants du système. 
 
 
-\subsection{Architecture}
+\section{Architecture}
 
-\subsubsection{Producer : Flink}
+\subsection{Producer : Flink}
 
 Le \textbf{Producer} s'inscrit sur un flux twitter pour récupérer les tweets sur les régions désirées. A chaque réception de tweets, le produceur distribue les tweets sur \textbf{Kafka}
 
-\subsubsection{Distributeur : Kafka}
+\subsection{Distributeur : Kafka}
 
 Notre \textbf{Kafka} est découpé en ville, chaque \textit{topic} correspond à une ville. Kafka stocke message par message les tweets pour chaque \textit{topic}. 
 
-\subsubsection{Traitement : Flink}
+\subsection{Traitement : Flink}
 
 Nos \textbf{Flink} de traitement sont découpés en ville. Il récupère message par message, les tweets de leur ville dans le \textit{topic} associé dans \textbf{Kafka}. Il traite chaque tweet afin d'attribuer une appréciation au tweet. 
 
-\subsubsection{Base de données : HBase}
+\subsection{Base de données : HBase}
 
 Nous stockons chaque tweet dans une table correspondant à sa ville. 
 
-\subsubsection{Visualisation : Zeppelin}
+\subsection{Visualisation : Zeppelin}
 
 Nous visualisons nos données grâce à \textbf{Zeppelin}
 
-%\section{[Comportement](./misc/BEHAVIOR.md)
+\section{Comportement}
+
+Nous considérons 3 serveurs. Nous souhaitons garantir le fonctionnement du service en tolérant deux fautes. 
+
+- Lorsque 3 machines sont en vie, alors le service fonctionne correctement.
+- Lorsque 2 machines sont en vie, alors le service fonctionne correctement et cherche à remettre en place la machine en faute.
+- Lorsque 1 machine est en vie, alors le service fonctionne correctement et à remettre en place les machines en faute. 
+
+Nous éxécutons le projet sur 3 villes : Paris, London, NYC
+
+\subsection{Configuration}
+
+\subsubsection{Kafka}
+
+\begin{itemize}
+\item Installé sur toutes les machines. 
+\item Un détecteur de faute se chargera de détecter les machines fautives.
+\item Un correcteur de faute cherchera à redémarrer la ou les machines fautives.
+\end{itemize}
+
+\subsubsection{Flink}
+
+\begin{itemize}
+\item Installé sur 3 machines. 
+\item Un détecteur de faute se chargera de répartir les différentes configurations de Flink sur les différents serveurs en vie
+\end{itemize}
+
+\subsubsection{Hbase}
+
+\begin{itemize}
+\item Installé sur 3 machines. 
+\end{itemize}	
+
+\subsubsection{Zeppelin}
+
+\begin{itemize}
+\item Installé sur 3 machines. 
+\item Un détecteur de faute cherchera à redémarrer la ou les machines fautives 
+\end{itemize}
 
 \section{Configurations et Aides}
 
