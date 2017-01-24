@@ -63,7 +63,7 @@ echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 <configuration>
 <property>
 <name>dfs.replication</name>
-<value>3</value>
+<value>5</value>
 </property>
 
 <property>
