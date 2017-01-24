@@ -36,6 +36,8 @@ if ! [ -d $FLINK_LOG_DIR ]; then
   chown flink:flink -R $FLINK_LOG_DIR
 fi
 
+chown flink:flink $FLINK_INSTALL_DIR
+
 # Create systemd unit for flink service
 echo "Flink: installing Flink systemd unit..." 1>&2
 

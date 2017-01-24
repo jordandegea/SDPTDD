@@ -39,6 +39,7 @@ build_outputs:
       cp source/apps/FlinkProcess/KafkaToHBase/target/flink-kafka-hbase-bridge-0.1.jar source/code/files/KafkaHbaseBridge.jar
     groups: [ java, kafka_to_hbase, flink_process ]
   source/code/files/FakeTwitterProducer.jar:
+    enabled: false
     dependencies:
       - source/apps/FlinkProducer/FakeTwitter/src/**/*
       - source/apps/FlinkProducer/FakeTwitter/pom.xml
@@ -49,6 +50,7 @@ build_outputs:
       cp source/apps/FlinkProducer/FakeTwitter/target/flink-producer-fake-twitter-0.1.jar source/code/files/FakeTwitterProducer.jar
     groups: [ java, fake_twitter, flink_producer ]
   source/code/files/fake_tweet.json:
+    enabled: false
     dependencies:
       - source/apps/FlinkProducer/FakeTwitter/fake_tweet.json
     build_script: |
@@ -66,3 +68,23 @@ build_outputs:
       (cd source/apps/FlinkProducer/RealTwitter && mvn package)
       cp source/apps/FlinkProducer/RealTwitter/target/flink-producer-twitter-0.1.jar source/code/files/TwitterProducer.jar
     groups: [ java, twitter_producer, flink_producer ]
+  source/code/files/IdFixer.jar:
+    dependencies:
+      - source/apps/FlinkProcess/IdFixer/src/**/*
+      - source/apps/FlinkProcess/IdFixer/pom.xml
+    build_script: |
+      #!/bin/bash
+      set -euo pipefail
+      (cd source/apps/FlinkProcess/IdFixer && mvn package)
+      cp source/apps/FlinkProcess/IdFixer/target/hbase-id-fixer-0.1.jar source/code/files/IdFixer.jar
+    groups: [ java, id_fixer ]
+  source/code/files/ValFixer.jar:
+    dependencies:
+      - source/apps/FlinkProcess/ValFixer/src/**/*
+      - source/apps/FlinkProcess/ValFixer/pom.xml
+    build_script: |
+      #!/bin/bash
+      set -euo pipefail
+      (cd source/apps/FlinkProcess/ValFixer && mvn package)
+      cp source/apps/FlinkProcess/ValFixer/target/hbase-val-fixer-0.1.jar source/code/files/ValFixer.jar
+    groups: [ java, val_fixer ]

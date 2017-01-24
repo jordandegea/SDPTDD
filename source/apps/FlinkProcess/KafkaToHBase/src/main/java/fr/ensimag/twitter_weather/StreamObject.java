@@ -23,20 +23,26 @@ public class StreamObject {
     private static final String[] tweetProperties = new String[] { "coordinates", "favorited", "created_at", "truncated", "id_str", "entities", "in_reply_to_user_id_str", "text", "contributors", "retweet_count", "id", "in_reply_to_status_id_str", "geo", "retweeted", "in_reply_to_user_id", "place", "source", "in_reply_to_screen_name", "in_reply_to_status_id" };
 
     private static final SimpleDateFormat twitterFormat = new SimpleDateFormat("EEE MMM d HH:mm:ss Z yyyy");
+    private static final String[] longColumns = new String[] { "created_at", "level", "id", "char_count", "emoji_count", "unique_emoji_count", "most_used_emoji_count" };
 
     public void put(Table table) throws IOException {
-        Put put = new Put(Bytes.toBytes(UUID.randomUUID().toString()));
-
         // Report critical parsing errors
         if (parsingException != null) {
-            putString(put, "feeling", "error", parsingException.getMessage());
-            table.put(put);
+            System.err.format("Parsing error %s\n", parsingException.getMessage());
             return;
         }
 
         // Early cancel if no text
         if (!rawTweet.has("text"))
             return;
+
+        // Use tweet id as row id
+        Put put = null;
+        try {
+            put = new Put(Bytes.toBytes(rawTweet.getLong("id")));
+        } catch (JSONException e) {
+            System.err.format("Tweet value error on id: %s\n", e.getMessage());
+        }
 
         parseDate(rawTweet);
 
@@ -98,6 +104,18 @@ public class StreamObject {
     }
 
     private void putString(Put put, String family, String column, String value) {
+        for (String longColumn : longColumns) {
+            if (longColumn.equals(column)) {
+                try {
+                    put.addColumn(Bytes.toBytes(family), Bytes.toBytes(column), System.currentTimeMillis(), Bytes.toBytes(Long.parseLong(value)));
+                    return;
+                } catch (NumberFormatException ex) {
+                    put.addColumn(Bytes.toBytes(family), Bytes.toBytes(column), System.currentTimeMillis(), Bytes.toBytes((long)0));
+                    return;
+                }
+            }
+        }
+
         put.addColumn(Bytes.toBytes(family), Bytes.toBytes(column), System.currentTimeMillis(), Bytes.toBytes(value));
     }
 

@@ -12,6 +12,7 @@ services:
   - name: kafka
     type: global
   - name: flink
+    exclusive: true
     prestart: &jobscript |
       #!/bin/bash
       SRC=/usr/local/flink/conf/flink-conf.yaml.tpl
@@ -19,7 +20,7 @@ services:
       sed "s#jobmanager_replace_me#{instance:flink@jobmanager}#" $SRC > $DEST
     instances:
       jobmanager: 1
-      taskmanager: 3
+      taskmanager: 8
   - name: hadoop
     prestart: &hostscript |
       #!/bin/bash
@@ -35,7 +36,7 @@ services:
     exclusive: true
     instances:
       master: 1
-      regionserver: 6
+      regionserver: 8
   - name: zeppelin
     prestart: |
       #!/bin/bash
@@ -50,17 +51,6 @@ services:
       paris: 1
       nyc: 1
       london: 1
-  # - name: flink_city_console
-  #   prestart: *jobscript
-  #   enabled: false
-  #   instances:
-  #     paris: 1
-  #     nyc: 1
-  #     london: 1
-  - name: flink_producer_fake
-    prestart: *jobscript
-    enabled: false
-    count: 1
   - name: flink_producer
     prestart: *jobscript
     count: 1

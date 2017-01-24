@@ -12,8 +12,10 @@ source ./flink_shared.sh
 # Deploy files
 chown flink:flink -R files/*
 mv files/KafkaHbaseBridge.jar $FLINK_INSTALL_DIR
-mv files/FakeTwitterProducer.jar $FLINK_INSTALL_DIR
+# mv files/FakeTwitterProducer.jar $FLINK_INSTALL_DIR
 mv files/TwitterProducer.jar $FLINK_INSTALL_DIR
+mv files/IdFixer.jar $FLINK_INSTALL_DIR
+mv files/ValFixer.jar $FLINK_INSTALL_DIR
 # mv files/KafkaConsoleBridge.jar $FLINK_INSTALL_DIR
-mv files/fake_tweet.json $FLINK_INSTALL_DIR
+# mv files/fake_tweet.json $FLINK_INSTALL_DIR
 
