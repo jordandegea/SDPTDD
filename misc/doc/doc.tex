@@ -1,5 +1,5 @@
 
-\documentclass[a4paper,oneside,11pt]{article}
+\documentclass[a4paper,oneside,12pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc} 
 \usepackage{hyperref}
@@ -11,6 +11,18 @@
 \usepackage[french]{babel}
 \usepackage{multicol}
 \usepackage{geometry}
+
+% #1 name of picture
+% #2 caption
+% #3 width
+\newcommand\appendixpicture[3]{
+	\begin{figure}[h]
+	\centering
+	\includegraphics[width=#3cm]{content/#1.png}
+	\caption{#2}
+	\label{#1}
+	\end{figure}
+}
 
 \geometry{hmargin=2cm,vmargin=1.5cm}
 
@@ -25,12 +37,14 @@ William DUCLOT - Mathieu STOFFEL - Joseph PEREZ - Imane Rachdi - Salim ABOUBACAR
 
 \maketitle
 
+\tableofcontents
 
+\pagebreak
 \section{Sujet - "Twitter \& Humeur"}
 
 L'objectif de ce projet est d'estimer l'\textbf{humeur} des gens dans différentes régions. Nous récupérons des flux twitters sur différentes régions. Sur chaque tweet, nous attribuons une appréciation. Puis nous stockons chaque tweet traité et son appreciation dans la base. 
 
-
+\pagebreak
 \section{Composants}
 
 \subsection{Kafka}
@@ -76,30 +90,38 @@ Cet outil fournit de nombreux graphes pour la visualisation de données, permett
 
 Zeppelin, en tant que simple outil de visualisation, ne garantit en rien la tolérance aux fautes. Cependant, Zeppelin intervient en bout de chaîne et son interruption n'a aucune incidence sur le fonctionnement du reste des composants du système. 
 
-
+\pagebreak
 \section{Architecture}
 
 \subsection{Producer : Flink}
 
 Le \textbf{Producer} s'inscrit sur un flux twitter pour récupérer les tweets sur les régions désirées. A chaque réception de tweets, le produceur distribue les tweets sur \textbf{Kafka}
 
+Annexe \ref{flinkkafka}
+
 \subsection{Distributeur : Kafka}
 
 Notre \textbf{Kafka} est découpé en ville, chaque \textit{topic} correspond à une ville. Kafka stocke message par message les tweets pour chaque \textit{topic}. 
+
+Annexe \ref{kafkaflink}
 
 \subsection{Traitement : Flink}
 
 Nos \textbf{Flink} de traitement sont découpés en ville. Il récupère message par message, les tweets de leur ville dans le \textit{topic} associé dans \textbf{Kafka}. Il traite chaque tweet afin d'attribuer une appréciation au tweet. 
 
+Annexe \ref{flinkhbase}
+
 \subsection{Base de données : HBase}
 
 Nous stockons chaque tweet dans une table correspondant à sa ville. 
 
+Annexe \ref{hbasezeppelin}
 
 \subsection{Visualisation : Zeppelin}
 
 Nous visualisons nos données grâce à \textbf{Zeppelin}
 
+\pagebreak
 \section{Comportement}
 
 Nous considérons 3 serveurs. Nous souhaitons garantir le fonctionnement du service en tolérant deux fautes. 
@@ -140,6 +162,13 @@ Nous éxécutons le projet sur 3 villes : Paris, London, NYC
 \item Un détecteur de faute cherchera à redémarrer la ou les machines fautives 
 \end{itemize}
 
+\subsubsection{Vues logiques, physiques et comportements}
+
+Voir annexes : \ref{vuelogique}, \ref{archioptimal}, \ref{archireel}, \ref{archicrashservice}, \ref{archicrashmachine}, \ref{archicomeback}
+
+
+
+\pagebreak
 \section{Configurations et Aides}
 
 \subsection{Configuration \& Aide pour Flink Producer}
@@ -189,6 +218,7 @@ Si Kafka n'est pas accessible à un moment, on ne cherche pas a envoyer de nouve
 
 
 
+\pagebreak
 \subsection{Configuration d'Apache Kafka}
 
 \subsubsection{Introduction concernant Apache Kafka}
@@ -297,6 +327,7 @@ sudo systemctl stop kafka
 De plus, \textit{systemd} essayera de redémarrer Apache Kafka en cas d'erreur
 inopinée.
 
+\pagebreak
 \subsection{Configuration \& Aide pour Flink Processing}
 
 \subsubsection{Information}
@@ -344,6 +375,7 @@ bin/flink run KafkaConsoleBridge.jar \
 
 Lorsque des données sont perdues, nous ne cherchons pas à les récupérer. Si les calculs échouent de même. N'oublions pas l'esprit du Streaming. 
 
+\pagebreak
 \subsection{Configuration \& Aide pour HBase}
 
 
@@ -352,7 +384,7 @@ Lorsque des données sont perdues, nous ne cherchons pas à les récupérer. Si 
 \textbf{Information}
 
 HBase enregistre les données sous forme de ligne texte. Chaque ligne correspond à un couple \textit{<row, column>}. 
-Par exemple, 
+Par exemple, \\
 \verb!row1      column=col1:a, timestamp=1481392727887, value=value2!
 
 \begin{itemize}
@@ -421,19 +453,22 @@ Pour découper l'enregistrement des tweets, on enregistre chaque tweet dans le l
 \subsubsection{Structure des tables}
 
 Table \textbf{<Place>\_Tweet}
-- \textbf{\textit{RowIdentifier}} - \textit{timestamp\_UniqID} : identifiant unique.
-- \textbf{user} : propriétés de l'utilisateur auteur du tweet
-- \textbf{tweet} : propriétés du tweet
-- \textbf{feeling} : estimation de l'humeur du tweet
+\begin{itemize}
+\item \textbf{\textit{RowIdentifier}} - \textit{timestamp\_UniqID} : identifiant unique.
+\item \textbf{user} : propriétés de l'utilisateur auteur du tweet
+\item \textbf{tweet} : propriétés du tweet
+\item \textbf{feeling} : estimation de l'humeur du tweet
+\end{itemize}
 
+\pagebreak
 
-\section{Informations}
+\section{Pour commencer}
+
+\subsection{Outils}
 
 Environnement de déploiement : \textbf{Vagrant}
 
 Outil de deploiement : \textbf{Rake}
-
-\section{Pour commencer}
 
 \subsection{Lancer en developpement local}
 
@@ -452,7 +487,7 @@ export RAKE_ENV=production
 ./deploy.sh
 \end{verbatim}
 
-
+\pagebreak
 \section{Utilisation de Rake pour les tâches de maintenance}
 
 \subsection{Installation}
@@ -560,7 +595,7 @@ rake features:service_watcher
 rake features:services
 \end{verbatim}
 
-
+\pagebreak
 \section{Environnement de test Vagrant}
 
 Le dossier vagrant contient :
@@ -619,9 +654,18 @@ Le réseau privé utilisé pour les machines Vagrant est 10.20.1.0/24. Par défa
 
 sous debian il peut être nécessaire d'installer le paquet ruby-dev.
 
+\appendix
 
+\appendixpicture{vuelogique}{Vue Logique}{15}
+\appendixpicture{archioptimal}{Attribution Optimale}{15}
+\appendixpicture{archireel}{Attribution Réel}{15}
+\appendixpicture{archicrashservice}{Crash d'un service}{15}
+\appendixpicture{archicrashmachine}{Crash d'une machine}{15}
+\appendixpicture{archicomeback}{Restauration d'une machine}{15}
 
-
-
+\appendixpicture{flinkkafka}{De Flink Producer à Kafka}{15}
+\appendixpicture{kafkaflink}{De Kafka à Flink}{15}
+\appendixpicture{flinkhbase}{De Flink à HBase}{15}
+\appendixpicture{hbasezeppelin}{de HBase à Zeppelin}{15}
 
 \end{document}
