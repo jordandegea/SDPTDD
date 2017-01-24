@@ -80,8 +80,6 @@ echo "Flink: installing Flink systemd unit..." 1>&2
 
 echo "jobmanager.rpc.address: jobmanager_replace_me
 jobmanager.rpc.port: 6123
-jobmanager.heap.mb: 256
-taskmanager.heap.mb: 512
 taskmanager.numberOfTaskSlots: 20
 taskmanager.memory.preallocate: false
 parallelism.default: 2
