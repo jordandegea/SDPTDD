@@ -41,7 +41,6 @@ deploy:
     - zeppelin:
     - haproxy:
     - drbd:
-    - spark:
   settings:
     - service_watcher: -z $zkquorum -F $firsthost
     - kafka: $hostspec

@@ -43,7 +43,6 @@ services:
       DEST=/etc/hosts
       IP=$(getent hosts {instance:hadoop@namenode} | awk '{print $1}')
       sed "s#nn_ip#${IP}#" $SRC > $DEST
-      echo -n "spark://{instance:spark@master}:7077" >/usr/local/spark/master
     count: 2
   - name: flink_city
     prestart: *jobscript
@@ -65,12 +64,3 @@ services:
   - name: flink_producer
     prestart: *jobscript
     count: 1
-  - name: spark
-    exclusive: true
-    enabled: false
-    prestart: |
-      #!/bin/bash
-      echo -n "spark://{instance:spark@master}:7077" >/usr/local/spark/master
-    instances:
-      master: 1
-      slave: 8
