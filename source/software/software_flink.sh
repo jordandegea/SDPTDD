@@ -14,7 +14,7 @@ FLINK_BASE_NAME="flink-1.1.3"
 # Install Flink
 if (($FORCE_INSTALL)) || ! [ -d $FLINK_INSTALL_DIR ]; then
   echo "Flink: Installing..."
-  get_file "https://archive.apache.org/dist/flink/flink-1.1.3/flink-1.1.3-bin-hadoop2-scala_2.10.tgz" "$FLINK_BASE_NAME.tgz"
+  get_file "https://archive.apache.org/dist/flink/flink-1.1.3/flink-1.1.3-bin-hadoop2-scala_2.11.tgz" "$FLINK_BASE_NAME.tgz"
 
   # Extract archive
   tar xf "$FLINK_BASE_NAME.tgz"
