@@ -255,20 +255,28 @@ avec Apache Kafka :
 # Décompresser et se rendre dans le dossier d'Apache Kafka.
 tar -xzf kafka_2.11-0.10.1.0.tgz
 cd kafka_2.11-0.10.1.0
+
 # Démarrer un daemon Apache Zookeeper.
 bin/zookeeper-server-start.sh config/zookeeper.properties
+
 # Démarrer un serveur Apache Kafka.
 bin/kafka-server-start.sh config/server.properties
+
 # Créer un topic dans une partition unique sans réplication.
-bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partitions 1 --topic test
+bin/kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 
+	--partitions 1 --topic test
+	
 # Lister les topics existants.
 bin/kafka-topics.sh --list --zookeeper localhost:2181
+
 # Publier des messages.
 bin/kafka-console-producer.sh --broker-list localhost:9092 --topic test
 This is a message
 This is another message
+
 # Lire lesdits messages.
-bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test --from-beginning
+bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic test 
+	--from-beginning
 \end{verbatim}
 
 \subsubsection{Gestion manuelle du cycle de vie}
@@ -450,43 +458,44 @@ export RAKE_ENV=production
 \subsection{Installation}
 
 \begin{verbatim}
-\section{Installation de Bundler (once)
+# Installation de Bundler (once)
 gem install bundler
 
-\section{Installation des dépendances
-\section{En cas d'incompatibilité avec Gemfile.lock sur le dépôt : bundle update
+# Installation des dépendances
+# En cas d'incompatibilité avec Gemfile.lock sur le dépôt : bundle update
 bundle
 \end{verbatim}
 
 \subsection{Environnement}
 
 \begin{verbatim}
-\section{Utilisation de l'environnement de développement
+# Utilisation de l'environnement de développement
 export RAKE_ENV=development
-\section{Ne pas oublier de démarrer les machines virtuelles pour l'environnement de développement
+# Ne pas oublier de démarrer les machines virtuelles pour l'environnement 
+# de développement
 rake vagrant:up
 
-\section{Utilisation de l'environnement de production
+# Utilisation de l'environnement de production
 export RAKE_ENV=production
 \end{verbatim}
 
 \subsection{Affichage de l'aide}
 
 \begin{verbatim}
-\section{Listing des tâches Rake avec leur description
+# Listing des tâches Rake avec leur description
 rake -T
 \end{verbatim}
 
 \subsection{Deploiement}
 
 \begin{verbatim}
-\section{Déploiement et provisioning
+# Déploiement et provisioning
 rake deploy
 
-\section{Uniquement sur deux serveurs (définis dans hosts.yml)
+# Uniquement sur deux serveurs (définis dans hosts.yml)
 rake deploy[server-2;server-3]
 
-\section{Connexion SSH
+# Connexion SSH
 rake ssh server-1
 \end{verbatim}
 
@@ -573,7 +582,8 @@ vagrant plugin install vagrant-hostmanager
 \end{verbatim}
 
 \begin{itemize}
-\item Suivre les instructions de \texttt{https://github.com/devopsgroup-io/vagrant-hostmanager\#passwordless-sudo} pour éviter la demande de mot de passe sudo à chaque démarrage des machines virtuelles.
+\item Suivre les instructions de \\
+	\texttt{https://github.com/devopsgroup-io/vagrant-hostmanager\#passwordless-sudo} pour éviter la demande de mot de passe sudo à chaque démarrage des machines virtuelles.
 \end{itemize}
 Une fois que tout est installé, les commandes suivantes peuvent être utilisées :
 
