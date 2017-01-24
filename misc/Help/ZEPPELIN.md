@@ -33,7 +33,7 @@ Pour créer un nouveau Notebook, cliquez sur *Notebook* -> *Create new note*.
 Si l'intrepreteur du système ou langage que vous désirez utiliser est installé
 et Apache Zeppelin correctement configuré, il suffira d'écrire en début de note
 %*nom_du_système_ou_langage* puis d'écrire les commandes du système en question.
-Par exemple pour hbase, la note suivante permet de lister les tables :
+Par exemple pour hbase, la note suivante permet de lister les tables :  
 %hbase  
 list  
 
