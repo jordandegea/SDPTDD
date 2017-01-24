@@ -77,8 +77,27 @@ Cet outil fournit de nombreux graphes pour la visualisation de données, permett
 Zeppelin, en tant que simple outil de visualisation, ne garantit en rien la tolérance aux fautes. Cependant, Zeppelin intervient en bout de chaîne et son interruption n'a aucune incidence sur le fonctionnement du reste des composants du système. 
 
 
+\subsection{Architecture}
 
-%\section{[Architecture](./misc/ARCHITECTURE.md)
+\subsubsection{Producer : Flink}
+
+Le \textbf{Producer} s'inscrit sur un flux twitter pour récupérer les tweets sur les régions désirées. A chaque réception de tweets, le produceur distribue les tweets sur \textbf{Kafka}
+
+\subsubsection{Distributeur : Kafka}
+
+Notre \textbf{Kafka} est découpé en ville, chaque \textit{topic} correspond à une ville. Kafka stocke message par message les tweets pour chaque \textit{topic}. 
+
+\subsubsection{Traitement : Flink}
+
+Nos \textbf{Flink} de traitement sont découpés en ville. Il récupère message par message, les tweets de leur ville dans le \textit{topic} associé dans \textbf{Kafka}. Il traite chaque tweet afin d'attribuer une appréciation au tweet. 
+
+\subsubsection{Base de données : HBase}
+
+Nous stockons chaque tweet dans une table correspondant à sa ville. 
+
+\subsubsection{Visualisation : Zeppelin}
+
+Nous visualisons nos données grâce à \textbf{Zeppelin}
 
 %\section{[Comportement](./misc/BEHAVIOR.md)
 
