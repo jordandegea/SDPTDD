@@ -142,13 +142,132 @@ Nous éxécutons le projet sur 3 villes : Paris, London, NYC
 
 \section{Configurations et Aides}
 
-%\subsection{[Flink en tant que Producer](./misc/FLINK_PRODUCER.md)
+\subsubsection{Configuration \& Aide pour Flink Producer}
 
-%\subsection{[Kafka](./misc/KAFKA.md)
+%## [Pour commencer](Help/FLINK.md)
 
-%\subsection{[Flink en tant que Traitement](./misc/FLINK_PROCESS.md)
 
-%\subsection{[HBase](./misc/HBASE.md)
+\subsubsection{Information}
+
+Les sources des tâches sont dans le dossier `source/apps/FlinkProducer`. 
+
+\begin{itemize}
+\item FakeTwitter : Envoi periodiquement un tweet à kafka, dans une table définie aléatoirement. 
+\end{itemize} 
+
+
+\subsubsection{Objectifs}
+
+Récupérer tous les tweets des lieux où nous souhaitons effectuer nos calculs. Sépare les tweets par lieu et les envoi sur Kafka sur le bon topic. 
+
+
+\subsubsection{Paramètres}
+
+\begin{itemize}
+\item \verb!number of tweet par second! 
+\item \verb!bootstrap server!
+\end{itemize}
+
+\begin{verbatim}
+# Run example
+bin/flink run FakeTwitter.jar 10 worker1:9092,worker2:9092,worker3:9092
+\end{verbatim}
+
+\subsubsection{Autres}
+
+Lorsque des données sont perdues, nous ne cherchons pas à les récupérer. Si les calculs échouent de même. N'oublions pas l'esprit du Streaming. 
+Si Kafka n'est pas accessible à un moment, on ne cherche pas a envoyer de nouveau les tweets, on les oublie. 
+
+
+
+\subsection{Configuration d'Apache Kafka}
+
+%## [Pour commencer](Help/KAFKA.md)
+
+\subsubsection{Gestion manuelle du cycle de vie}
+
+Si l'on souhaite gérer manuellement le cycle de vie d'Apache Kafka 
+(c'est-à-dire sans avoir recours à \textit{ServiceWatcher}), il est 
+recommandé d'utiliser \textit{systemd} :
+
+\begin{verbatim}
+# Monitorer l'état d'Apache Kafka.
+sudo systemctl status kafka
+# Démarrer le service associé à Apache Kafka.
+sudo systemctl start kafka
+# Stopper le service associé à Apache Kafka.
+sudo systemctl stop kafka
+\end{verbatim}
+
+De plus, \textit{systemd} essayera de redémarrer Apache Kafka en cas d'erreur
+inopinée.
+
+\subsection{Configuration \& Aide pour Flink Processing}
+
+%## [Pour commencer](Help/FLINK.md)
+
+
+\subsubsection{Information}
+
+Les sources des tâches sont dans le dossier \verb!source/apps/FlinkProcess!. 
+
+\begin{itemize}
+\item KafkaToConsole : Récupère les tweets de Kafka et les écrits dans la console
+\item KafkaToHBase : Récupère les tweets de Kafka et les envoi à HBase
+\end{itemize}
+
+\subsubsection{Objectifs}
+
+A chaque tweet, nous estimons son humeur et ecrivons le resultat dans la base de données. 
+
+Les tweets sont continuellement récupérés de Kafka, estimés et enregistrés dans HBase. 
+
+\subsubsection{Paramètres}
+
+\begin{itemize}
+\item \verb!--port <flink port>! 
+\item \verb!--topic <place>!
+\item \verb!--bootstrap.servers <bootstrap servers>!
+\item \verb!--zookeeper.connect <zookeeper machine:port>!
+\item \verb!--group.id <consumer group>!
+\item \verb!--hbasetable <topic name>!
+\item \verb!--hbasequorum <hbase quorum>!
+\item \verb!--hbaseport <port of hbase quorum>!
+\end{itemize}
+
+\begin{verbatim}
+# Run example
+bin/flink run KafkaConsoleBridge.jar \
+	--port 9000 \
+	--topic paris \
+	--bootstrap.servers worker1:9092,worker2:9092,worker3:9092 \
+	--zookeeper.connect localhost:2181 \
+	--group.id parisconsumer \
+	--hbasetable paris_tweets \
+	--hbasequorum worker1,worker2,worker3 \
+	--hbaseport 2181
+\end{verbatim}
+
+\subsubsection{Autres}
+
+Lorsque des données sont perdues, nous ne cherchons pas à les récupérer. Si les calculs échouent de même. N'oublions pas l'esprit du Streaming. 
+
+\subsection{Configuration \& Aide pour HBase}
+
+%## [Pour commencer](Help/HBASE.md)
+
+\subsubsection{Information}
+
+Pour découper l'enregistrement des tweets, on enregistre chaque tweet dans le lieu correspondant. C'est à dire, chaque lieu à sa propre table. De cette manière, on evite l'utilisation des filters. Le nom de la table est \textbf{<Place>\_Tweets}
+
+\subsubsection{Structure des tables}
+
+Table \textbf{<Place>\_Tweet}
+- \textbf{\textit{RowIdentifier}} - \textit{timestamp\_UniqID} : identifiant unique.
+- \textbf{user} : propriétés de l'utilisateur auteur du tweet
+- \textbf{tweet} : propriétés du tweet
+- \textbf{feeling} : estimation de l'humeur du tweet
+
 
 %\subsection{[Zeppelin](./misc/ZEPPELIN.md)
 
