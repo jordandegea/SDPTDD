@@ -14,8 +14,8 @@
 
 \geometry{hmargin=2cm,vmargin=1.5cm}
 
-\title{Système distribué pour le traitement de données\\
-Documentation
+\title{Twitter \& Humeur : Documentation\\
+\small{Système distribué pour le traitement de données}
 }
 
 \author{Jordan DE GEA - Guillaume THIOLLIERE - Vincent TAVERNIER - Pierre HEINISCH\\
@@ -25,6 +25,282 @@ William DUCLOT - Mathieu STOFFEL - Joseph PEREZ - Imane Rachdi - Salim ABOUBACAR
 
 \maketitle
 
+
+\section{Sujet - "Twitter \& Humeur"}
+
+L'objectif de ce projet est d'estimer l'\textbf{humeur} des gens dans différentes régions. Nous récupérons des flux twitters sur différentes régions. Sur chaque tweet, nous attribuons une appréciation. Puis nous stockons chaque tweet traité et son appreciation dans la base. 
+
+
+\subsection{Composants}
+
+\subsubsection{Kafka}
+
+\textbf{Kafka} est un système de messagerie distribué. Il joue le rôle de 
+{broker} pour des flux de données : des \textbf{producteurs} envoient des flux de données à Kafka, qui va les stocker et permettre à des \textbf{consommateurs} de traiter ces flux.
+
+Chaque flux peut être partitionné, permettant à plusieurs consommateurs de travailler sur le même flux en parallèle. Une partition est une suite de messages ordonnés et immutables, chaque message ayant un identifiant qui lui est affecté.
+
+\textbf{Kafka} fonctionne en cluster, permettant de répliquer les partitions pour être tolérant aux fautes, d'automatiquement redistribuer les consommateurs en cas de faute et d'être très facilement horizontalement scalable.
+
+Dans notre cas, Kafka sera utilisé pour s'abonner aux flux Twitter et météo, et partitionner ces flux par région.
+
+\textbf{Kafka} est tolérant aux pannes franches, du fait de la réplication des partitions sur les différents serveurs (réplication configurable). Cette tolérance est valable si on considère que les communications entre producteur et cluster Kafka sont fiables. En effet la réplication se fait au sein du cluster Kafka, les serveurs de réplication (\textit{followers}) pour une partition donnée copiant la partition depuis le serveur référent (\textit{leader}) pour cette partition. Dés lors si le producteur ne parvient pas à contacter le serveur référent, le message ne sera pas renvoyé et sera perdu. 
+
+\textbf{Utilisé par :} Netflix, PayPal, Uber...
+
+
+\subsubsection{Flink}
+
+\textbf{Apache Flink} est un framework de traitement temps-réel. Il permet donc de traiter des données arrivant en temps-réel, plutôt que par \textit{batch}, et donc d'avoir un temps de latence extrêmement court.
+
+En utilisant \textbf{Flink} pour traiter les flux fournis par Kafka, nous conservons l'aspect temps-réel qui fait la particularité de Twitter.
+
+\textbf{Utilisé par :} Bouygues Telecom, Alibaba, Amadeus, ATOS...
+
+\subsubsection{HBase}
+
+HBase est une base de données distribuée non-relationnelle. Cette technologie permet de stocker de larges quantités de données, et est très efficace pour les applications ayant un haut débit de données.
+
+Hbase gère la réplication au sein du cluster, le sharding et le équilibrage de charge. Le requêtage est extrêmement rapide et des filtres peuvent être appliqués.
+
+\textbf{Utilisé par :} Adobe, Airbnb, Facebook Messenger, Netflix...
+
+\textbf{HBase} assure une cohérence stricte des écritures et lectures, c'est à dire qu'une lecture renvoie toujours le résultat de la dernière écriture effectuée.
+HBase gère de manière automatique la réplication au sein du cluster ainsi que le basculement en cas de panne.
+
+\subsubsection{Zeppelin}
+
+\textbf{Zeppelin} fournit une interface web de visualisation de données. Son principal intérêt est d'être capable d'analyser et mettre en forme de grandes quantités de données, et de s'intégrer très bien aux autres technologies (faisant partie de l'écosystème Apache).
+
+Cet outil fournit de nombreux graphes pour la visualisation de données, permettant de rapidement et facilement travailler sur de gros volumes.
+
+Zeppelin, en tant que simple outil de visualisation, ne garantit en rien la tolérance aux fautes. Cependant, Zeppelin intervient en bout de chaîne et son interruption n'a aucune incidence sur le fonctionnement du reste des composants du système. 
+
+
+
+%\section{[Architecture](./misc/ARCHITECTURE.md)
+
+%\section{[Comportement](./misc/BEHAVIOR.md)
+
+\section{Configurations et Aides}
+
+%\subsection{[Flink en tant que Producer](./misc/FLINK_PRODUCER.md)
+
+%\subsection{[Kafka](./misc/KAFKA.md)
+
+%\subsection{[Flink en tant que Traitement](./misc/FLINK_PROCESS.md)
+
+%\subsection{[HBase](./misc/HBASE.md)
+
+%\subsection{[Zeppelin](./misc/ZEPPELIN.md)
+
+\section{Informations}
+
+Environnement de déploiement : \textbf{Vagrant}
+
+Outil de deploiement : \textbf{Rake}
+
+\section{Pour commencer}
+
+\subsection{Lancer en developpement local}
+
+\begin{verbatim}
+export RAKE_ENV=development
+rake vagrant:up
+./deploy.sh
+\end{verbatim}
+
+\subsection{Lancer en production}
+
+Le document hosts.yml contient les informations de connexion aux machines de production. 
+
+\begin{verbatim}
+export RAKE_ENV=production
+./deploy.sh
+\end{verbatim}
+
+
+\section{Utilisation de Rake pour les tâches de maintenance}
+
+\subsection{Installation}
+
+\begin{verbatim}
+\section{Installation de Bundler (once)
+gem install bundler
+
+\section{Installation des dépendances
+\section{En cas d'incompatibilité avec Gemfile.lock sur le dépôt : bundle update
+bundle
+\end{verbatim}
+
+\subsection{Environnement}
+
+\begin{verbatim}
+\section{Utilisation de l'environnement de développement
+export RAKE_ENV=development
+\section{Ne pas oublier de démarrer les machines virtuelles pour l'environnement de développement
+rake vagrant:up
+
+\section{Utilisation de l'environnement de production
+export RAKE_ENV=production
+\end{verbatim}
+
+\subsection{Affichage de l'aide}
+
+\begin{verbatim}
+\section{Listing des tâches Rake avec leur description
+rake -T
+\end{verbatim}
+
+\subsection{Deploiement}
+
+\begin{verbatim}
+\section{Déploiement et provisioning
+rake deploy
+
+\section{Uniquement sur deux serveurs (définis dans hosts.yml)
+rake deploy[server-2;server-3]
+
+\section{Connexion SSH
+rake ssh server-1
+\end{verbatim}
+
+\subsection{Services}
+
+En l'absence de services spécifiés pour ces commandes, l'ensemble de services
+concerné est celui défini dans la section \textit{services} du fichier de configuration
+courant. Ces commandes (à l'exception de `services:watcher`) correspondent
+à l'appel de `systemctl` sur les machines cibles.
+
+\begin{verbatim}
+# Démarrage des services
+rake services:start
+
+# Statut des services
+rake services:status
+
+# Arrêt des services
+rake services:stop
+
+# Kill des services
+rake services:kill
+
+# Kill tous les services de <server1> et <server2>
+rake services:kill[<server1>;<server2>]
+
+# Kill les services <service1> et <service2> de <server1> et <server2>
+rake services:kill[<server1>;<server2>,<service1>;<service2>]
+
+# Kill les services <service1> et <service2> sur tous les serveurs
+rake services:kill[,<service1>;<service2>]
+
+# Activation au démarrage (enable)
+rake services:enable
+\end{verbatim}
+
+\subsection{Execution OneShot de commande}
+
+\begin{verbatim}
+# Lancer la commande <commande> (défini dans le yaml config)
+rake run:<commande>[<server1>,<server2>]
+\end{verbatim}
+
+
+\subsection{Tests automatisés}
+
+Le fonctionnement de l'infrastructure actuelle (selon \verb!$RAKE_ENV!) peut être
+validé par l'exécution de tests automatisés, tels que définis dans le dossier
+\verb!features/!.
+
+\begin{verbatim}
+# Exécution de tous les tests
+rake features
+
+# Exécution des tests de déploiement
+rake features:deployment
+
+# Exécution des tests du composant service_watcher
+rake features:service_watcher
+
+# Exécution des tests de contrôle des services systemd
+rake features:services
+\end{verbatim}
+
+
+\section{Environnement de test Vagrant}
+
+Le dossier vagrant contient :
+\begin{itemize}
+	\item  \verb!Vagrantfile! : définition de machines virtuelles de test
+	\item  \verb!vagrant-hosts.yml! : configuration des différentes machines de test
+\end{itemize}
+
+Pour utiliser cet environnement de test :
+
+\begin{itemize}
+\item Installer [Vagrant](https://www.vagrantup.com/).
+\item Installer [VirtualBox](https://www.virtualbox.org/).
+\item Installer le plugin "vagrant-hostmanager" :
+\end{itemize}
+
+\begin{verbatim}
+vagrant plugin install vagrant-hostmanager
+\end{verbatim}
+
+\begin{itemize}
+\item Suivre les instructions de \texttt{https://github.com/devopsgroup-io/vagrant-hostmanager\#passwordless-sudo} pour éviter la demande de mot de passe sudo à chaque démarrage des machines virtuelles.
+\end{itemize}
+Une fois que tout est installé, les commandes suivantes peuvent être utilisées :
+
+\begin{verbatim}
+# Démarrage des machines définies dans le Vagrantfile
+# La première fois, les images vont être téléchargées et configurées. Cela prend du temps.
+# Les fois suivantes les machines installées seront reprises dans leur état actuel.
+vagrant up
+
+# Connexion SSH à une des machines
+vagrant ssh worker1
+
+# Recréer les machines suite à une modification du Vagrantfile
+vagrant reload
+
+# Mise en pause des machines
+vagrant suspend
+
+# Arrêt des machines (shutdown)
+vagrant halt
+
+# Destruction des machines (pour réinstallation propre)
+vagrant destroy
+\end{verbatim}
+
+Si \_vagrant-hostmanager\_ est configuré correctement, les machines peuvent être contactées en utilisant les noms \verb!worker1!, \verb!worker2! etc. plutôt que leurs adresses IP.
+
+Le réseau privé utilisé pour les machines Vagrant est 10.20.1.0/24. Par défaut l'adresse de la machine hôte est 10.20.1.1.
+
+\subsection{Troubleshooting}
+
+\verb!#vagrant plugin install vagrant-hostmanager échoue!
+
+sous debian il peut être nécessaire d'installer le paquet ruby-dev.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% Old document
 Nous avons choisi de travailler sur le sujet IDA. Il s'agit de traiter des données sous forme de flux. \\
 
 \section{Thème} 
