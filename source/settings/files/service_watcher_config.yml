@@ -36,7 +36,7 @@ services:
     exclusive: true
     instances:
       master: 1
-      regionserver: 8
+      regionserver: 5
   - name: zeppelin
     prestart: |
       #!/bin/bash
